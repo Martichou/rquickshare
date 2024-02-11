@@ -1,0 +1,13 @@
+[package]
+name = "rquickshare"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time"] }
+log = "0.4"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+mdns-sd = "0.10"
