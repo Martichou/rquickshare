@@ -1,12 +1,15 @@
 <div align="center">
   <h1>rquickshare</h1>
   <p>
-    <strong>Use NearbyShare/QuickShare on Linux</strong>
+    <strong>NearbyShare/QuickShare for Linux</strong>
   </p>
   <p>
 
+[![CI](https://github.com/Martichou/rquickshare/actions/workflows/build_ubuntu.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
+[![CI](https://github.com/Martichou/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
+[![CI](https://github.com/Martichou/rquickshare/actions/workflows/clippy.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
+
 [![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](LICENSE)
-[![CI](https://github.com/Martichou/rquickshare/workflows/CI/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 
   </p>
 </div>
