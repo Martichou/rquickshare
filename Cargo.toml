@@ -10,4 +10,9 @@ anyhow = "1.0"
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time"] }
 log = "0.4"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+base64 = "0.21"
+rand = "0.8"
 mdns-sd = "0.10"
+sys_metrics = "0.2.6"
+once_cell = "1.0"
+tokio-util = { version = "0.7", features = ["rt"] }
