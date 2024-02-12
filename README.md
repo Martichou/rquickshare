@@ -20,6 +20,17 @@ WIP Notes
 Got feedback or suggestions? We'd love to hear them! Feel free to open an issue and share your thoughts.
 
 
+Credits
+--------------------------
+
+This project wouldn't exist without those amazing open-source project:
+
+- https://github.com/grishka/NearDrop
+- https://github.com/vicr123/QNearbyShare
+
+And of course the code source for NearbyShare and all directly from Google.
+
+
 Contributing
 --------------------------
 
