@@ -4,11 +4,14 @@ extern crate log;
 use manager::TcpServer;
 use mdns::MDnsServer;
 use tokio::net::TcpListener;
-use tokio_util::{sync::CancellationToken, task::TaskTracker};
+use tokio_util::sync::CancellationToken;
+use tokio_util::task::TaskTracker;
 use utils::DeviceType;
 
+mod inbound;
 mod manager;
 mod mdns;
+mod states;
 mod utils;
 
 pub mod sharing_nearby {
@@ -32,7 +35,7 @@ pub mod location_nearby_connections {
 async fn main() -> Result<(), anyhow::Error> {
     // Define log level
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "TRACE,mdns_sd=ERROR,polling=ERROR")
+        std::env::set_var("RUST_LOG", "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR");
     }
 
     // Init logger/tracing
