@@ -17,13 +17,24 @@ impl MDnsServer {
 
         let endpoint_id = rand::thread_rng().gen::<[u8; 4]>();
         let name = gen_mdns_name(endpoint_id);
-        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, "rtin");
+        let hostname = sys_metrics::host::get_hostname()?;
+        let device_name;
+        #[cfg(debug_assertions)]
+        {
+            let random_u8: u8 = rand::thread_rng().gen();
+            device_name = format!("{hostname}-{random_u8}");
+        }
+        #[cfg(not(debug_assertions))]
+        {
+            device_name = format!("{hostname}");
+        }
+        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &device_name);
 
         let properties = [("n", endpoint_info)];
         let si = ServiceInfo::new(
             "_FC9F5ED42C8A._tcp.local.",
             &name,
-            &sys_metrics::host::get_hostname()?,
+            &hostname,
             "",
             service_port,
             &properties[..],
