@@ -1,12 +1,27 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
+use tokio::{io::AsyncReadExt, net::TcpStream};
 
+#[derive(Debug)]
 #[allow(dead_code)]
 pub enum DeviceType {
     Unknown = 0,
     Phone = 1,
     Tablet = 2,
     Laptop = 3,
+}
+
+#[allow(dead_code)]
+impl DeviceType {
+    pub fn from_raw_value(value: i32) -> Self {
+        match value {
+            0 => DeviceType::Unknown,
+            1 => DeviceType::Phone,
+            2 => DeviceType::Tablet,
+            3 => DeviceType::Laptop,
+            _ => DeviceType::Unknown,
+        }
+    }
 }
 
 pub fn gen_mdns_name(endpoint_id: [u8; 4]) -> String {
@@ -42,4 +57,14 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     record.extend_from_slice(device_name);
 
     URL_SAFE_NO_PAD.encode(&record)
+}
+
+pub async fn stream_read_exact(
+    socket: &mut TcpStream,
+    buf: &mut [u8],
+) -> Result<(), anyhow::Error> {
+    match socket.read_exact(buf).await {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.into()),
+    }
 }

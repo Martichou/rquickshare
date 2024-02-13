@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time"] }
+tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 log = "0.4"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 base64 = "0.21"
@@ -16,3 +16,7 @@ mdns-sd = "0.10"
 sys_metrics = "0.2.6"
 once_cell = "1.0"
 tokio-util = { version = "0.7", features = ["rt"] }
+prost = "0.12"
+
+[build-dependencies]
+prost-build = "0.12"

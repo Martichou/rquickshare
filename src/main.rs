@@ -1,12 +1,31 @@
-use mdns::MDnsServer;
-use tokio_util::{sync::CancellationToken, task::TaskTracker};
-use utils::DeviceType;
-
 #[macro_use]
 extern crate log;
 
+use manager::TcpServer;
+use mdns::MDnsServer;
+use tokio::net::TcpListener;
+use tokio_util::{sync::CancellationToken, task::TaskTracker};
+use utils::DeviceType;
+
+mod manager;
 mod mdns;
 mod utils;
+
+pub mod sharing_nearby {
+    include!(concat!(env!("OUT_DIR"), "/sharing.nearby.rs"));
+}
+
+pub mod securemessage {
+    include!(concat!(env!("OUT_DIR"), "/securemessage.rs"));
+}
+
+pub mod securegcm {
+    include!(concat!(env!("OUT_DIR"), "/securegcm.rs"));
+}
+
+pub mod location_nearby_connections {
+    include!(concat!(env!("OUT_DIR"), "/location.nearby.connections.rs"));
+}
 
 #[tokio::main]
 
@@ -22,9 +41,15 @@ async fn main() -> Result<(), anyhow::Error> {
     let tracker = TaskTracker::new();
     let token = CancellationToken::new();
 
-    let service_port = 1234;
+    let tcp_listener = TcpListener::bind("0.0.0.0:0").await?;
+    let binded_addr = tcp_listener.local_addr()?;
+    info!("TcpListener on: {}", binded_addr);
 
-    let mdns = MDnsServer::new(service_port, DeviceType::Laptop)?;
+    let server = TcpServer::new(tcp_listener)?;
+    let ctk = token.clone();
+    tracker.spawn(async move { server.run(ctk).await });
+
+    let mdns = MDnsServer::new(binded_addr.port(), DeviceType::Laptop)?;
     let ctk = token.clone();
     tracker.spawn(async move { mdns.run(ctk).await });
 
