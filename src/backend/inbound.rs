@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::os::unix::fs::FileExt;
 
@@ -56,21 +55,8 @@ impl InboundRequest {
                 client_seq: 0,
                 state: State::Initial,
                 encryption_done: true,
-                remote_device_info: None,
-                cipher_commitment: None,
-                private_key: None,
-                public_key: None,
-                server_init_data: None,
-                client_init_msg_data: None,
-                decrypt_key: None,
-                recv_hmac_key: None,
-                encrypt_key: None,
-                send_hmac_key: None,
-                pin_code: None,
-                payload_buffers: HashMap::default(),
                 text_payload_id: -1,
-                transfer_metadata: None,
-                transferred_files: HashMap::default(),
+                ..Default::default()
             },
         }
     }
@@ -689,10 +675,13 @@ impl InboundRequest {
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
             };
-            // TODO - Ask for user consent
-            info!("Asking for user consent: {:?}", metadata);
 
-            // TODO - Currently always accept file transfer
+            info!("Asking for user consent: {:?}", metadata);
+            self.update_state(|e| {
+                e.transfer_metadata = Some(metadata);
+            });
+            // TODO - Ask for user consent
+            // Currently always accept file transfer
             self.accept_transfer().await?;
         } else if introduction.text_metadata.len() == 1 {
             trace!("process_introduction: handling text_metadata");
@@ -704,14 +693,14 @@ impl InboundRequest {
                     pin_code: self.state.pin_code.clone(),
                     text_description: meta.text_title.clone(),
                 };
+
+                info!("Asking for user consent: {:?}", metadata);
                 self.update_state(|e| {
                     e.text_payload_id = meta.payload_id();
+                    e.transfer_metadata = Some(metadata);
                 });
-
                 // TODO - Ask for user consent
-                info!("Asking for user consent: {:?}", metadata);
-
-                // TODO - Currently always accept file transfer
+                // Currently always accept file transfer
                 self.accept_transfer().await?;
             } else {
                 // TODO - Reject transfer

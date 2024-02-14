@@ -15,8 +15,9 @@ mod mdns;
 pub use mdns::*;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub enum State {
+    #[default]
     Initial,
     ReceivedConnectionRequest,
     SentUkeyServerInit,
@@ -29,14 +30,21 @@ pub enum State {
     Disconnected,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct InnerState {
     pub id: String,
     pub server_seq: i32,
     pub client_seq: i32,
-    pub state: State,
     pub encryption_done: bool,
+
+    // Subject to be used-facing for progress, ...
+    pub state: State,
     pub remote_device_info: Option<RemoteDeviceInfo>,
+    pub pin_code: Option<String>,
+    pub transfer_metadata: Option<TransferMetadata>,
+    pub transferred_files: HashMap<i64, InternalFileInfo>,
+
+    // Everything needed for encryption/decryption/verif
     pub cipher_commitment: Option<CipherCommitment>,
     pub private_key: Option<SecretKey>,
     pub public_key: Option<PublicKey>,
@@ -46,10 +54,8 @@ pub struct InnerState {
     pub recv_hmac_key: Option<Vec<u8>>,
     pub encrypt_key: Option<Vec<u8>>,
     pub send_hmac_key: Option<Vec<u8>>,
-    pub pin_code: Option<String>,
 
+    // Used to handle/track ingress transfer
     pub text_payload_id: i64,
     pub payload_buffers: HashMap<i64, Vec<u8>>,
-    pub transfer_metadata: Option<TransferMetadata>,
-    pub transferred_files: HashMap<i64, InternalFileInfo>,
 }

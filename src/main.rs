@@ -2,7 +2,8 @@
 extern crate log;
 
 use manager::TcpServer;
-use tokio::{net::TcpListener, sync::broadcast};
+use tokio::net::TcpListener;
+use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use utils::DeviceType;
