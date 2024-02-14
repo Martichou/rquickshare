@@ -19,18 +19,8 @@ impl MDnsServer {
         let endpoint_id = rand::thread_rng().gen::<[u8; 4]>();
         let name = gen_mdns_name(endpoint_id);
         let hostname = sys_metrics::host::get_hostname()?;
-        let device_name;
-        #[cfg(debug_assertions)]
-        {
-            let random_u8: u8 = rand::thread_rng().gen();
-            device_name = format!("{hostname}-{random_u8}");
-        }
-        #[cfg(not(debug_assertions))]
-        {
-            device_name = format!("{hostname}");
-        }
-        info!("Broadcasting with: {device_name}");
-        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &device_name);
+        info!("Broadcasting with: {hostname}");
+        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
 
         let local_ip = local_ip().unwrap();
         let properties = [("n", endpoint_info)];
