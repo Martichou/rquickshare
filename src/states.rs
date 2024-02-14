@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use p256::{PublicKey, SecretKey};
 
+use crate::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
 use crate::utils::RemoteDeviceInfo;
 
@@ -18,10 +21,13 @@ pub enum State {
     Disconnected,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct InnerState {
+    pub id: String,
     pub server_seq: i32,
+    pub client_seq: i32,
     pub state: State,
+    pub encryption_done: bool,
     pub remote_device_info: Option<RemoteDeviceInfo>,
     pub cipher_commitment: Option<CipherCommitment>,
     pub private_key: Option<SecretKey>,
@@ -33,4 +39,9 @@ pub struct InnerState {
     pub encrypt_key: Option<Vec<u8>>,
     pub send_hmac_key: Option<Vec<u8>>,
     pub pin_code: Option<String>,
+
+    pub text_payload_id: i64,
+    pub payload_buffers: HashMap<i64, Vec<u8>>,
+    pub transfer_metadata: Option<TransferMetadata>,
+    pub transferred_files: HashMap<i64, InternalFileInfo>,
 }

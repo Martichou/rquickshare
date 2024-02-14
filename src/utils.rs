@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf};
+
 use anyhow::anyhow;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
@@ -132,4 +134,16 @@ pub fn gen_random(size: usize) -> Vec<u8> {
     rand::thread_rng().fill_bytes(&mut data);
 
     data
+}
+
+pub fn get_download_dir() -> PathBuf {
+    if let Some(user_dirs) = directories::UserDirs::new() {
+        if let Some(dd) = user_dirs.download_dir() {
+            return dd.to_path_buf();
+        }
+
+        return user_dirs.home_dir().to_path_buf();
+    }
+
+    Path::new("/").to_path_buf()
 }

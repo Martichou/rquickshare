@@ -1,7 +1,10 @@
-use aes::cipher::block_padding::Pkcs7;
-use aes::cipher::{BlockEncryptMut, KeyIvInit};
+use std::collections::HashMap;
+use std::fs::File;
+use std::os::unix::fs::FileExt;
+
 use anyhow::anyhow;
 use hmac::{Hmac, Mac};
+use libaes::{Cipher, AES_256_KEY_LEN};
 use p256::ecdh::diffie_hellman;
 use p256::elliptic_curve::sec1::{FromEncodedPoint, ToEncodedPoint};
 use p256::{EncodedPoint, PublicKey};
@@ -11,10 +14,11 @@ use sha2::{Digest, Sha256, Sha512};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
+use crate::info::InternalFileInfo;
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
 };
-use crate::location_nearby_connections::{OfflineFrame, PayloadTransferFrame};
+use crate::location_nearby_connections::{KeepAliveFrame, OfflineFrame, PayloadTransferFrame};
 use crate::securegcm::ukey2_alert::AlertType;
 use crate::securegcm::{
     ukey2_message, DeviceToDeviceMessage, GcmMetadata, Type, Ukey2Alert, Ukey2ClientFinished,
@@ -24,15 +28,17 @@ use crate::securemessage::{
     EcP256PublicKey, EncScheme, GenericPublicKey, Header, HeaderAndBody, PublicKeyType,
     SecureMessage, SigScheme,
 };
+use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::states::{InnerState, State};
 use crate::utils::{
-    gen_ecdsa_keypair, gen_random, hkdf_extract_expand, stream_read_exact, to_four_digit_string,
-    DeviceType, RemoteDeviceInfo,
+    gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand, stream_read_exact,
+    to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
-use crate::{location_nearby_connections, sharing_nearby};
+use crate::{info, location_nearby_connections, sharing_nearby};
 
-type Aes256CbcEnc = cbc::Encryptor<aes::Aes256>;
 type HmacSha256 = Hmac<Sha256>;
+
+const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
 
 #[derive(Debug)]
 pub struct InboundRequest {
@@ -41,12 +47,15 @@ pub struct InboundRequest {
 }
 
 impl InboundRequest {
-    pub fn new(socket: TcpStream) -> Self {
+    pub fn new(socket: TcpStream, id: String) -> Self {
         Self {
             socket,
             state: InnerState {
-                server_seq: 1,
+                id,
+                server_seq: 0,
+                client_seq: 0,
                 state: State::Initial,
+                encryption_done: true,
                 remote_device_info: None,
                 cipher_commitment: None,
                 private_key: None,
@@ -58,6 +67,10 @@ impl InboundRequest {
                 encrypt_key: None,
                 send_hmac_key: None,
                 pin_code: None,
+                payload_buffers: HashMap::default(),
+                text_payload_id: -1,
+                transfer_metadata: None,
+                transferred_files: HashMap::default(),
             },
         }
     }
@@ -69,7 +82,7 @@ impl InboundRequest {
 
         let msg_length = u32::from_be_bytes(length_buf) as usize;
         // Ensure the message length is not unreasonably big to avoid allocation attacks
-        if msg_length > 5 * 1024 * 1024 {
+        if msg_length > SANE_FRAME_LENGTH as usize {
             error!("Message length too big");
             return Err(anyhow!("value"));
         }
@@ -123,7 +136,8 @@ impl InboundRequest {
             }
             _ => {
                 debug!("Handling SecureMessage frame");
-                let _smsg = SecureMessage::decode(&*frame_data);
+                let smsg = SecureMessage::decode(&*frame_data)?;
+                self.decrypt_and_process_secure_message(&smsg).await?;
             }
         }
 
@@ -367,6 +381,434 @@ impl InboundRequest {
         Ok(())
     }
 
+    async fn decrypt_and_process_secure_message(
+        &mut self,
+        smsg: &SecureMessage,
+    ) -> Result<(), anyhow::Error> {
+        let mut hmac = HmacSha256::new_from_slice(self.state.recv_hmac_key.as_ref().unwrap())?;
+        hmac.update(&smsg.header_and_body);
+        if !hmac
+            .finalize()
+            .into_bytes()
+            .as_slice()
+            .eq(smsg.signature.as_slice())
+        {
+            return Err(anyhow!("hmac!=signature"));
+        }
+
+        let header_and_body = HeaderAndBody::decode(&*smsg.header_and_body)?;
+
+        let msg_data = header_and_body.body;
+        let key = self.state.decrypt_key.as_ref().unwrap();
+
+        let mut cipher = Cipher::new_256(key[..AES_256_KEY_LEN].try_into()?);
+        cipher.set_auto_padding(true);
+        let decrypted = cipher.cbc_decrypt(header_and_body.header.iv(), &msg_data);
+
+        let d2d_msg = DeviceToDeviceMessage::decode(&*decrypted)?;
+
+        let seq = self.get_client_seq_inc();
+        if d2d_msg.sequence_number() != seq {
+            return Err(anyhow!(
+                "Error d2d_msg.sequence_number invalid ({} vs {})",
+                d2d_msg.sequence_number(),
+                seq
+            ));
+        }
+
+        let offline = location_nearby_connections::OfflineFrame::decode(d2d_msg.message())?;
+        let v1_frame = offline
+            .v1
+            .as_ref()
+            .ok_or_else(|| anyhow!("Missing required fields"))?;
+        match v1_frame.r#type() {
+            location_nearby_connections::v1_frame::FrameType::PayloadTransfer => {
+                trace!("Received FrameType::PayloadTransfer");
+                let payload_transfer = v1_frame
+                    .payload_transfer
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+                let header = payload_transfer
+                    .payload_header
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Missing required fields"))?;
+                let chunk = payload_transfer
+                    .payload_chunk
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+                match header.r#type() {
+                    payload_header::PayloadType::Bytes => {
+                        info!("Processing PayloadType::Bytes");
+                        let payload_id = header.id();
+
+                        if header.total_size() > SANE_FRAME_LENGTH.into() {
+                            self.state.payload_buffers.remove(&payload_id);
+                            return Err(anyhow!(
+                                "Payload too large: {} bytes",
+                                header.total_size()
+                            ));
+                        }
+
+                        self.state
+                            .payload_buffers
+                            .entry(payload_id)
+                            .or_insert_with(|| Vec::with_capacity(header.total_size() as usize));
+
+                        // Get the current length of the buffer, if it exists, without holding a mutable borrow.
+                        let buffer_len = self.state.payload_buffers.get(&payload_id).unwrap().len();
+                        if chunk.offset() != buffer_len as i64 {
+                            self.state.payload_buffers.remove(&payload_id);
+                            return Err(anyhow!(
+                                "Unexpected chunk offset: {}, expected: {}",
+                                chunk.offset(),
+                                buffer_len
+                            ));
+                        }
+
+                        let buffer = self.state.payload_buffers.get_mut(&payload_id).unwrap();
+                        if let Some(body) = &chunk.body {
+                            buffer.extend(body);
+                        }
+
+                        if (chunk.flags() & 1) == 1 {
+                            // Clear payload_buffer for payload_id
+                            debug!("Chunk flags & 1 == 1 ?? End of data ??");
+
+                            if payload_id == self.state.text_payload_id {
+                                open::that(std::str::from_utf8(buffer)?)?;
+
+                                info!("Transfer finished");
+                                self.disconnection().await?;
+                                return Err(anyhow!(crate::errors::AppError::NotAnError));
+                            } else {
+                                let innner_frame =
+                                    sharing_nearby::Frame::decode(buffer.as_slice())?;
+                                self.process_transfer_setup(&innner_frame).await?;
+                            }
+                        }
+                    }
+                    payload_header::PayloadType::File => {
+                        info!("Processing PayloadType::File");
+                        let payload_id = header.id();
+
+                        let file_internal = self
+                            .state
+                            .transferred_files
+                            .get_mut(&payload_id)
+                            .ok_or_else(|| {
+                                anyhow!("File payload ID ({}) is not known", payload_id)
+                            })?;
+
+                        let current_offset = file_internal.bytes_transferred;
+                        if chunk.offset() != current_offset {
+                            return Err(anyhow!(
+                                "Invalid offset into file {}, expected {}",
+                                chunk.offset(),
+                                current_offset
+                            ));
+                        }
+                        if current_offset + chunk.body().len() as i64 > file_internal.meta.size() {
+                            return Err(anyhow!(
+                                "Transferred file size exceeds previously specified value"
+                            ));
+                        }
+
+                        if !chunk.body().is_empty() {
+                            file_internal
+                                .file
+                                .as_ref()
+                                .unwrap()
+                                .write_all_at(chunk.body(), current_offset as u64)?;
+                            file_internal.bytes_transferred += chunk.body().len() as i64;
+                        } else if (chunk.flags() & 1) == 1 {
+                            self.state.transferred_files.remove(&payload_id);
+                            if self.state.transferred_files.is_empty() {
+                                info!("Transfer finished");
+                                self.disconnection().await?;
+                                return Err(anyhow!(crate::errors::AppError::NotAnError));
+                            }
+                        }
+                    }
+                    payload_header::PayloadType::Stream => {
+                        error!("Unhandled PayloadType::Stream: {:?}", header.r#type())
+                    }
+                    payload_header::PayloadType::UnknownPayloadType => {
+                        error!(
+                            "Invalid PayloadType::UnknownPayloadType: {:?}",
+                            header.r#type()
+                        )
+                    }
+                }
+            }
+            location_nearby_connections::v1_frame::FrameType::KeepAlive => {
+                trace!("Sending keepalive");
+                self.send_keepalive(true).await?;
+            }
+            _ => {
+                error!("Unhandled offline frame encrypted: {:?}", offline);
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn process_transfer_setup(
+        &mut self,
+        frame: &sharing_nearby::Frame,
+    ) -> Result<(), anyhow::Error> {
+        let v1_frame = frame
+            .v1
+            .as_ref()
+            .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+        if v1_frame.r#type() == sharing_nearby::v1_frame::FrameType::Cancel {
+            info!("Transfer canceled");
+            return self.disconnection().await;
+        }
+
+        match self.state.state {
+            State::SentConnectionResponse => {
+                debug!("Processing State::SentConnectionResponse");
+                self.process_paired_key_encryption_frame(v1_frame).await?;
+                self.update_state(|e| {
+                    e.state = State::SentPairedKeyResult;
+                });
+            }
+            State::SentPairedKeyResult => {
+                debug!("Processing State::SentPairedKeyResult");
+                self.process_paired_key_result(v1_frame).await?;
+                self.update_state(|e| {
+                    e.state = State::ReceivedPairedKeyResult;
+                });
+            }
+            State::ReceivedPairedKeyResult => {
+                debug!("Processing State::ReceivedPairedKeyResult");
+                self.process_introduction(v1_frame).await?;
+            }
+            _ => {
+                info!(
+                    "Unhandled connection state in process_transfer_setup: {:?}",
+                    self.state.state
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn process_paired_key_encryption_frame(
+        &mut self,
+        v1_frame: &sharing_nearby::V1Frame,
+    ) -> Result<(), anyhow::Error> {
+        if v1_frame.paired_key_encryption.is_none() {
+            return Err(anyhow!("Missing required fields"));
+        }
+
+        let paired_result = sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(sharing_nearby::V1Frame {
+                r#type: Some(sharing_nearby::v1_frame::FrameType::PairedKeyResult.into()),
+                paired_key_result: Some(sharing_nearby::PairedKeyResultFrame {
+                    status: Some(paired_key_result_frame::Status::Unable.into()),
+                }),
+                ..Default::default()
+            }),
+        };
+
+        self.send_encrypted_frame(&paired_result).await?;
+
+        Ok(())
+    }
+
+    async fn process_paired_key_result(
+        &self,
+        v1_frame: &sharing_nearby::V1Frame,
+    ) -> Result<(), anyhow::Error> {
+        if v1_frame.paired_key_result.is_none() {
+            return Err(anyhow!("Missing required fields"));
+        }
+
+        Ok(())
+    }
+
+    async fn process_introduction(
+        &mut self,
+        v1_frame: &sharing_nearby::V1Frame,
+    ) -> Result<(), anyhow::Error> {
+        let introduction = v1_frame
+            .introduction
+            .as_ref()
+            .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+        self.update_state(|e| {
+            e.state = State::WaitingForUserConsent;
+        });
+
+        if !introduction.file_metadata.is_empty() && introduction.text_metadata.is_empty() {
+            trace!("process_introduction: handling file_metadata");
+            let mut files_name = Vec::with_capacity(introduction.file_metadata.len());
+
+            for file in &introduction.file_metadata {
+                info!("File name: {}", file.name());
+
+                let mut dest = get_download_dir();
+                dest.push(file.name());
+
+                info!("Destination: {:?}", dest);
+                if dest.exists() {
+                    let mut counter = 1;
+                    dest.pop();
+
+                    loop {
+                        dest.push(format!("{}_{}", counter, file.name()));
+                        if !dest.exists() {
+                            break;
+                        }
+                        counter += 1;
+                    }
+
+                    info!("New destination: {:?}", dest);
+                }
+
+                let info = InternalFileInfo {
+                    meta: file.clone(),
+                    payload_id: file.payload_id(),
+                    destination_url: dest,
+                    bytes_transferred: 0,
+                    file: None,
+                };
+                self.state.transferred_files.insert(file.payload_id(), info);
+                files_name.push(file.name().to_owned());
+            }
+
+            let metadata = info::TransferMetadata {
+                files: files_name,
+                id: self.state.id.clone(),
+                pin_code: self.state.pin_code.clone(),
+                text_description: None,
+            };
+            // TODO - Ask for user consent
+            info!("Asking for user consent: {:?}", metadata);
+
+            // TODO - Currently always accept file transfer
+            self.accept_transfer().await?;
+        } else if introduction.text_metadata.len() == 1 {
+            trace!("process_introduction: handling text_metadata");
+            let meta = introduction.text_metadata.first().unwrap();
+            if meta.r#type() == text_metadata::Type::Url {
+                let metadata = info::TransferMetadata {
+                    files: vec![],
+                    id: self.state.id.clone(),
+                    pin_code: self.state.pin_code.clone(),
+                    text_description: meta.text_title.clone(),
+                };
+                self.update_state(|e| {
+                    e.text_payload_id = meta.payload_id();
+                });
+
+                // TODO - Ask for user consent
+                info!("Asking for user consent: {:?}", metadata);
+
+                // TODO - Currently always accept file transfer
+                self.accept_transfer().await?;
+            } else {
+                // TODO - Reject transfer
+                self.reject_transfer(Some(
+                    sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
+                ))
+                .await?;
+            }
+        } else {
+            // TODO - Reject transfer
+            self.reject_transfer(Some(
+                sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
+            ))
+            .await?;
+        }
+
+        Ok(())
+    }
+
+    async fn disconnection(&mut self) -> Result<(), anyhow::Error> {
+        let frame = location_nearby_connections::OfflineFrame {
+            version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
+            v1: Some(location_nearby_connections::V1Frame {
+                r#type: Some(
+                    location_nearby_connections::v1_frame::FrameType::Disconnection.into(),
+                ),
+                disconnection: Some(location_nearby_connections::DisconnectionFrame {
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+        };
+
+        if self.state.encryption_done {
+            self.encrypt_and_send(&frame).await
+        } else {
+            self.send_frame(frame.encode_to_vec()).await
+        }
+    }
+
+    async fn accept_transfer(&mut self) -> Result<(), anyhow::Error> {
+        let ids: Vec<i64> = self.state.transferred_files.keys().cloned().collect();
+
+        for id in ids {
+            let mfi = self.state.transferred_files.get_mut(&id).unwrap();
+
+            let file = File::create(&mfi.destination_url)?;
+            info!("Created file: {:?}", &file);
+            mfi.file = Some(file);
+        }
+
+        let frame = sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(sharing_nearby::V1Frame {
+                r#type: Some(sharing_nearby::v1_frame::FrameType::Response.into()),
+                connection_response: Some(sharing_nearby::ConnectionResponseFrame {
+                    status: Some(sharing_nearby::connection_response_frame::Status::Accept.into()),
+                }),
+                ..Default::default()
+            }),
+        };
+
+        self.send_encrypted_frame(&frame).await?;
+
+        self.update_state(|e| {
+            e.state = State::ReceivingFiles;
+        });
+
+        Ok(())
+    }
+
+    async fn reject_transfer(
+        &mut self,
+        reason: Option<sharing_nearby::connection_response_frame::Status>,
+    ) -> Result<(), anyhow::Error> {
+        let sreason = if let Some(r) = reason {
+            r
+        } else {
+            sharing_nearby::connection_response_frame::Status::Reject
+        };
+
+        let frame = sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(sharing_nearby::V1Frame {
+                r#type: Some(sharing_nearby::v1_frame::FrameType::Response.into()),
+                connection_response: Some(sharing_nearby::ConnectionResponseFrame {
+                    status: Some(sreason.into()),
+                }),
+                ..Default::default()
+            }),
+        };
+
+        self.send_encrypted_frame(&frame).await?;
+
+        Ok(())
+    }
+
     fn finalize_key_exchange(
         &mut self,
         raw_peer_key: GenericPublicKey,
@@ -427,6 +869,7 @@ impl InboundRequest {
             e.encrypt_key = Some(server_key);
             e.send_hmac_key = Some(server_hmac_key);
             e.pin_code = Some(to_four_digit_string(&auth_string));
+            e.encryption_done = true;
         });
 
         info!("Pin code: {:?}", self.state.pin_code);
@@ -519,39 +962,20 @@ impl InboundRequest {
 
     async fn encrypt_and_send(&mut self, frame: &OfflineFrame) -> Result<(), anyhow::Error> {
         let d2d_msg = DeviceToDeviceMessage {
-            sequence_number: Some(self.get_seq_inc()),
+            sequence_number: Some(self.get_server_seq_inc()),
             message: Some(frame.encode_to_vec()),
         };
 
+        let key = self.state.encrypt_key.as_ref().unwrap();
         let msg_data = d2d_msg.encode_to_vec();
-        let msg_data_size = msg_data.len();
         let iv = gen_random(16);
 
-        let data_len = msg_data_size + 4;
-        let mut encrypted_buf: Vec<u8> = unsafe {
-            let mut buf = Vec::with_capacity(data_len + 16);
-            #[allow(clippy::uninit_vec)]
-            buf.set_len(data_len + 16);
-            buf
-        };
-
-        let key = self.state.encrypt_key.as_ref().unwrap();
-        let encryptor = Aes256CbcEnc::new(key.as_slice().into(), iv.as_slice().into());
-        let encrypted =
-            match encryptor.encrypt_padded_mut::<Pkcs7>(&mut encrypted_buf[4..], msg_data_size) {
-                Ok(o) => o,
-                Err(e) => {
-                    error!("error: {:?}", e);
-                    return Err(anyhow!("Error encrypting pkt: {}", e));
-                }
-            };
-
-        let mut bytes = vec![];
-        bytes.extend_from_slice(&msg_data_size.to_be_bytes());
-        bytes.extend_from_slice(encrypted);
+        let mut cipher = Cipher::new_256(&key[..AES_256_KEY_LEN].try_into().unwrap());
+        cipher.set_auto_padding(true);
+        let encrypted = cipher.cbc_encrypt(&iv, &msg_data);
 
         let hb = HeaderAndBody {
-            body: bytes,
+            body: encrypted,
             header: Header {
                 encryption_scheme: EncScheme::Aes256Cbc.into(),
                 signature_scheme: SigScheme::HmacSha256.into(),
@@ -567,8 +991,7 @@ impl InboundRequest {
             },
         };
 
-        let mut hmac =
-            HmacSha256::new_from_slice(self.state.send_hmac_key.as_ref().unwrap()).unwrap();
+        let mut hmac = HmacSha256::new_from_slice(self.state.send_hmac_key.as_ref().unwrap())?;
         hmac.update(&hb.encode_to_vec());
         let result = hmac.finalize();
 
@@ -580,6 +1003,23 @@ impl InboundRequest {
         self.send_frame(smsg.encode_to_vec()).await?;
 
         Ok(())
+    }
+
+    async fn send_keepalive(&mut self, ack: bool) -> Result<(), anyhow::Error> {
+        let ack_frame = location_nearby_connections::OfflineFrame {
+            version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
+            v1: Some(location_nearby_connections::V1Frame {
+                r#type: Some(location_nearby_connections::v1_frame::FrameType::KeepAlive.into()),
+                keep_alive: Some(KeepAliveFrame { ack: Some(ack) }),
+                ..Default::default()
+            }),
+        };
+
+        if self.state.encryption_done {
+            self.encrypt_and_send(&ack_frame).await
+        } else {
+            self.send_frame(ack_frame.encode_to_vec()).await
+        }
     }
 
     async fn send_frame(&mut self, data: Vec<u8>) -> Result<(), anyhow::Error> {
@@ -603,14 +1043,20 @@ impl InboundRequest {
         Ok(())
     }
 
-    fn get_seq_inc(&mut self) -> i32 {
-        let seq = self.state.server_seq;
-
+    fn get_server_seq_inc(&mut self) -> i32 {
         self.update_state(|e| {
             e.server_seq += 1;
         });
 
-        seq
+        self.state.server_seq
+    }
+
+    fn get_client_seq_inc(&mut self) -> i32 {
+        self.update_state(|e| {
+            e.client_seq += 1;
+        });
+
+        self.state.client_seq
     }
 
     fn update_state<F>(&mut self, f: F)

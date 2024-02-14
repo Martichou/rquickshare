@@ -1,6 +1,7 @@
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 
+use crate::errors::AppError;
 use crate::inbound::InboundRequest;
 
 const INNER_NAME: &str = "TcpServer";
@@ -31,15 +32,18 @@ impl TcpServer {
                             trace!("New client: {remote_addr}");
 
                             tokio::spawn(async move {
-                                let mut ir = InboundRequest::new(socket);
+                                let mut ir = InboundRequest::new(socket, remote_addr.to_string());
 
                                 loop {
                                     match ir.handle().await {
                                         Ok(_) => {},
-                                        Err(e) => {
-                                            error!("Error while handling client: {e}");
-                                            break;
-                                        }
+                                        Err(e) => match e.downcast_ref() {
+                                            Some(AppError::NotAnError) => break,
+                                            None => {
+                                                error!("Error while handling client: {e}");
+                                                break;
+                                            }
+                                        },
                                     }
                                 }
                             });

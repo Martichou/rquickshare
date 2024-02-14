@@ -8,7 +8,9 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use utils::DeviceType;
 
+mod errors;
 mod inbound;
+mod info;
 mod manager;
 mod mdns;
 mod states;
