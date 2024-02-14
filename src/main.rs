@@ -31,7 +31,6 @@ pub mod location_nearby_connections {
 }
 
 #[tokio::main]
-
 async fn main() -> Result<(), anyhow::Error> {
     // Define log level
     if std::env::var("RUST_LOG").is_err() {

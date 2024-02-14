@@ -22,4 +22,8 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install libdbus-1-dev
       - run: cargo build
