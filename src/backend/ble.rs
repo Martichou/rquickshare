@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 
 use anyhow::anyhow;
@@ -42,7 +41,7 @@ impl BleListener {
             })
             .await?;
 
-        let mut already_alerted = HashMap::new();
+        let mut last_alert = SystemTime::now();
 
         loop {
             tokio::select! {
@@ -53,20 +52,18 @@ impl BleListener {
                 Some(e) = events.next() => {
                     match e {
                         CentralEvent::ServiceDataAdvertisement { id, service_data } => {
+                            let _ = id;
                             let _ = service_data;
                             let now = SystemTime::now();
-                            let when = already_alerted.get(&id);
 
-                            // Don't spam, max once per 60s
-                            if let Some(t) = when {
-                                if now.duration_since(*t)? <= Duration::from_secs(60) {
-                                    continue;
-                                }
+                            // Don't spam, max once per 15s
+                            if now.duration_since(last_alert)? <= Duration::from_secs(15) {
+                                continue;
                             }
 
                             debug!("{INNER_NAME}: A device is sharing nearby");
                             self.sender.send(())?;
-                            already_alerted.insert(id, now);
+                            last_alert = now;
                         },
                         // Not interesting for us
                         _ => {

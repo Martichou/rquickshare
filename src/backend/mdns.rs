@@ -44,11 +44,11 @@ impl MDnsServer {
         device_type: DeviceType,
         receiver: Receiver<()>,
     ) -> Result<Self, anyhow::Error> {
-        let service = Self::build_service(service_port, device_type)?;
-        let fullname = service.get_fullname().to_owned();
+        let service_info = Self::build_service(service_port, device_type)?;
+        let fullname = service_info.get_fullname().to_owned();
 
         let daemon = ServiceDaemon::new()?;
-        daemon.register(service)?;
+        daemon.register(service_info)?;
 
         Ok(Self {
             daemon,
@@ -77,7 +77,12 @@ impl MDnsServer {
                 // Can be used later on to change the visibility on the fly
                 // by unregistering the service and registering it only when
                 // a device nearby is sharing.
-                _ = receiver.recv() => {}
+                _ = receiver.recv() => {
+                    // Android can sometime not see the mDNS service if the service
+                    // was running BEFORE Android started the Discovery phase for QuickShare.
+                    // So resend a broadcast if there's a android device sending.
+                    self.daemon.register_resend(&self.fullname)?;
+                }
             }
         }
 
