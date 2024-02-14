@@ -14,7 +14,8 @@ use sha2::{Digest, Sha256, Sha512};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
-use crate::info::InternalFileInfo;
+use super::{InnerState, State};
+use crate::backend::info::{InternalFileInfo, TransferMetadata};
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
 };
@@ -29,12 +30,11 @@ use crate::securemessage::{
     SecureMessage, SigScheme,
 };
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
-use crate::states::{InnerState, State};
 use crate::utils::{
     gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand, stream_read_exact,
     to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
-use crate::{info, location_nearby_connections, sharing_nearby};
+use crate::{location_nearby_connections, sharing_nearby};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -683,7 +683,7 @@ impl InboundRequest {
                 files_name.push(file.name().to_owned());
             }
 
-            let metadata = info::TransferMetadata {
+            let metadata = TransferMetadata {
                 files: files_name,
                 id: self.state.id.clone(),
                 pin_code: self.state.pin_code.clone(),
@@ -698,7 +698,7 @@ impl InboundRequest {
             trace!("process_introduction: handling text_metadata");
             let meta = introduction.text_metadata.first().unwrap();
             if meta.r#type() == text_metadata::Type::Url {
-                let metadata = info::TransferMetadata {
+                let metadata = TransferMetadata {
                     files: vec![],
                     id: self.state.id.clone(),
                     pin_code: self.state.pin_code.clone(),

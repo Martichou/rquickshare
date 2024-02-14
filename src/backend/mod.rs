@@ -2,9 +2,15 @@ use std::collections::HashMap;
 
 use p256::{PublicKey, SecretKey};
 
-use crate::info::{InternalFileInfo, TransferMetadata};
+use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
 use crate::utils::RemoteDeviceInfo;
+
+mod inbound;
+pub use inbound::*;
+mod info;
+mod mdns;
+pub use mdns::*;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone)]

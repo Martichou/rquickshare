@@ -1,8 +1,8 @@
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 
+use crate::backend::InboundRequest;
 use crate::errors::AppError;
-use crate::inbound::InboundRequest;
 
 const INNER_NAME: &str = "TcpServer";
 

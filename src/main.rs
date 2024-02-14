@@ -2,18 +2,16 @@
 extern crate log;
 
 use manager::TcpServer;
-use mdns::MDnsServer;
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use utils::DeviceType;
 
+use crate::backend::MDnsServer;
+
+mod backend;
 mod errors;
-mod inbound;
-mod info;
 mod manager;
-mod mdns;
-mod states;
 mod utils;
 
 pub mod sharing_nearby {
