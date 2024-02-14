@@ -2,12 +2,12 @@
 extern crate log;
 
 use manager::TcpServer;
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, sync::broadcast};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use utils::DeviceType;
 
-use crate::backend::MDnsServer;
+use crate::backend::{BleListener, MDnsServer};
 
 mod backend;
 mod errors;
@@ -35,7 +35,10 @@ pub mod location_nearby_connections {
 async fn main() -> Result<(), anyhow::Error> {
     // Define log level
     if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var("RUST_LOG", "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR");
+        std::env::set_var(
+            "RUST_LOG",
+            "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR",
+        );
     }
 
     // Init logger/tracing
@@ -52,7 +55,15 @@ async fn main() -> Result<(), anyhow::Error> {
     let ctk = token.clone();
     tracker.spawn(async move { server.run(ctk).await });
 
-    let mdns = MDnsServer::new(binded_addr.port(), DeviceType::Laptop)?;
+    let ble_channel = broadcast::channel(10);
+
+    // Don't threat BleListener error as fatal, it's a nice to have.
+    if let Ok(ble) = BleListener::new(ble_channel.0).await {
+        let ctk = token.clone();
+        tracker.spawn(async move { ble.run(ctk).await });
+    }
+
+    let mdns = MDnsServer::new(binded_addr.port(), DeviceType::Laptop, ble_channel.1)?;
     let ctk = token.clone();
     tracker.spawn(async move { mdns.run(ctk).await });
 

@@ -1,6 +1,7 @@
 use local_ip_address::linux::local_ip;
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use rand::Rng;
+use tokio::sync::broadcast::Receiver;
 use tokio_util::sync::CancellationToken;
 
 use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
@@ -10,12 +11,14 @@ const INNER_NAME: &str = "MDnsServer";
 pub struct MDnsServer {
     daemon: ServiceDaemon,
     fullname: String,
+    receiver: Receiver<()>,
 }
 
 impl MDnsServer {
-    pub fn new(service_port: u16, device_type: DeviceType) -> Result<Self, anyhow::Error> {
-        let daemon = ServiceDaemon::new()?;
-
+    fn build_service(
+        service_port: u16,
+        device_type: DeviceType,
+    ) -> Result<ServiceInfo, anyhow::Error> {
         let endpoint_id = rand::thread_rng().gen::<[u8; 4]>();
         let name = gen_mdns_name(endpoint_id);
         let hostname = sys_metrics::host::get_hostname()?;
@@ -33,16 +36,32 @@ impl MDnsServer {
             &properties[..],
         )?;
 
-        let fullname = si.get_fullname().to_owned();
+        Ok(si)
+    }
 
-        daemon.register(si)?;
+    pub fn new(
+        service_port: u16,
+        device_type: DeviceType,
+        receiver: Receiver<()>,
+    ) -> Result<Self, anyhow::Error> {
+        let service = Self::build_service(service_port, device_type)?;
+        let fullname = service.get_fullname().to_owned();
 
-        Ok(Self { daemon, fullname })
+        let daemon = ServiceDaemon::new()?;
+        daemon.register(service)?;
+
+        Ok(Self {
+            daemon,
+            fullname,
+            receiver,
+        })
     }
 
     pub async fn run(self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
         info!("{INNER_NAME}: service starting");
         let monitor = self.daemon.monitor()?;
+        let mut receiver = self.receiver;
+
         loop {
             tokio::select! {
                 _ = ctk.cancelled() => {
@@ -54,7 +73,11 @@ impl MDnsServer {
                         Ok(_) => continue,
                         Err(err) => return Err(err.into()),
                     }
-                }
+                },
+                // Can be used later on to change the visibility on the fly
+                // by unregistering the service and registering it only when
+                // a device nearby is sharing.
+                _ = receiver.recv() => {}
             }
         }
 

@@ -7,7 +7,9 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0"
 base64 = "0.21"
+btleplug = "0.11.5"
 directories = "5.0"
+futures = "0.3.30"
 hex = "0.4"
 hkdf = "0.12"
 hmac = "0.12"
@@ -25,6 +27,7 @@ sys_metrics = "0.2"
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = "1.7.0"
 
 [build-dependencies]
 prost-build = "0.12"

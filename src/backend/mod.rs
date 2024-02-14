@@ -6,6 +6,8 @@ use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
 use crate::utils::RemoteDeviceInfo;
 
+mod ble;
+pub use ble::*;
 mod inbound;
 pub use inbound::*;
 mod info;
