@@ -16,6 +16,13 @@ env:
 jobs:
   clippy_check:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - directory: ./core_lib
+            clippy_args: "--all-features --all"
+          - directory: ./frontend/src-tauri
+            clippy_args: "--no-default-features"
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
@@ -25,5 +32,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install libdbus-1-dev
-      - run: cargo clippy --all-features --all
+          sudo apt-get install -y libdbus-1-dev
+      - name: Install Linux dependencies
+        if: matrix.directory == './frontend/src-tauri'
+        run: |
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Clippy Check
+        run: |
+          cd ${{ matrix.directory }}
+          cargo clippy ${{ matrix.clippy_args }}

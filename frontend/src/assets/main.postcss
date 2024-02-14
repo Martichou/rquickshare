@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;300;400;500;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer utilities {
+    /* Chrome, Safari and Opera */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
+}
+
+html,
+body,
+#app {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.status-indicator {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 48px
+}
+
+.status-indicator .circle {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    width: 12px;
+    height: 12px;
+    border-radius: 100px
+}
+
+.status-indicator .circle.circle--animated {
+    animation-iteration-count: infinite;
+    animation-delay: 1s;
+    animation-fill-mode: backwards;
+    animation-duration: 4s;
+    animation-timing-function: linear
+}
+
+.status-indicator .circle-main {
+    z-index: 3;
+    background: #000
+}
+
+.status-indicator .circle-main.circle--animated {
+    animation-name: pulsate-main-infinite
+}
+
+.status-indicator .circle-secondary {
+    z-index: 2;
+    background: rgba(0, 0, 0, .1)
+}
+
+.status-indicator .circle-secondary.circle--animated {
+    animation-name: pulsate-secondary-infinite
+}
+
+.status-indicator .circle-tertiary {
+    z-index: 1;
+    background: rgba(0, 0, 0, .6);
+    opacity: 1
+}
+
+.status-indicator .circle-tertiary.circle--animated {
+    animation-name: pulsate-tertiary
+}
+
+.status-indicator--infinite .circle.circle--animated {
+    animation-iteration-count: infinite
+}
+
+.status-indicator--success .circle-main {
+	@apply bg-green-400
+    /* background: rgb(52, 211, 153) */
+}
+
+.status-indicator--success .circle-secondary {
+	@apply bg-green-400 bg-opacity-10
+    /* background: rgba(52, 211, 153, .1) */
+}
+
+.status-indicator--success .circle-tertiary {
+	@apply bg-green-400 bg-opacity-40
+    /* background: rgba(52, 211, 153, .4) */
+}
+
+.status-indicator--sm {
+    width: 40px;
+    height: 40px
+}
+
+.status-indicator--sm .circle {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    width: 10px;
+    height: 10px;
+    animation-iteration-count: 0;
+    will-change: transform
+}
+
+.status-indicator--xs {
+    width: 30px;
+    height: 30px
+}
+
+.status-indicator--xs .circle {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 8.33px;
+    height: 8.33px;
+    animation-iteration-count: 0;
+    will-change: transform
+}
+
+.status-indicator--xl {
+    width: 120px;
+    height: 120px
+}
+
+.status-indicator--xl .circle {
+    position: absolute;
+    top: 45px;
+    left: 45px;
+    width: 30px;
+    height: 30px;
+    animation-iteration-count: 0;
+    will-change: transform
+}
+
+@keyframes pulsate-tertiary {
+    45% {
+        transform: scale(1, 1)
+    }
+    80% {
+        transform: scale(4, 4);
+        opacity: 0
+    }
+    100% {
+        transform: scale(4, 4);
+        opacity: 0
+    }
+}
+
+@keyframes pulsate-main-infinite {
+    20% {
+        transform: scale(1, 1)
+    }
+    45% {
+        transform: scale(1.5, 1.5)
+    }
+    55% {
+        transform: scale(1.5, 1.5)
+    }
+    80% {
+        transform: scale(1, 1)
+    }
+}
+
+@keyframes pulsate-secondary-infinite {
+    10% {
+        transform: scale(1, 1)
+    }
+    25% {
+        transform: scale(1, 1)
+    }
+    50% {
+        transform: scale(4, 4)
+    }
+    75% {
+        transform: scale(4, 4)
+    }
+    100% {
+        transform: scale(1, 1)
+    }
+}

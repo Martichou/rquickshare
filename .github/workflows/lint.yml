@@ -16,8 +16,15 @@ env:
 jobs:
   style:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - directory: ./core_lib
+          - directory: ./frontend/src-tauri
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo fmt --all --check
+      - run: |
+          cd ${{ matrix.directory }}
+          cargo fmt --all --check

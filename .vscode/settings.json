@@ -1,3 +1,6 @@
 {
-	"rust-analyzer.showUnlinkedFileNotification": false
+	"rust-analyzer.linkedProjects": [
+		"core_lib/Cargo.toml",
+		"frontend/src-tauri/Cargo.toml",
+	],
 }
