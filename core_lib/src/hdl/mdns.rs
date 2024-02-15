@@ -1,5 +1,4 @@
-use local_ip_address::linux::local_ip;
-use mdns_sd::{ServiceDaemon, ServiceInfo};
+use mdns_sd::{AddrType, ServiceDaemon, ServiceInfo};
 use rand::Rng;
 use tokio::sync::broadcast::Receiver;
 use tokio_util::sync::CancellationToken;
@@ -25,16 +24,16 @@ impl MDnsServer {
         info!("Broadcasting with: {hostname}");
         let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
 
-        let local_ip = local_ip().unwrap();
         let properties = [("n", endpoint_info)];
         let si = ServiceInfo::new(
             "_FC9F5ED42C8A._tcp.local.",
             &name,
             &hostname,
-            local_ip,
+            "",
             service_port,
             &properties[..],
-        )?;
+        )?
+        .enable_addr_auto(AddrType::V4);
 
         Ok(si)
     }

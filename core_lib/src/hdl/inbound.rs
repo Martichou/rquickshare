@@ -14,7 +14,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 
 use super::{InnerState, State};
-use crate::backend::info::{InternalFileInfo, TransferMetadata};
+use crate::hdl::info::{InternalFileInfo, TransferMetadata};
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
 };

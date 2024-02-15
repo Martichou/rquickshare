@@ -8,10 +8,10 @@ use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use utils::DeviceType;
 
-use crate::backend::{BleListener, MDnsServer};
+use crate::hdl::{BleListener, MDnsServer};
 
-mod backend;
 mod errors;
+mod hdl;
 mod manager;
 mod utils;
 
