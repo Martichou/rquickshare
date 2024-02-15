@@ -6,6 +6,7 @@
 #[macro_use]
 extern crate log;
 
+use rquickshare::RQS;
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tokio::sync::{mpsc, Mutex};
 
@@ -14,7 +15,10 @@ struct AsyncProcInputTx {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), anyhow::Error> {
+    // Define tauri async runtime to be tokio
+    tauri::async_runtime::set(tokio::runtime::Handle::current());
+
     // Define log level
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var(
@@ -26,8 +30,9 @@ async fn main() {
     // Init logger/tracing
     tracing_subscriber::fmt::init();
 
-    // Define tauri async runtime to be tokio
-    tauri::async_runtime::set(tokio::runtime::Handle::current());
+    // Start the RQuickShare service
+    let rqs = RQS::default();
+    rqs.run().await?;
 
     // Configure System Tray
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
@@ -83,6 +88,7 @@ async fn main() {
         });
 
     info!("Application stopped");
+    Ok(())
 }
 
 fn rs2js<R: tauri::Runtime>(message: String, manager: &impl Manager<R>) {

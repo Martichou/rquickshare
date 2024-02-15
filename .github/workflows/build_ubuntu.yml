@@ -49,4 +49,4 @@ jobs:
       - name: Build Vite + Tauri
         run: |
           cd ./frontend
-          pnpm build
+          pnpm build --debug

@@ -12,14 +12,16 @@
     "devtools": "pnpm vue-devtools",
     "ts-check": "vue-tsc --noEmit",
     "preview": "vite preview",
-    "check": "cd src-tauri && cargo check"
+    "check": "cd src-tauri && cargo check",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore"
   },
   "dependencies": {
     "@tauri-apps/api": "1.5.1",
     "vue": "3.3.11"
   },
   "devDependencies": {
-	"@tailwindcss/typography": "^0.5.10",
+	"@stylistic/eslint-plugin": "^1.6.2",
+    "@tailwindcss/typography": "^0.5.10",
     "@tauri-apps/cli": "1.5.7",
     "@types/node": "20.10.4",
     "@vitejs/plugin-vue": "4.5.2",

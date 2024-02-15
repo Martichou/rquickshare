@@ -14,7 +14,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  style:
+  stylerust:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,3 +28,18 @@ jobs:
       - run: |
           cd ${{ matrix.directory }}
           cargo fmt --all --check
+  style_tauri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/setup-protoc@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: |
+          cd ./frontend
+          pnpm lint

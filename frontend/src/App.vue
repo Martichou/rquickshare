@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { Suspense } from 'vue';
-import Home from './components/Home.vue'
+import HomePage from './components/HomePage.vue'
 </script>
 
 <template>
 	<div class="w-screen h-screen">
 		<Suspense>
-			<Home />
+			<HomePage />
 		</Suspense>
 	</div>
 </template>
