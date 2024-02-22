@@ -14,6 +14,41 @@
   </p>
 </div>
 
+(WIP) How to use
+--------------------------
+
+rquickshare offers two options for using its file sharing capabilities: command line (CMD) and a frontend application. However, please note that currently only the CMD mode is functional and limited to receiving files. Sending files from your computer will be implemented later.
+
+#### Cmd line mode
+
+1. Open a terminal.
+
+2. Navigate to the core_lib directory: Replace [path] with the actual installation directory of rquickshare:
+
+	```
+	cd [path]/core_lib
+	```
+
+3. Run the core service: Launch the application and make your computer discoverable by nearby Android devices:
+
+	```
+	cargo run
+	```
+
+#### Frontend Application (Coming Soon)
+The frontend application, built with the Tauri framework, is currently under development and cannot be used yet. While you can try running it with the following commands, functionality is limited:
+
+1. Install dependencies:
+
+	```
+	pnpm install
+	```
+
+2. Start development server:
+
+	```
+	pnpm dev
+	```
 
 WIP Notes
 --------------------------
