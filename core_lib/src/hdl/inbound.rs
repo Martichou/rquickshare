@@ -81,9 +81,9 @@ impl InboundRequest {
                             return Ok(());
                         }
 
-						if channel_msg.id != self.state.id {
-							return Ok(());
-						}
+                        if channel_msg.id != self.state.id {
+                            return Ok(());
+                        }
 
                         debug!("inbound: got: {:?}", channel_msg);
                         match channel_msg.action {

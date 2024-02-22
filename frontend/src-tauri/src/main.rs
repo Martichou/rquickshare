@@ -12,7 +12,7 @@ use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu
 use tokio::sync::broadcast::Sender;
 
 pub struct AppState {
-	pub sender: Sender<ChannelMessage>
+    pub sender: Sender<ChannelMessage>,
 }
 
 #[tokio::main]
@@ -44,9 +44,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Build and run Tauri app
     tauri::Builder::default()
-		.manage(AppState {
-			sender,
-		})
+        .manage(AppState { sender })
         .invoke_handler(tauri::generate_handler![js2rs])
         .setup(|app| {
             let app_handle = app.handle();
@@ -56,7 +54,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         rs2js(info, &app_handle);
                     } else {
                         error!("Error getting receiver message");
-						// TODO - Handle error gracefully
+                        // TODO - Handle error gracefully
                         std::process::exit(0);
                     }
                 }
@@ -91,15 +89,15 @@ fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) 
 
 #[tauri::command]
 async fn js2rs(message: String, state: tauri::State<'_, AppState>) -> Result<(), String> {
-	info!("js2rs: {:?}", &message);
+    info!("js2rs: {:?}", &message);
 
-	let _ = match serde_json::from_str::<ChannelMessage>(&message) {
-		Ok(m) => state.sender.send(m),
-		Err(e) => {
-			error!("Cannot serialize message: {} due to: {}", message, e);
-			return Err(String::from("Cannot serialize message"));
-		}
-	};
+    let _ = match serde_json::from_str::<ChannelMessage>(&message) {
+        Ok(m) => state.sender.send(m),
+        Err(e) => {
+            error!("Cannot serialize message: {} due to: {}", message, e);
+            return Err(String::from("Cannot serialize message"));
+        }
+    };
 
     Ok(())
 }
