@@ -19,7 +19,8 @@ tauri = { version = "1.5", features = [ "system-tray", "api-all"] }
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 # rquickshare = { git = "https://github.com/Martichou/rquickshare" }
-rquickshare = { path = "/home/martichou/Works/rquickshare/core_lib" }
+# rquickshare = { path = "/home/martichou/Works/rquickshare/core_lib" }
+rquickshare = { path = "../../core_lib" }
 
 [features]
 # by default Tauri runs in production mode
