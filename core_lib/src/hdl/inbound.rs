@@ -12,8 +12,10 @@ use rand::Rng;
 use sha2::{Digest, Sha256, Sha512};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
+use tokio::sync::broadcast::{Receiver, Sender};
 
 use super::{InnerState, State};
+use crate::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use crate::hdl::info::{InternalFileInfo, TransferMetadata};
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
@@ -43,10 +45,14 @@ const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
 pub struct InboundRequest {
     socket: TcpStream,
     state: InnerState,
+    sender: Sender<ChannelMessage>,
+    receiver: Receiver<ChannelMessage>,
 }
 
 impl InboundRequest {
-    pub fn new(socket: TcpStream, id: String) -> Self {
+    pub fn new(socket: TcpStream, id: String, sender: Sender<ChannelMessage>) -> Self {
+        let receiver = sender.subscribe();
+
         Self {
             socket,
             state: InnerState {
@@ -58,14 +64,57 @@ impl InboundRequest {
                 text_payload_id: -1,
                 ..Default::default()
             },
+            sender,
+            receiver,
         }
     }
 
     pub async fn handle(&mut self) -> Result<(), anyhow::Error> {
         // Buffer for the 4-byte length
         let mut length_buf = [0u8; 4];
-        stream_read_exact(&mut self.socket, &mut length_buf).await?;
 
+        tokio::select! {
+            i = self.receiver.recv() => {
+                match i {
+                    Ok(channel_msg) => {
+                        if channel_msg.direction == ChannelDirection::LibToFront {
+                            return Ok(());
+                        }
+
+                        debug!("inbound: got: {:?}", channel_msg);
+                        match channel_msg.action {
+                            Some(ChannelAction::AcceptTransfer) => {
+                                self.accept_transfer().await?;
+                            },
+                            Some(ChannelAction::RejectTransfer) => {
+                                self.reject_transfer(Some(
+                                    sharing_nearby::connection_response_frame::Status::Reject
+                                )).await?;
+                            },
+                            Some(ChannelAction::CancelTransfer) => {
+                                todo!()
+                            },
+                            None => {
+                                trace!("inbound: nothing to do")
+                            },
+                        }
+                    }
+                    Err(e) => {
+                        error!("inbound: channel error: {}", e);
+                    }
+                }
+            },
+            h = stream_read_exact(&mut self.socket, &mut length_buf) => {
+                h?;
+
+                self._handle(length_buf).await?
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn _handle(&mut self, length_buf: [u8; 4]) -> Result<(), anyhow::Error> {
         let msg_length = u32::from_be_bytes(length_buf) as usize;
         // Ensure the message length is not unreasonably big to avoid allocation attacks
         if msg_length > SANE_FRAME_LENGTH as usize {
@@ -512,6 +561,13 @@ impl InboundRequest {
                             self.state.transferred_files.remove(&payload_id);
                             if self.state.transferred_files.is_empty() {
                                 info!("Transfer finished");
+                                self.sender.send(ChannelMessage {
+                                    id: self.state.id.clone(),
+                                    direction: ChannelDirection::LibToFront,
+                                    action: None,
+                                    state: Some(State::Finished),
+                                    meta: None,
+                                })?;
                                 self.disconnection().await?;
                                 return Err(anyhow!(crate::errors::AppError::NotAnError));
                             }
@@ -670,26 +726,34 @@ impl InboundRequest {
             }
 
             let metadata = TransferMetadata {
-                files: files_name,
                 id: self.state.id.clone(),
+                files: files_name,
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
             };
 
             info!("Asking for user consent: {:?}", metadata);
             self.update_state(|e| {
-                e.transfer_metadata = Some(metadata);
+                e.transfer_metadata = Some(metadata.clone());
             });
+
             // TODO - Ask for user consent
             // Currently always accept file transfer
-            self.accept_transfer().await?;
+            // self.accept_transfer().await?;
+            self.sender.send(ChannelMessage {
+                id: self.state.id.clone(),
+                direction: ChannelDirection::LibToFront,
+                action: None,
+                state: Some(self.state.state.clone()),
+                meta: Some(metadata),
+            })?;
         } else if introduction.text_metadata.len() == 1 {
             trace!("process_introduction: handling text_metadata");
             let meta = introduction.text_metadata.first().unwrap();
             if meta.r#type() == text_metadata::Type::Url {
                 let metadata = TransferMetadata {
-                    files: vec![],
                     id: self.state.id.clone(),
+                    files: vec![],
                     pin_code: self.state.pin_code.clone(),
                     text_description: meta.text_title.clone(),
                 };
@@ -697,20 +761,28 @@ impl InboundRequest {
                 info!("Asking for user consent: {:?}", metadata);
                 self.update_state(|e| {
                     e.text_payload_id = meta.payload_id();
-                    e.transfer_metadata = Some(metadata);
+                    e.transfer_metadata = Some(metadata.clone());
                 });
+
                 // TODO - Ask for user consent
                 // Currently always accept file transfer
-                self.accept_transfer().await?;
+                // self.accept_transfer().await?;
+                self.sender.send(ChannelMessage {
+                    id: self.state.id.clone(),
+                    direction: ChannelDirection::LibToFront,
+                    action: None,
+                    state: Some(self.state.state.clone()),
+                    meta: Some(metadata),
+                })?;
             } else {
-                // TODO - Reject transfer
+                // Reject transfer
                 self.reject_transfer(Some(
                     sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
                 ))
                 .await?;
             }
         } else {
-            // TODO - Reject transfer
+            // Reject transfer
             self.reject_transfer(Some(
                 sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
             ))

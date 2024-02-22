@@ -1346,6 +1346,7 @@ dependencies = [
  "prost",
  "prost-build",
  "rand",
+ "serde",
  "sha2",
  "sys_metrics",
  "tokio",

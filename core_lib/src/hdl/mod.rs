@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use p256::{PublicKey, SecretKey};
+use serde::{Deserialize, Serialize};
 
 use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
@@ -10,12 +11,12 @@ mod ble;
 pub use ble::*;
 mod inbound;
 pub use inbound::*;
-mod info;
+pub(crate) mod info;
 mod mdns;
 pub use mdns::*;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub enum State {
     #[default]
     Initial,
@@ -28,6 +29,7 @@ pub enum State {
     WaitingForUserConsent,
     ReceivingFiles,
     Disconnected,
+    Finished,
 }
 
 #[derive(Debug, Default)]

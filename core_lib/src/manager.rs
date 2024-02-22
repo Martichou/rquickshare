@@ -1,6 +1,8 @@
 use tokio::net::TcpListener;
+use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 
+use crate::channel::ChannelMessage;
 use crate::errors::AppError;
 use crate::hdl::InboundRequest;
 
@@ -8,14 +10,21 @@ const INNER_NAME: &str = "TcpServer";
 
 pub struct TcpServer {
     tcp_listener: TcpListener,
+    sender: Sender<ChannelMessage>,
 }
 
 impl TcpServer {
-    pub fn new(tcp_listener: TcpListener) -> Result<Self, anyhow::Error> {
-        Ok(Self { tcp_listener })
+    pub fn new(
+        tcp_listener: TcpListener,
+        sender: Sender<ChannelMessage>,
+    ) -> Result<Self, anyhow::Error> {
+        Ok(Self {
+            tcp_listener,
+            sender,
+        })
     }
 
-    pub async fn run(&self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
+    pub async fn run(&mut self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
         info!("{INNER_NAME}: service starting");
 
         loop {
@@ -29,10 +38,11 @@ impl TcpServer {
                 r = self.tcp_listener.accept() => {
                     match r {
                         Ok((socket, remote_addr)) => {
-                            trace!("New client: {remote_addr}");
+                            trace!("{INNER_NAME}: new client: {remote_addr}");
+                            let csender = self.sender.clone();
 
                             tokio::spawn(async move {
-                                let mut ir = InboundRequest::new(socket, remote_addr.to_string());
+                                let mut ir = InboundRequest::new(socket, remote_addr.to_string(), csender);
 
                                 loop {
                                     match ir.handle().await {
@@ -40,7 +50,7 @@ impl TcpServer {
                                         Err(e) => match e.downcast_ref() {
                                             Some(AppError::NotAnError) => break,
                                             None => {
-                                                error!("Error while handling client: {e}");
+                                                error!("{INNER_NAME}: error while handling client: {e}");
                                                 break;
                                             }
                                         },
@@ -49,7 +59,7 @@ impl TcpServer {
                             });
                         },
                         Err(err) => {
-                            error!("TcpListener: error accepting: {}", err);
+                            error!("{INNER_NAME}: error accepting: {}", err);
                             break;
                         }
                     }

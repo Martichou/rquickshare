@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-// import { listen } from '@tauri-apps/api/event'
+import { listen } from '@tauri-apps/api/event'
 // import { invoke } from '@tauri-apps/api/tauri'
 
 enum FileType {
@@ -54,13 +54,13 @@ const requests = ref<TransferRequest[]>([{
 	transferred_files: []
 }]);
 
-// function sendOutput() {
-//   invoke('js2rs', { message: "" })
+// function sendCmd() {
+// 	invoke('js2rs', { message: "" })
 // }
 
-// await listen('rs2js', (event) => {
-//   console.log("js: rs2js: " + event)
-// })
+await listen('rs2js', (event) => {
+	console.log("rs2js:", event)
+})
 </script>
 
 <template>

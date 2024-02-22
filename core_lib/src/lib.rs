@@ -1,14 +1,16 @@
 #[macro_use]
 extern crate log;
 
+use channel::ChannelMessage;
 use tokio::net::TcpListener;
-use tokio::sync::broadcast;
+use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 
 use crate::hdl::{BleListener, MDnsServer};
 use crate::manager::TcpServer;
 
+pub mod channel;
 mod errors;
 mod hdl;
 mod manager;
@@ -36,6 +38,7 @@ pub mod location_nearby_connections {
 pub struct RQS {
     tracker: TaskTracker,
     ctoken: CancellationToken,
+    pub channel: (Sender<ChannelMessage>, Receiver<ChannelMessage>),
 }
 
 impl Default for RQS {
@@ -48,8 +51,13 @@ impl RQS {
     fn new() -> Self {
         let tracker = TaskTracker::new();
         let ctoken = CancellationToken::new();
+        let channel = broadcast::channel(10);
 
-        Self { tracker, ctoken }
+        Self {
+            tracker,
+            ctoken,
+            channel,
+        }
     }
 
     pub async fn run(&self) -> Result<(), anyhow::Error> {
@@ -57,8 +65,11 @@ impl RQS {
         let binded_addr = tcp_listener.local_addr()?;
         info!("TcpListener on: {}", binded_addr);
 
+        // Sender for the TcpServer
+        let sender = self.channel.0.clone();
+
         // Start TcpServer in own "task"
-        let server = TcpServer::new(tcp_listener)?;
+        let mut server = TcpServer::new(tcp_listener, sender)?;
         let ctk = self.ctoken.clone();
         self.tracker.spawn(async move { server.run(ctk).await });
 

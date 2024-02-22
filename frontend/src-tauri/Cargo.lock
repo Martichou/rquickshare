@@ -3603,7 +3603,6 @@ dependencies = [
 [[package]]
 name = "rquickshare"
 version = "0.1.0"
-source = "git+https://github.com/Martichou/rquickshare#becf5164e8f5a47e8bb22617ab947cf85c0e1fac"
 dependencies = [
  "anyhow",
  "base64 0.21.7",
@@ -3622,6 +3621,7 @@ dependencies = [
  "prost",
  "prost-build",
  "rand 0.8.5",
+ "serde",
  "sha2",
  "sys_metrics",
  "tokio",

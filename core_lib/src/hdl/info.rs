@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::path::PathBuf;
 
+use serde::{Deserialize, Serialize};
+
 use crate::sharing_nearby::FileMetadata;
 
 #[derive(Debug)]
@@ -12,10 +14,10 @@ pub struct InternalFileInfo {
     pub file: Option<File>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TransferMetadata {
-    pub files: Vec<String>,
     pub id: String,
+    pub files: Vec<String>,
     pub pin_code: Option<String>,
     pub text_description: Option<String>,
 }

@@ -31,6 +31,7 @@ tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net"
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = "1.7.0"
+serde = { version = "1.0", features = ["derive"] }
 
 [build-dependencies]
 prost-build = "0.12"
