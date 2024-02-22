@@ -9,6 +9,11 @@ extern crate log;
 use rquickshare::channel::ChannelMessage;
 use rquickshare::RQS;
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tokio::sync::broadcast::Sender;
+
+pub struct AppState {
+	pub sender: Sender<ChannelMessage>
+}
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -39,15 +44,11 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Build and run Tauri app
     tauri::Builder::default()
+		.manage(AppState {
+			sender,
+		})
         .invoke_handler(tauri::generate_handler![js2rs])
         .setup(|app| {
-            // Uncomment if you need to debug with devtools
-            // #[cfg(debug_assertions)]
-            // {
-            //     let main_window = _app.get_window("main").unwrap();
-            //     main_window.open_devtools();
-            // }
-
             let app_handle = app.handle();
             tauri::async_runtime::spawn(async move {
                 loop {
@@ -55,6 +56,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         rs2js(info, &app_handle);
                     } else {
                         error!("Error getting receiver message");
+						// TODO - Handle error gracefully
                         std::process::exit(0);
                     }
                 }
@@ -83,13 +85,21 @@ async fn main() -> Result<(), anyhow::Error> {
 }
 
 fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) {
-    info!("rs2js: {:?}", message);
-    manager.emit_all("rs2js", message).unwrap();
+    info!("rs2js: {:?}", &message);
+    manager.emit_all("rs2js", &message).unwrap();
 }
 
 #[tauri::command]
-async fn js2rs(message: String) -> Result<(), String> {
-    let cmsg = serde_json::from_str::<ChannelMessage>(&message);
-    info!("js2rs: {:?}", cmsg);
+async fn js2rs(message: String, state: tauri::State<'_, AppState>) -> Result<(), String> {
+	info!("js2rs: {:?}", &message);
+
+	let _ = match serde_json::from_str::<ChannelMessage>(&message) {
+		Ok(m) => state.sender.send(m),
+		Err(e) => {
+			error!("Cannot serialize message: {} due to: {}", message, e);
+			return Err(String::from("Cannot serialize message"));
+		}
+	};
+
     Ok(())
 }
