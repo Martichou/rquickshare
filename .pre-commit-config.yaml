@@ -4,3 +4,9 @@ repos:
     hooks:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
+-   repo: local
+    hooks:
+    -   id: fmt_rust
+        name: fmt_rust
+        entry: bash -c 'rustfmt core_lib/**.rs frontend/src-tauri/**.rs'
+        language: system
