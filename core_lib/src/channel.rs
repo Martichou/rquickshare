@@ -1,22 +1,26 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::hdl::info::TransferMetadata;
 use crate::hdl::State;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub enum ChannelDirection {
     FrontToLib,
     LibToFront,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub enum ChannelAction {
     AcceptTransfer,
     RejectTransfer,
     CancelTransfer,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct ChannelMessage {
     pub id: String,
     pub direction: ChannelDirection,

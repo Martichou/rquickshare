@@ -2,6 +2,7 @@ use std::fs::File;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::sharing_nearby::FileMetadata;
 
@@ -14,7 +15,8 @@ pub struct InternalFileInfo {
     pub file: Option<File>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct TransferMetadata {
     pub id: String,
     pub files: Vec<String>,

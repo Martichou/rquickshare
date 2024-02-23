@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use p256::{PublicKey, SecretKey};
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
@@ -16,7 +17,8 @@ mod mdns;
 pub use mdns::*;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub enum State {
     #[default]
     Initial,
