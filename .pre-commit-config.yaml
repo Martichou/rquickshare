@@ -1,12 +1,8 @@
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+  - repo: local
     hooks:
-    -   id: end-of-file-fixer
-    -   id: trailing-whitespace
--   repo: local
-    hooks:
-    -   id: fmt_rust
-        name: fmt_rust
-        entry: bash -c 'rustfmt core_lib/**.rs frontend/src-tauri/**.rs'
-        language: system
+      - id: rust-format
+        name: Rust Format
+        entry: ./rs_fmt.sh
+        language: script
+        stages: [commit]

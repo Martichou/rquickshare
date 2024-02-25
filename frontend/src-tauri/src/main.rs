@@ -84,10 +84,10 @@ async fn main() -> Result<(), anyhow::Error> {
 
 fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) {
     if message.direction == ChannelDirection::FrontToLib {
-		return;
-	}
+        return;
+    }
 
-	info!("rs2js: {:?}", &message);
+    info!("rs2js: {:?}", &message);
     manager.emit_all("rs2js", &message).unwrap();
 }
 
@@ -95,8 +95,8 @@ fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) 
 fn js2rs(message: ChannelMessage, state: tauri::State<'_, AppState>) -> Result<(), String> {
     info!("js2rs: {:?}", &message);
 
-	match state.sender.send(message) {
-		Ok(_) => Ok(()),
-		Err(e) => return Err(format!("Coudln't perform: {}", e))
-	}
+    match state.sender.send(message) {
+        Ok(_) => Ok(()),
+        Err(e) => return Err(format!("Coudln't perform: {}", e)),
+    }
 }
