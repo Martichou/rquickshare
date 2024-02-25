@@ -712,6 +712,7 @@ impl InboundRequest {
                         if !dest.exists() {
                             break;
                         }
+                        dest.pop();
                         counter += 1;
                     }
 
@@ -731,6 +732,7 @@ impl InboundRequest {
 
             let metadata = TransferMetadata {
                 id: self.state.id.clone(),
+                source: self.state.remote_device_info.clone(),
                 files: files_name,
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
@@ -757,6 +759,7 @@ impl InboundRequest {
             if meta.r#type() == text_metadata::Type::Url {
                 let metadata = TransferMetadata {
                     id: self.state.id.clone(),
+                    source: self.state.remote_device_info.clone(),
                     files: vec![],
                     pin_code: self.state.pin_code.clone(),
                     text_description: meta.text_title.clone(),

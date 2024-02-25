@@ -2,9 +2,9 @@ use tokio::net::TcpListener;
 use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
 
-use crate::channel::ChannelMessage;
+use crate::channel::{ChannelDirection, ChannelMessage};
 use crate::errors::AppError;
-use crate::hdl::InboundRequest;
+use crate::hdl::{InboundRequest, State};
 
 const INNER_NAME: &str = "TcpServer";
 
@@ -39,6 +39,7 @@ impl TcpServer {
                     match r {
                         Ok((socket, remote_addr)) => {
                             trace!("{INNER_NAME}: new client: {remote_addr}");
+                            let esender = self.sender.clone();
                             let csender = self.sender.clone();
 
                             tokio::spawn(async move {
@@ -50,6 +51,13 @@ impl TcpServer {
                                         Err(e) => match e.downcast_ref() {
                                             Some(AppError::NotAnError) => break,
                                             None => {
+                                                let _ = esender.send(ChannelMessage {
+                                                    id: remote_addr.to_string(),
+                                                    direction: ChannelDirection::LibToFront,
+                                                    action: None,
+                                                    state: Some(State::Disconnected),
+                                                    meta: None,
+                                                });
                                                 error!("{INNER_NAME}: error while handling client: {e}");
                                                 break;
                                             }

@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::sharing_nearby::FileMetadata;
+use crate::{sharing_nearby::FileMetadata, utils::RemoteDeviceInfo};
 
 #[derive(Debug)]
 pub struct InternalFileInfo {
@@ -19,6 +19,7 @@ pub struct InternalFileInfo {
 #[ts(export)]
 pub struct TransferMetadata {
     pub id: String,
+    pub source: Option<RemoteDeviceInfo>,
     pub files: Vec<String>,
     pub pin_code: Option<String>,
     pub text_description: Option<String>,

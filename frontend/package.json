@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\" \"pnpm devtools\"",
+	"dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\"",
     "build": "tauri build",
     "vite:dev": "vite dev",
     "vite:build": "vite build",
@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "1.5.1",
+	"@martichou/core_lib": "../core_lib",
     "vue": "3.3.11"
   },
   "devDependencies": {

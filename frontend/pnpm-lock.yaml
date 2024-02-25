@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@martichou/core_lib':
+    specifier: ../core_lib
+    version: link:../core_lib
   '@tauri-apps/api':
     specifier: 1.5.1
     version: 1.5.1

@@ -6,12 +6,15 @@ use base64::Engine;
 use hkdf::Hkdf;
 use p256::{PublicKey, SecretKey};
 use rand::{Rng, RngCore};
+use serde::{Deserialize, Serialize};
 use sha2::digest::generic_array::GenericArray;
 use sha2::Sha256;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
+use ts_rs::TS;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(export)]
 #[allow(dead_code)]
 pub enum DeviceType {
     Unknown = 0,
@@ -33,7 +36,8 @@ impl DeviceType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct RemoteDeviceInfo {
     pub name: String,
     pub device_type: DeviceType,

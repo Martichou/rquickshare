@@ -1,66 +1,90 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { listen } from '@tauri-apps/api/event'
-// import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/tauri'
 
-enum FileType {
-	UNKNOWN = 0,
-	IMAGE = 1,
-	VIDEO = 2,
-	APP = 3,
-	AUDIO = 4,
+import { ChannelMessage } from '../../../core_lib/bindings/ChannelMessage';
+import { ChannelAction } from '../../../core_lib/bindings/ChannelAction';
+
+const _stateToDisplay = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished"]
+
+interface ToDelete {
+	id: string,
+	triggered: number
 }
 
-type FileMetadata = {
-	name?: string;
-	type?: FileType;
-	payload_id?: number;
-	size?: number;
-	mime_type?: string;
-	id?: number;
+const requests = ref<ChannelMessage[]>([]);
+const toDelete = ref<ToDelete[]>([]);
+const requestIsEmpty = computed(() => {
+	return requests.value.filter((el) => _stateToDisplay.includes(el.state ?? 'Initial')).length == 0
+});
+
+async function sendCmd(id: string, action: ChannelAction) {
+	const cm: ChannelMessage = {
+		id: id,
+		direction: 'FrontToLib',
+		action: action,
+		meta: null,
+		state: null,
+	};
+	console.log("js2rs:", cm);
+
+	await invoke('js2rs', { message: cm });
 }
-
-interface TransferMetadata {
-	id: number;
-	files: Array<string>;
-	pin_code?: string;
-	description?: string;
-}
-
-type InternalFileInfo = {
-	meta: FileMetadata;
-	payload_id: number;
-	destination_url: string;
-	bytes_transferred: number;
-}
-
-interface TransferRequest {
-	name: string;
-	device_type: number;
-	state: number;
-	transfer_metadata?: TransferMetadata;
-	transferred_files: Record<number, InternalFileInfo>;
-}
-
-const requests = ref<TransferRequest[]>([{
-	name: "Martin's Phone",
-	device_type: 1,
-	state: 7,
-	transfer_metadata: {
-		id: 1,
-		files: ["test1.png", "test2.png"],
-		pin_code: "1234"
-	},
-	transferred_files: []
-}]);
-
-// function sendCmd() {
-// 	invoke('js2rs', { message: "" })
-// }
 
 await listen('rs2js', (event) => {
-	console.log("rs2js:", event)
+	const cm = event.payload as ChannelMessage;
+	console.log("rs2js:", cm);
+
+	const idx = requests.value.findIndex((el) => el.id === cm.id);
+
+	if (cm.state === "Disconnected" || cm.state === "Finished") {
+		toDelete.value.push({
+			id: cm.id,
+			triggered: new Date().getTime()
+		});
+	}
+
+	if (idx != -1) {
+		const prev = requests.value.at(idx);
+		console.log("Prev", prev);
+		console.log("After", {
+			...cm,
+			state: cm.state ?? prev!.state,
+			meta: cm.meta ?? prev!.meta,
+		});
+		// Update the existing message at index 'idx'
+		requests.value.splice(idx, 1, {
+			...cm,
+			state: cm.state ?? prev!.state,
+			meta: cm.meta ?? prev!.meta,
+		});
+	} else {
+		// Push the new message if not found
+		requests.value.push(cm);
+	}
 })
+
+setInterval(() => {
+	toDelete.value.forEach((itemToDelete) => {
+		const now = new Date();
+		const timeDifference = now.getTime() - itemToDelete.triggered;
+
+		// Check if at least 30 seconds have passed (30000 milliseconds)
+		if (timeDifference >= 30000) {
+			const idx = requests.value.findIndex((el) => el.id === itemToDelete.id);
+			if (idx !== -1) {
+				requests.value.splice(idx, 1);
+			}
+		}
+	});
+
+	// Clear only elements that have been processed (more than 30s old)
+	toDelete.value = toDelete.value.filter((item) => {
+		const now = new Date();
+		return now.getTime() - item.triggered < 30000;
+	});
+}, 30000);
 </script>
 
 <template>
@@ -101,37 +125,37 @@ await listen('rs2js', (event) => {
 			</div>
 			<div
 				class="flex-1 flex flex-col h-full rounded-tl-[3rem] bg-white p-6"
-				:class="{'items-center': requests.filter((el) => el.state >= 7).length === 0}">
+				:class="{'items-center': requestIsEmpty}">
 				<h3 class="my-4">
 					Ready to receive
 				</h3>
 
-				<div v-if="requests.filter((el) => el.state >= 7).length === 0" class="my-auto status-indicator status-indicator--success status-indicator--xl">
+				<div v-if="requestIsEmpty" class="my-auto status-indicator status-indicator--success status-indicator--xl">
 					<div class="circle circle--animated circle-main" />
 					<div class="circle circle--animated circle-secondary" />
 					<div class="circle circle--animated circle-tertiary" />
 				</div>
 
 				<div
-					v-for="request in requests.filter((el) => el.state >= 7)"
-					:key="request.name"
+					v-for="request in requests.filter((el) => _stateToDisplay.includes(el.state ?? 'Initial'))"
+					:key="request.id"
 					class="bg-green-200 rounded-3xl flex flex-row gap-6 p-6">
 					<div>
 						<div class="h-16 w-16 rounded-full bg-green-50">
 							<svg
-								v-if="request.device_type === 1" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
+								v-if="request.meta?.source?.device_type === 'Laptop'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
 								width="24" class="w-full h-full p-4 fill-gray-900">
 								<!-- eslint-disable-next-line -->
 								<path d="M0-160v-80h160v-40q-33 0-56.5-23.5T80-360v-400q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v400q0 33-23.5 56.5T800-280v40h160v80H0Zm160-200h640v-400H160v400Zm0 0v-400 400Z" />
 							</svg>
 							<svg
-								v-else-if="request.device_type === 2" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
+								v-else-if="request.meta?.source?.device_type === 'Phone'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
 								width="24" class="w-full h-full p-4 fill-gray-900">
 								<!-- eslint-disable-next-line -->
 								<path d="M280-40q-33 0-56.5-23.5T200-120v-720q0-33 23.5-56.5T280-920h400q33 0 56.5 23.5T760-840v720q0 33-23.5 56.5T680-40H280Zm0-120v40h400v-40H280Zm0-80h400v-480H280v480Zm0-560h400v-40H280v40Zm0 0v-40 40Zm0 640v40-40Z" />
 							</svg>
 							<svg
-								v-else-if="request.device_type === 3" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
+								v-else-if="request.meta?.source?.device_type === 'Tablet'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
 								width="24" class="w-full h-full p-4 fill-gray-900">
 								<!-- eslint-disable-next-line -->
 								<path d="M120-160q-33 0-56.5-23.5T40-240v-480q0-33 23.5-56.5T120-800h720q33 0 56.5 23.5T920-720v480q0 33-23.5 56.5T840-160H120Zm40-560h-40v480h40v-480Zm80 480h480v-480H240v480Zm560-480v480h40v-480h-40Zm0 0h40-40Zm-640 0h-40 40Z" />
@@ -143,42 +167,46 @@ await listen('rs2js', (event) => {
 								<path d="M280-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640v80H160v480h120v80Zm160-100q25 0 42.5-17.5T500-320q0-25-17.5-42.5T440-380q-25 0-42.5 17.5T380-320q0 25 17.5 42.5T440-260Zm-80 100v-71q-19-17-29.5-40T320-320q0-26 10.5-49t29.5-40v-71h160v71q19 17 29.5 40t10.5 49q0 26-10.5 49T520-231v71H360Zm480 0H640q-17 0-28.5-11.5T600-200v-360q0-17 11.5-28.5T640-600h200q17 0 28.5 11.5T880-560v360q0 17-11.5 28.5T840-160Zm-160-80h120v-280H680v280Zm0 0h120-120Z" />
 							</svg>
 						</div>
-						<p v-if="request.state === 7" class="text-center inline-flex gap-1 mb-0 text-sm items-center">
+						<p v-if="request.state === 'WaitingForUserConsent'" class="text-center inline-flex gap-1 mb-0 text-sm items-center">
 							<svg
 								xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
 								class="fill-gray-900">
 								<!-- eslint-disable-next-line -->
 								<path d="M420-360h120l-23-129q20-10 31.5-29t11.5-42q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 23 11.5 42t31.5 29l-23 129Zm60 280q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Z" />
 							</svg>
-							{{ request.transfer_metadata?.pin_code }}
+							{{ request.meta?.pin_code }}
 						</p>
 					</div>
 					<div class="flex-1 flex flex-col">
 						<h4 class="mt-0">
-							Martin's Phone
+							{{ request.meta?.source?.name ?? 'Unknown' }}
 						</h4>
-						<div v-if="request.state === 7" class="flex-1 flex flex-col justify-between">
+						<div v-if="request.state === 'WaitingForUserConsent'" class="flex-1 flex flex-col justify-between">
 							<p class="mt-2 mb-0">
-								Wants to share {{ request.transfer_metadata?.files.join(', ') ?? 'some file(s).' }}
+								Wants to share {{ request.meta?.files.join(', ') ?? 'some file(s).' }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
+									@click="sendCmd(request.id, 'AcceptTransfer')"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-100 rounded-lg
 									font-semibold active:scale-105 transition duration-150 ease-in-out">
 									Accept
 								</p>
 								<p
+									@click="sendCmd(request.id, 'RejectTransfer')"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-100 rounded-lg
 									font-semibold active:scale-105 transition duration-150 ease-in-out">
 									Decline
 								</p>
 							</div>
 						</div>
-						<div v-else-if="request.state === 8">
+						<div v-else-if="request.state === 'ReceivingFiles'">
 							<p class="mt-2 font-medium">
 								Receiving...
 							</p>
-							<p>{{ request.transferred_files }}</p>
+							<p v-for="f in request.meta?.files ?? []" :key="f">
+								{{ f }}
+							</p>
 							<p />
 						</div>
 					</div>

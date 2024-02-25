@@ -6,7 +6,7 @@
 #[macro_use]
 extern crate log;
 
-use rquickshare::channel::ChannelMessage;
+use rquickshare::channel::{ChannelDirection, ChannelMessage};
 use rquickshare::RQS;
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tokio::sync::broadcast::Sender;
@@ -83,21 +83,20 @@ async fn main() -> Result<(), anyhow::Error> {
 }
 
 fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) {
-    info!("rs2js: {:?}", &message);
+    if message.direction == ChannelDirection::FrontToLib {
+		return;
+	}
+
+	info!("rs2js: {:?}", &message);
     manager.emit_all("rs2js", &message).unwrap();
 }
 
 #[tauri::command]
-async fn js2rs(message: String, state: tauri::State<'_, AppState>) -> Result<(), String> {
+fn js2rs(message: ChannelMessage, state: tauri::State<'_, AppState>) -> Result<(), String> {
     info!("js2rs: {:?}", &message);
 
-    let _ = match serde_json::from_str::<ChannelMessage>(&message) {
-        Ok(m) => state.sender.send(m),
-        Err(e) => {
-            error!("Cannot serialize message: {} due to: {}", message, e);
-            return Err(String::from("Cannot serialize message"));
-        }
-    };
-
-    Ok(())
+	match state.sender.send(message) {
+		Ok(_) => Ok(()),
+		Err(e) => return Err(format!("Coudln't perform: {}", e))
+	}
 }
