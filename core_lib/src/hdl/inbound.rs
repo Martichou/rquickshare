@@ -140,38 +140,50 @@ impl InboundRequest {
                 info!("RemoteDeviceInfo: {:?}", &rdi);
 
                 // Advance current state
-                self.update_state(|e: &mut InnerState| {
-                    e.state = State::ReceivedConnectionRequest;
-                    e.remote_device_info = Some(rdi);
-                });
+                self.update_state(
+                    |e: &mut InnerState| {
+                        e.state = State::ReceivedConnectionRequest;
+                        e.remote_device_info = Some(rdi);
+                    },
+                    false,
+                );
             }
             State::ReceivedConnectionRequest => {
                 debug!("Handling State::ReceivedConnectionRequest frame");
                 let msg = Ukey2Message::decode(&*frame_data)?;
                 self.process_ukey2_client_init(&msg).await?;
 
-                self.update_state(|e: &mut InnerState| {
-                    e.state = State::SentUkeyServerInit;
-                    e.client_init_msg_data = Some(frame_data);
-                });
+                self.update_state(
+                    |e: &mut InnerState| {
+                        e.state = State::SentUkeyServerInit;
+                        e.client_init_msg_data = Some(frame_data);
+                    },
+                    false,
+                );
             }
             State::SentUkeyServerInit => {
                 debug!("Handling State::SentUkeyServerInit frame");
                 let msg = Ukey2Message::decode(&*frame_data)?;
                 self.process_ukey2_client_finish(&msg, &frame_data).await?;
 
-                self.update_state(|e: &mut InnerState| {
-                    e.state = State::ReceivedUkeyClientFinish;
-                });
+                self.update_state(
+                    |e: &mut InnerState| {
+                        e.state = State::ReceivedUkeyClientFinish;
+                    },
+                    false,
+                );
             }
             State::ReceivedUkeyClientFinish => {
                 debug!("Handling State::ReceivedUkeyClientFinish frame");
                 let frame = location_nearby_connections::OfflineFrame::decode(&*frame_data)?;
                 self.process_connection_response(&frame).await?;
 
-                self.update_state(|e: &mut InnerState| {
-                    e.state = State::SentConnectionResponse;
-                });
+                self.update_state(
+                    |e: &mut InnerState| {
+                        e.state = State::SentConnectionResponse;
+                    },
+                    false,
+                );
             }
             _ => {
                 debug!("Handling SecureMessage frame");
@@ -269,9 +281,12 @@ impl InboundRequest {
             trace!("CipherCommitment: {:?}", commitment.handshake_cipher());
             if Ukey2HandshakeCipher::P256Sha512 == commitment.handshake_cipher() {
                 found = true;
-                self.update_state(|e| {
-                    e.cipher_commitment = Some(commitment.clone());
-                });
+                self.update_state(
+                    |e| {
+                        e.cipher_commitment = Some(commitment.clone());
+                    },
+                    false,
+                );
                 break;
             }
         }
@@ -315,11 +330,14 @@ impl InboundRequest {
         };
 
         let server_init_data = server_init_msg.encode_to_vec();
-        self.update_state(|e| {
-            e.private_key = Some(secret_key);
-            e.public_key = Some(public_key);
-            e.server_init_data = Some(server_init_data.clone());
-        });
+        self.update_state(
+            |e| {
+                e.private_key = Some(secret_key);
+                e.public_key = Some(public_key);
+                e.server_init_data = Some(server_init_data.clone());
+            },
+            false,
+        );
 
         self.send_frame(server_init_data).await?;
 
@@ -519,6 +537,12 @@ impl InboundRequest {
                                 open::that(std::str::from_utf8(buffer)?)?;
 
                                 info!("Transfer finished");
+                                self.update_state(
+                                    |e| {
+                                        e.state = State::Finished;
+                                    },
+                                    true,
+                                );
                                 self.disconnection().await?;
                                 return Err(anyhow!(crate::errors::AppError::NotAnError));
                             } else {
@@ -565,13 +589,12 @@ impl InboundRequest {
                             self.state.transferred_files.remove(&payload_id);
                             if self.state.transferred_files.is_empty() {
                                 info!("Transfer finished");
-                                self.sender.send(ChannelMessage {
-                                    id: self.state.id.clone(),
-                                    direction: ChannelDirection::LibToFront,
-                                    action: None,
-                                    state: Some(State::Finished),
-                                    meta: None,
-                                })?;
+                                self.update_state(
+                                    |e| {
+                                        e.state = State::Finished;
+                                    },
+                                    true,
+                                );
                                 self.disconnection().await?;
                                 return Err(anyhow!(crate::errors::AppError::NotAnError));
                             }
@@ -618,16 +641,22 @@ impl InboundRequest {
             State::SentConnectionResponse => {
                 debug!("Processing State::SentConnectionResponse");
                 self.process_paired_key_encryption_frame(v1_frame).await?;
-                self.update_state(|e| {
-                    e.state = State::SentPairedKeyResult;
-                });
+                self.update_state(
+                    |e| {
+                        e.state = State::SentPairedKeyResult;
+                    },
+                    false,
+                );
             }
             State::SentPairedKeyResult => {
                 debug!("Processing State::SentPairedKeyResult");
                 self.process_paired_key_result(v1_frame).await?;
-                self.update_state(|e| {
-                    e.state = State::ReceivedPairedKeyResult;
-                });
+                self.update_state(
+                    |e| {
+                        e.state = State::ReceivedPairedKeyResult;
+                    },
+                    false,
+                );
             }
             State::ReceivedPairedKeyResult => {
                 debug!("Processing State::ReceivedPairedKeyResult");
@@ -688,9 +717,13 @@ impl InboundRequest {
             .as_ref()
             .ok_or_else(|| anyhow!("Missing required fields"))?;
 
-        self.update_state(|e| {
-            e.state = State::WaitingForUserConsent;
-        });
+        // No need to inform the channel here, we'll do it anyway with files info
+        self.update_state(
+            |e| {
+                e.state = State::WaitingForUserConsent;
+            },
+            false,
+        );
 
         if !introduction.file_metadata.is_empty() && introduction.text_metadata.is_empty() {
             trace!("process_introduction: handling file_metadata");
@@ -732,61 +765,66 @@ impl InboundRequest {
 
             let metadata = TransferMetadata {
                 id: self.state.id.clone(),
+                destination: Some(
+                    get_download_dir()
+                        .into_os_string()
+                        .into_string()
+                        .map_err(|_| anyhow!("failed to convert PathBuf to String"))?,
+                ),
                 source: self.state.remote_device_info.clone(),
-                files: files_name,
+                files: Some(files_name),
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
             };
 
             info!("Asking for user consent: {:?}", metadata);
-            self.update_state(|e| {
-                e.transfer_metadata = Some(metadata.clone());
-            });
-
-            // TODO - Ask for user consent
-            // Currently always accept file transfer
-            // self.accept_transfer().await?;
-            self.sender.send(ChannelMessage {
-                id: self.state.id.clone(),
-                direction: ChannelDirection::LibToFront,
-                action: None,
-                state: Some(self.state.state.clone()),
-                meta: Some(metadata),
-            })?;
+            self.update_state(
+                |e| {
+                    e.transfer_metadata = Some(metadata.clone());
+                },
+                true,
+            );
         } else if introduction.text_metadata.len() == 1 {
             trace!("process_introduction: handling text_metadata");
             let meta = introduction.text_metadata.first().unwrap();
-            if meta.r#type() == text_metadata::Type::Url {
-                let metadata = TransferMetadata {
-                    id: self.state.id.clone(),
-                    source: self.state.remote_device_info.clone(),
-                    files: vec![],
-                    pin_code: self.state.pin_code.clone(),
-                    text_description: meta.text_title.clone(),
-                };
 
-                info!("Asking for user consent: {:?}", metadata);
-                self.update_state(|e| {
-                    e.text_payload_id = meta.payload_id();
-                    e.transfer_metadata = Some(metadata.clone());
-                });
+            match meta.r#type() {
+                text_metadata::Type::Url => {
+                    let metadata = TransferMetadata {
+                        id: self.state.id.clone(),
+                        destination: None,
+                        source: self.state.remote_device_info.clone(),
+                        files: None,
+                        pin_code: self.state.pin_code.clone(),
+                        text_description: meta.text_title.clone(),
+                    };
 
-                // TODO - Ask for user consent
-                // Currently always accept file transfer
-                // self.accept_transfer().await?;
-                self.sender.send(ChannelMessage {
-                    id: self.state.id.clone(),
-                    direction: ChannelDirection::LibToFront,
-                    action: None,
-                    state: Some(self.state.state.clone()),
-                    meta: Some(metadata),
-                })?;
-            } else {
-                // Reject transfer
-                self.reject_transfer(Some(
-                    sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
-                ))
-                .await?;
+                    info!("Asking for user consent: {:?}", metadata);
+                    self.update_state(
+                        |e| {
+                            e.text_payload_id = meta.payload_id();
+                            e.transfer_metadata = Some(metadata.clone());
+                        },
+                        true,
+                    );
+                }
+                text_metadata::Type::PhoneNumber
+                | text_metadata::Type::Address
+                | text_metadata::Type::Text => {
+                    // TODO - Handle
+                    // Reject transfer
+                    self.reject_transfer(Some(
+						sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
+					))
+					.await?;
+                }
+                text_metadata::Type::Unknown => {
+                    // Reject transfer
+                    self.reject_transfer(Some(
+						sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
+					))
+					.await?;
+                }
             }
         } else {
             // Reject transfer
@@ -844,9 +882,12 @@ impl InboundRequest {
 
         self.send_encrypted_frame(&frame).await?;
 
-        self.update_state(|e| {
-            e.state = State::ReceivingFiles;
-        });
+        self.update_state(
+            |e| {
+                e.state = State::ReceivingFiles;
+            },
+            true,
+        );
 
         Ok(())
     }
@@ -931,14 +972,17 @@ impl InboundRequest {
         let server_key = hkdf_extract_expand(&key_salt, &d2d_server, "ENC:2".as_bytes(), 32)?;
         let server_hmac_key = hkdf_extract_expand(&key_salt, &d2d_server, "SIG:1".as_bytes(), 32)?;
 
-        self.update_state(|e| {
-            e.decrypt_key = Some(client_key);
-            e.recv_hmac_key = Some(client_hmac_key);
-            e.encrypt_key = Some(server_key);
-            e.send_hmac_key = Some(server_hmac_key);
-            e.pin_code = Some(to_four_digit_string(&auth_string));
-            e.encryption_done = true;
-        });
+        self.update_state(
+            |e| {
+                e.decrypt_key = Some(client_key);
+                e.recv_hmac_key = Some(client_hmac_key);
+                e.encrypt_key = Some(server_key);
+                e.send_hmac_key = Some(server_hmac_key);
+                e.pin_code = Some(to_four_digit_string(&auth_string));
+                e.encryption_done = true;
+            },
+            false,
+        );
 
         info!("Pin code: {:?}", self.state.pin_code);
 
@@ -1112,25 +1156,43 @@ impl InboundRequest {
     }
 
     fn get_server_seq_inc(&mut self) -> i32 {
-        self.update_state(|e| {
-            e.server_seq += 1;
-        });
+        self.update_state(
+            |e| {
+                e.server_seq += 1;
+            },
+            false,
+        );
 
         self.state.server_seq
     }
 
     fn get_client_seq_inc(&mut self) -> i32 {
-        self.update_state(|e| {
-            e.client_seq += 1;
-        });
+        self.update_state(
+            |e| {
+                e.client_seq += 1;
+            },
+            false,
+        );
 
         self.state.client_seq
     }
 
-    fn update_state<F>(&mut self, f: F)
+    fn update_state<F>(&mut self, f: F, inform: bool)
     where
         F: FnOnce(&mut InnerState),
     {
         f(&mut self.state);
+
+        if !inform {
+            return;
+        }
+
+        let _ = self.sender.send(ChannelMessage {
+            id: self.state.id.clone(),
+            direction: ChannelDirection::LibToFront,
+            state: Some(self.state.state.clone()),
+            meta: self.state.transfer_metadata.clone(),
+            ..Default::default()
+        });
     }
 }

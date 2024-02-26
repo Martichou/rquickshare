@@ -4,9 +4,10 @@ use ts_rs::TS;
 use crate::hdl::info::TransferMetadata;
 use crate::hdl::State;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize, TS)]
 #[ts(export)]
 pub enum ChannelDirection {
+    #[default]
     FrontToLib,
     LibToFront,
 }
@@ -19,7 +20,7 @@ pub enum ChannelAction {
     CancelTransfer,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
 #[ts(export)]
 pub struct ChannelMessage {
     pub id: String,

@@ -19,8 +19,9 @@ pub struct InternalFileInfo {
 #[ts(export)]
 pub struct TransferMetadata {
     pub id: String,
+    pub destination: Option<String>,
     pub source: Option<RemoteDeviceInfo>,
-    pub files: Vec<String>,
+    pub files: Option<Vec<String>>,
     pub pin_code: Option<String>,
     pub text_description: Option<String>,
 }

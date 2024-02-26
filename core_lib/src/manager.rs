@@ -54,9 +54,8 @@ impl TcpServer {
                                                 let _ = esender.send(ChannelMessage {
                                                     id: remote_addr.to_string(),
                                                     direction: ChannelDirection::LibToFront,
-                                                    action: None,
                                                     state: Some(State::Disconnected),
-                                                    meta: None,
+                                                    ..Default::default()
                                                 });
                                                 error!("{INNER_NAME}: error while handling client: {e}");
                                                 break;

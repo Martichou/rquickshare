@@ -45,7 +45,7 @@ async fn main() -> Result<(), anyhow::Error> {
     // Build and run Tauri app
     tauri::Builder::default()
         .manage(AppState { sender })
-        .invoke_handler(tauri::generate_handler![js2rs])
+        .invoke_handler(tauri::generate_handler![js2rs, open])
         .setup(|app| {
             let app_handle = app.handle();
             tauri::async_runtime::spawn(async move {
@@ -89,6 +89,16 @@ fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) 
 
     info!("rs2js: {:?}", &message);
     manager.emit_all("rs2js", &message).unwrap();
+}
+
+#[tauri::command]
+fn open(message: String) -> Result<(), String> {
+    info!("js2rs: {:?}", &message);
+
+    match open::that(message) {
+        Ok(_) => Ok(()),
+        Err(e) => return Err(format!("Coudln't open: {}", e)),
+    }
 }
 
 #[tauri::command]

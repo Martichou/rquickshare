@@ -15,7 +15,9 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./ChannelDirection"), exports);
+__exportStar(require("./DeviceType"), exports);
 __exportStar(require("./ChannelMessage"), exports);
 __exportStar(require("./TransferMetadata"), exports);
 __exportStar(require("./ChannelAction"), exports);
+__exportStar(require("./RemoteDeviceInfo"), exports);
 __exportStar(require("./State"), exports);

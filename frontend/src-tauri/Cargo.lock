@@ -3645,6 +3645,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "log",
+ "open 5.0.1",
  "rquickshare",
  "serde",
  "serde_json",
