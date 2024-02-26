@@ -1,8 +1,8 @@
 repos:
   - repo: local
     hooks:
-      - id: rust-format
-        name: Rust Format
-        entry: ./rs_fmt.sh
+      - id: project-format
+        name: Project Format
+        entry: ./fmt.sh
         language: script
         stages: [commit]
