@@ -162,9 +162,10 @@ window.addEventListener('blur', () => {
 				<div
 					v-for="request in requests.filter((el) => _stateToDisplay.includes(el.state ?? 'Initial'))"
 					:key="request.id"
-					class="bg-green-200 bg-opacity-65 rounded-3xl flex flex-row gap-6 p-6 mb-4">
+					class="bg-green-200 bg-opacity-65 rounded-3xl flex flex-row gap-6 p-6 mb-4"
+					:class="{'pb-4': ['WaitingForUserConsent', 'Finished'].includes(request.state ?? '')}">
 					<div>
-						<div class="h-16 w-16 rounded-full bg-green-50" :class="{'bg-green-400': request.state === 'Finished'}">
+						<div class="h-16 w-16 rounded-full bg-green-50" :class="{'!bg-green-400': request.state === 'Finished'}">
 							<svg
 								v-if="request.state === 'Finished'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
 								width="24" class="w-full h-full p-4 fill-white">
@@ -264,6 +265,14 @@ window.addEventListener('blur', () => {
 							<p class="mt-2">
 								Unexpected disconnection
 							</p>
+							<div class="flex flex-row justify-end gap-4 mt-1">
+								<p
+									@click="removeRequest(request.id)"
+									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-lg
+									font-medium active:scale-105 transition duration-150 ease-in-out">
+									Clear
+								</p>
+							</div>
 						</div>
 					</div>
 					<div v-if="request.state === 'ReceivingFiles'" class="my-auto">
