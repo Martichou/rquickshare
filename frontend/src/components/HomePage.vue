@@ -2,9 +2,20 @@
 import { ref } from 'vue'
 import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification'
 
 import { ChannelMessage } from '../../../core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '../../../core_lib/bindings/ChannelAction';
+
+let isAppInForeground = false;
+// Do you have permission to send a notification?
+let permissionGranted = await isPermissionGranted();
+
+// If not we need to request it
+if (!permissionGranted) {
+	const permission = await requestPermission();
+	permissionGranted = permission === 'granted';
+}
 
 const _stateToDisplay = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished"]
 
@@ -62,6 +73,10 @@ await listen('rs2js', (event) => {
 			meta: cm.meta ?? prev!.meta,
 		});
 	} else {
+		if (isAppInForeground && permissionGranted && cm.state === 'WaitingForUserConsent') {
+			sendNotification({ title: 'New transfer request', body: (cm.meta?.source?.name ?? 'Unknown') + ' want to initiate a transfer.' });
+		}
+
 		// Push the new message if not found
 		requests.value.push(cm);
 	}
@@ -82,6 +97,14 @@ setInterval(() => {
 		return now.getTime() - item.triggered < 30000;
 	});
 }, 30000);
+
+window.addEventListener('focus', () => {
+	isAppInForeground = true;
+});
+
+window.addEventListener('blur', () => {
+	isAppInForeground = false;
+});
 </script>
 
 <template>
