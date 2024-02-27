@@ -33,6 +33,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ts-rs = { version = "7.1", features = ["serde-compat", "uuid-impl", "chrono-impl"] }
 uuid = "1.7.0"
 serde = { version = "1.0", features = ["derive"] }
+mime_guess = "2.0.4"
 
 [build-dependencies]
 prost-build = "0.12"

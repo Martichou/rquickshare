@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::os::unix::fs::MetadataExt;
+use std::path::Path;
+
 use anyhow::anyhow;
 use hmac::{Hmac, Mac};
 use libaes::{Cipher, AES_256_KEY_LEN};
@@ -29,6 +33,9 @@ use crate::securemessage::{
     EcP256PublicKey, EncScheme, GenericPublicKey, Header, HeaderAndBody, PublicKeyType,
     SecureMessage, SigScheme,
 };
+use crate::sharing_nearby::{
+    file_metadata, paired_key_result_frame, FileMetadata, IntroductionFrame,
+};
 use crate::utils::{
     gen_ecdsa_keypair, gen_random, hkdf_extract_expand, stream_read_exact, to_four_digit_string,
     DeviceType, RemoteDeviceInfo,
@@ -41,7 +48,7 @@ const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
 
 #[derive(Debug)]
 pub enum OutboundPayload {
-    File(String),
+    Files(Vec<String>),
 }
 
 #[derive(Debug)]
@@ -414,6 +421,269 @@ impl OutboundRequest {
             .v1
             .as_ref()
             .ok_or_else(|| anyhow!("Missing required fields"))?;
+        match v1_frame.r#type() {
+            location_nearby_connections::v1_frame::FrameType::PayloadTransfer => {
+                trace!("Received FrameType::PayloadTransfer");
+                let payload_transfer = v1_frame
+                    .payload_transfer
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+                let header = payload_transfer
+                    .payload_header
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Missing required fields"))?;
+                let chunk = payload_transfer
+                    .payload_chunk
+                    .as_ref()
+                    .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+                match header.r#type() {
+                    payload_header::PayloadType::Bytes => {
+                        info!("Processing PayloadType::Bytes");
+                        let payload_id = header.id();
+
+                        if header.total_size() > SANE_FRAME_LENGTH.into() {
+                            self.state.payload_buffers.remove(&payload_id);
+                            return Err(anyhow!(
+                                "Payload too large: {} bytes",
+                                header.total_size()
+                            ));
+                        }
+
+                        self.state
+                            .payload_buffers
+                            .entry(payload_id)
+                            .or_insert_with(|| Vec::with_capacity(header.total_size() as usize));
+
+                        // Get the current length of the buffer, if it exists, without holding a mutable borrow.
+                        let buffer_len = self.state.payload_buffers.get(&payload_id).unwrap().len();
+                        if chunk.offset() != buffer_len as i64 {
+                            self.state.payload_buffers.remove(&payload_id);
+                            return Err(anyhow!(
+                                "Unexpected chunk offset: {}, expected: {}",
+                                chunk.offset(),
+                                buffer_len
+                            ));
+                        }
+
+                        let buffer = self.state.payload_buffers.get_mut(&payload_id).unwrap();
+                        if let Some(body) = &chunk.body {
+                            buffer.extend(body);
+                        }
+
+                        if (chunk.flags() & 1) == 1 {
+                            // Clear payload_buffer for payload_id
+                            debug!("Chunk flags & 1 == 1 ?? End of data ??");
+
+                            if payload_id == self.state.text_payload_id {
+                                open::that(std::str::from_utf8(buffer)?)?;
+
+                                info!("Transfer finished");
+                                self.update_state(
+                                    |e| {
+                                        e.state = State::Finished;
+                                    },
+                                    true,
+                                );
+                                self.disconnection().await?;
+                                return Err(anyhow!(crate::errors::AppError::NotAnError));
+                            } else {
+                                let innner_frame =
+                                    sharing_nearby::Frame::decode(buffer.as_slice())?;
+                                self.process_transfer_setup(&innner_frame).await?;
+                            }
+                        }
+                    }
+                    payload_header::PayloadType::File => {
+                        error!("Unhandled PayloadType::File: {:?}", header.r#type())
+                    }
+                    payload_header::PayloadType::Stream => {
+                        error!("Unhandled PayloadType::Stream: {:?}", header.r#type())
+                    }
+                    payload_header::PayloadType::UnknownPayloadType => {
+                        error!(
+                            "Invalid PayloadType::UnknownPayloadType: {:?}",
+                            header.r#type()
+                        )
+                    }
+                }
+            }
+            location_nearby_connections::v1_frame::FrameType::KeepAlive => {
+                trace!("Sending keepalive");
+                self.send_keepalive(true).await?;
+            }
+            _ => {
+                error!("Unhandled offline frame encrypted: {:?}", offline);
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn process_transfer_setup(
+        &mut self,
+        frame: &sharing_nearby::Frame,
+    ) -> Result<(), anyhow::Error> {
+        let v1_frame = frame
+            .v1
+            .as_ref()
+            .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+        if v1_frame.r#type() == sharing_nearby::v1_frame::FrameType::Cancel {
+            info!("Transfer canceled");
+            return self.disconnection().await;
+        }
+
+        match self.state.state {
+            State::SentPairedKeyEncryption => {
+                debug!("Processing State::SentPairedKeyEncryption");
+                self.process_paired_key_encryption_frame(v1_frame).await?;
+                self.update_state(
+                    |e| {
+                        e.state = State::SentPairedKeyResult;
+                    },
+                    false,
+                );
+            }
+            State::SentPairedKeyResult => {
+                debug!("Processing State::SentPairedKeyResult");
+                self.process_paired_key_result(v1_frame).await?;
+                self.update_state(
+                    |e| {
+                        e.state = State::SentIntroduction;
+                    },
+                    false,
+                );
+            }
+            State::SentIntroduction => {
+                debug!("Processing State::SentIntroduction");
+                // self.process_introduction(v1_frame).await?;
+            }
+            State::SendingFiles => {}
+            _ => {
+                info!(
+                    "Unhandled connection state in process_transfer_setup: {:?}",
+                    self.state.state
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    async fn process_paired_key_encryption_frame(
+        &mut self,
+        v1_frame: &sharing_nearby::V1Frame,
+    ) -> Result<(), anyhow::Error> {
+        if v1_frame.paired_key_encryption.is_none() {
+            return Err(anyhow!("Missing required fields"));
+        }
+
+        let paired_result = sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(sharing_nearby::V1Frame {
+                r#type: Some(sharing_nearby::v1_frame::FrameType::PairedKeyResult.into()),
+                paired_key_result: Some(sharing_nearby::PairedKeyResultFrame {
+                    status: Some(paired_key_result_frame::Status::Unable.into()),
+                }),
+                ..Default::default()
+            }),
+        };
+
+        self.send_encrypted_frame(&paired_result).await?;
+
+        Ok(())
+    }
+
+    async fn process_paired_key_result(
+        &mut self,
+        v1_frame: &sharing_nearby::V1Frame,
+    ) -> Result<(), anyhow::Error> {
+        if v1_frame.paired_key_result.is_none() {
+            return Err(anyhow!("Missing required fields"));
+        }
+
+        let mut file_metadata: Vec<FileMetadata> = vec![];
+        let mut total_to_send = 0;
+        // TODO - Handle sending Text
+        match &self.payload {
+            OutboundPayload::Files(files) => {
+                for f in files {
+                    let path = Path::new(f);
+                    if !path.is_file() {
+                        continue;
+                    }
+
+                    let file = match File::open(f) {
+                        Ok(_f) => _f,
+                        Err(e) => {
+                            error!("Failed to open file: {f}: {:?}", e);
+                            continue;
+                        }
+                    };
+                    let fmetadata = match file.metadata() {
+                        Ok(_fm) => _fm,
+                        Err(e) => {
+                            error!("Failed to get metadata for: {f}: {:?}", e);
+                            continue;
+                        }
+                    };
+
+                    let ftype = mime_guess::from_path(path)
+                        .first_or_octet_stream()
+                        .to_string();
+
+                    let meta_type = if ftype.starts_with("image/") {
+                        file_metadata::Type::Image
+                    } else if ftype.starts_with("video/") {
+                        file_metadata::Type::Video
+                    } else if ftype.starts_with("audio/") {
+                        file_metadata::Type::Audio
+                    } else if path.extension().unwrap_or_default() == "apk" {
+                        file_metadata::Type::App
+                    } else {
+                        file_metadata::Type::Unknown
+                    };
+
+                    let fname = path
+                        .file_name()
+                        .ok_or_else(|| anyhow!("Failed to get file_name for {f}"))?;
+                    let fmeta = FileMetadata {
+                        payload_id: Some(rand::thread_rng().gen::<i64>()),
+                        name: Some(fname.to_os_string().into_string().unwrap()),
+                        size: Some(fmetadata.size() as i64),
+                        mime_type: Some(ftype),
+                        r#type: Some(meta_type.into()),
+                        ..Default::default()
+                    };
+                    // TODO - See how to handle those
+                    file_metadata.push(fmeta);
+                    total_to_send += fmetadata.size();
+                }
+            }
+        }
+
+        self.update_state(
+            |e| {
+                e.bytes_to_send = total_to_send;
+            },
+            false,
+        );
+
+        let introduction = sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(sharing_nearby::V1Frame {
+                r#type: Some(sharing_nearby::v1_frame::FrameType::Introduction.into()),
+                introduction: Some(IntroductionFrame {
+                    file_metadata,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+        };
+
+        self.send_encrypted_frame(&introduction).await?;
 
         Ok(())
     }

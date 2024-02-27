@@ -19,6 +19,7 @@ mod hdl;
 mod manager;
 mod utils;
 
+pub use hdl::OutboundPayload;
 pub use utils::DeviceType;
 
 pub mod sharing_nearby {
