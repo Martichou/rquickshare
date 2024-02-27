@@ -108,7 +108,7 @@ window.addEventListener('blur', () => {
 </script>
 
 <template>
-	<div class="flex flex-col bg-green-50 bg-opacity-75 w-full h-full max-w-full max-h-full">
+	<div class="flex flex-col bg-green-50 w-full h-full max-w-full max-h-full">
 		<div class="flex flex-row justify-between items-center px-6 py-4">
 			<!-- Header, Pc name left and options right -->
 			<div>

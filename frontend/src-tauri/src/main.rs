@@ -8,7 +8,9 @@ extern crate log;
 
 use rquickshare::channel::{ChannelDirection, ChannelMessage};
 use rquickshare::RQS;
-use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tauri::{
+    CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
+};
 use tokio::sync::broadcast::Sender;
 
 pub struct AppState {
@@ -38,8 +40,12 @@ async fn main() -> Result<(), anyhow::Error> {
     let (sender, mut receiver) = rqs.channel;
 
     // Configure System Tray
+    let show = CustomMenuItem::new("show".to_string(), "Show");
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let tray_menu = SystemTrayMenu::new().add_item(quit);
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(show)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(quit);
     let tray = SystemTray::new().with_menu(tray_menu);
 
     // Build and run Tauri app
@@ -65,10 +71,26 @@ async fn main() -> Result<(), anyhow::Error> {
         .system_tray(tray)
         .on_system_tray_event(|_app, event| {
             if let SystemTrayEvent::MenuItemClick { id, .. } = event {
-                if id.as_str() == "quit" {
-                    std::process::exit(0);
+                match id.as_str() {
+                    "show" => {
+                        let widow = _app.get_window("main").unwrap();
+                        let _ = widow.show();
+                        let _ = widow.set_focus();
+                    }
+                    "quit" => {
+                        // TODO - Clean exit
+                        std::process::exit(0);
+                    }
+                    _ => {}
                 }
             }
+        })
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                event.window().hide().unwrap();
+                api.prevent_close();
+            }
+            _ => {}
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
