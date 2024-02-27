@@ -50,6 +50,13 @@ The frontend application, built with the Tauri framework, is currently under dev
 	pnpm dev
 	```
 
+Limitations
+--------------------------
+
+- **Wi-Fi LAN only**. Your devices needs to be on the same network for this app to work.
+
+- **Visible to everyone** on your network at all times while the app is running.
+
 WIP Notes
 --------------------------
 
