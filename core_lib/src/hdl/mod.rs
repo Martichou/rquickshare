@@ -15,6 +15,8 @@ pub use inbound::*;
 pub(crate) mod info;
 mod mdns;
 pub use mdns::*;
+mod outbound;
+pub use outbound::*;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
@@ -24,6 +26,8 @@ pub enum State {
     Initial,
     ReceivedConnectionRequest,
     SentUkeyServerInit,
+    SentUkeyClientInit,
+    SentUkeyClientFinish,
     ReceivedUkeyClientFinish,
     SentConnectionResponse,
     SentPairedKeyResult,
@@ -54,6 +58,7 @@ pub struct InnerState {
     pub public_key: Option<PublicKey>,
     pub server_init_data: Option<Vec<u8>>,
     pub client_init_msg_data: Option<Vec<u8>>,
+    pub ukey_client_finish_msg_data: Option<Vec<u8>>,
     pub decrypt_key: Option<Vec<u8>>,
     pub recv_hmac_key: Option<Vec<u8>>,
     pub encrypt_key: Option<Vec<u8>>,

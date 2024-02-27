@@ -4,7 +4,8 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::{sharing_nearby::FileMetadata, utils::RemoteDeviceInfo};
+use crate::sharing_nearby::FileMetadata;
+use crate::utils::RemoteDeviceInfo;
 
 #[derive(Debug)]
 pub struct InternalFileInfo {

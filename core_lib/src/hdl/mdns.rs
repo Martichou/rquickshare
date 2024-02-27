@@ -1,5 +1,4 @@
 use mdns_sd::{AddrType, ServiceDaemon, ServiceInfo};
-use rand::Rng;
 use tokio::sync::broadcast::Receiver;
 use tokio_util::sync::CancellationToken;
 
@@ -15,10 +14,10 @@ pub struct MDnsServer {
 
 impl MDnsServer {
     fn build_service(
+        endpoint_id: [u8; 4],
         service_port: u16,
         device_type: DeviceType,
     ) -> Result<ServiceInfo, anyhow::Error> {
-        let endpoint_id = rand::thread_rng().gen::<[u8; 4]>();
         let name = gen_mdns_name(endpoint_id);
         let hostname = sys_metrics::host::get_hostname()?;
         info!("Broadcasting with: {hostname}");
@@ -39,11 +38,12 @@ impl MDnsServer {
     }
 
     pub fn new(
+        endpoint_id: [u8; 4],
         service_port: u16,
         device_type: DeviceType,
         receiver: Receiver<()>,
     ) -> Result<Self, anyhow::Error> {
-        let service_info = Self::build_service(service_port, device_type)?;
+        let service_info = Self::build_service(endpoint_id, service_port, device_type)?;
         let fullname = service_info.get_fullname().to_owned();
 
         let daemon = ServiceDaemon::new()?;

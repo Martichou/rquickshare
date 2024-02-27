@@ -2,8 +2,11 @@
 extern crate log;
 
 use channel::ChannelMessage;
+use manager::SendInfo;
+use rand::Rng;
 use tokio::net::TcpListener;
-use tokio::sync::broadcast::{self, Receiver, Sender};
+use tokio::sync::broadcast::{self, Receiver};
+use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 
@@ -38,7 +41,7 @@ pub mod location_nearby_connections {
 pub struct RQS {
     tracker: TaskTracker,
     ctoken: CancellationToken,
-    pub channel: (Sender<ChannelMessage>, Receiver<ChannelMessage>),
+    pub channel: (broadcast::Sender<ChannelMessage>, Receiver<ChannelMessage>),
 }
 
 impl Default for RQS {
@@ -60,7 +63,8 @@ impl RQS {
         }
     }
 
-    pub async fn run(&self) -> Result<(), anyhow::Error> {
+    pub async fn run(&self) -> Result<mpsc::Sender<SendInfo>, anyhow::Error> {
+        let endpoint_id = rand::thread_rng().gen::<[u8; 4]>();
         let tcp_listener = TcpListener::bind("0.0.0.0:0").await?;
         let binded_addr = tcp_listener.local_addr()?;
         info!("TcpListener on: {}", binded_addr);
@@ -68,8 +72,10 @@ impl RQS {
         // Sender for the TcpServer
         let sender = self.channel.0.clone();
 
+        let send_channel = mpsc::channel(10);
+
         // Start TcpServer in own "task"
-        let mut server = TcpServer::new(tcp_listener, sender)?;
+        let mut server = TcpServer::new(endpoint_id, tcp_listener, sender, send_channel.1)?;
         let ctk = self.ctoken.clone();
         self.tracker.spawn(async move { server.run(ctk).await });
 
@@ -82,13 +88,18 @@ impl RQS {
         }
 
         // Start MDnsServer in own "task"
-        let mdns = MDnsServer::new(binded_addr.port(), DeviceType::Laptop, ble_channel.1)?;
+        let mdns = MDnsServer::new(
+            endpoint_id,
+            binded_addr.port(),
+            DeviceType::Laptop,
+            ble_channel.1,
+        )?;
         let ctk = self.ctoken.clone();
         self.tracker.spawn(async move { mdns.run(ctk).await });
 
         self.tracker.close();
 
-        Ok(())
+        Ok(send_channel.0)
     }
 
     pub async fn stop(&self) {

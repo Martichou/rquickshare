@@ -5,7 +5,7 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use hkdf::Hkdf;
 use p256::{PublicKey, SecretKey};
-use rand::{Rng, RngCore};
+use rand::{thread_rng, Rng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::digest::generic_array::GenericArray;
 use sha2::Sha256;
@@ -41,6 +41,34 @@ impl DeviceType {
 pub struct RemoteDeviceInfo {
     pub name: String,
     pub device_type: DeviceType,
+}
+
+impl RemoteDeviceInfo {
+    pub fn serialize(&self) -> Vec<u8> {
+        // Version(3 bits)|Visibility(1 bit)|Device Type(3 bits)|Reserved(1 bit)
+        // Assuming Version = 1, Visibility = 1 for demonstration
+        let version_and_visibility: u8 = 0b1000_0000; // Version 1 and visible
+        let device_type_bits: u8 = (self.device_type.clone() as u8) << 1;
+        let first_byte = version_and_visibility | device_type_bits;
+
+        let mut endpoint_info = Vec::new();
+        endpoint_info.push(first_byte);
+
+        // Append 16 random bytes
+        let mut rng = thread_rng();
+        let random_bytes: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
+        endpoint_info.extend(random_bytes);
+
+        // Appending device name in UTF-8 prefixed with 1-byte length
+        let mut name_bytes = self.name.as_bytes().to_vec();
+        if name_bytes.len() > 255 {
+            name_bytes.truncate(255);
+        }
+        endpoint_info.push(name_bytes.len() as u8);
+        endpoint_info.extend(name_bytes);
+
+        endpoint_info
+    }
 }
 
 pub fn gen_mdns_name(endpoint_id: [u8; 4]) -> String {
