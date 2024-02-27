@@ -14,6 +14,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use super::{InnerState, State};
 use crate::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use crate::location_nearby_connections::bandwidth_upgrade_negotiation_frame::upgrade_path_info::Medium;
+use crate::location_nearby_connections::connection_response_frame::ResponseStatus;
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
 };
@@ -155,6 +156,18 @@ impl OutboundRequest {
             }
             State::SentUkeyClientFinish => {
                 debug!("Handling State::SentUkeyClientFinish frame");
+                let frame = location_nearby_connections::OfflineFrame::decode(&*frame_data)?;
+                self.process_connection_response(&frame).await?;
+
+                // Advance current state
+                self.update_state(
+                    |e: &mut InnerState| {
+                        e.state = State::SentPairedKeyEncryption;
+                        e.server_init_data = Some(frame_data);
+                        e.encryption_done = true;
+                    },
+                    false,
+                );
             }
             _ => {
                 debug!("Handling SecureMessage frame");
@@ -314,6 +327,49 @@ impl OutboundRequest {
         };
 
         self.send_frame(frame.encode_to_vec()).await?;
+
+        Ok(())
+    }
+
+    async fn process_connection_response(
+        &mut self,
+        frame: &location_nearby_connections::OfflineFrame,
+    ) -> Result<(), anyhow::Error> {
+        let v1_frame = frame
+            .v1
+            .as_ref()
+            .ok_or_else(|| anyhow!("Missing required fields"))?;
+
+        if v1_frame.r#type() != location_nearby_connections::v1_frame::FrameType::ConnectionResponse
+        {
+            return Err(anyhow!(format!(
+                "Unexpected frame type: {:?}",
+                v1_frame.r#type()
+            )));
+        }
+
+        if v1_frame.connection_response.is_none() {
+            return Err(anyhow!(format!("Unexpected None connection_response",)));
+        }
+
+        if v1_frame.connection_response.as_ref().unwrap().response() != ResponseStatus::Accept {
+            return Err(anyhow!(format!("Connection rejected by third party",)));
+        }
+
+        let paired_encryption = sharing_nearby::Frame {
+            version: Some(sharing_nearby::frame::Version::V1.into()),
+            v1: Some(sharing_nearby::V1Frame {
+                r#type: Some(sharing_nearby::v1_frame::FrameType::PairedKeyEncryption.into()),
+                paired_key_encryption: Some(sharing_nearby::PairedKeyEncryptionFrame {
+                    secret_id_hash: Some(gen_random(6)),
+                    signed_data: Some(gen_random(72)),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+        };
+
+        self.send_encrypted_frame(&paired_encryption).await?;
 
         Ok(())
     }

@@ -28,6 +28,7 @@ pub enum State {
     SentUkeyServerInit,
     SentUkeyClientInit,
     SentUkeyClientFinish,
+    SentPairedKeyEncryption,
     ReceivedUkeyClientFinish,
     SentConnectionResponse,
     SentPairedKeyResult,
