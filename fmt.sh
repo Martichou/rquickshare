@@ -16,3 +16,5 @@ if git diff --name-only HEAD | grep '^frontend/src/' >/dev/null; then
 else
     echo "No changes detected in /frontend/src."
 fi
+
+cargo-sort core_lib/Cargo.toml frontend/src-tauri/Cargo.toml

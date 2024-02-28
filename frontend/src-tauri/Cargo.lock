@@ -3822,6 +3822,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "log",
+ "notify-rust",
  "open 5.0.1",
  "rquickshare",
  "serde",
