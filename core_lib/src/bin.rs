@@ -2,6 +2,7 @@
 extern crate log;
 
 use rquickshare::RQS;
+use tokio::sync::mpsc;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -17,8 +18,12 @@ async fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
 
     // Start the RQuickShare service
-    let rqs = RQS::default();
+    let mut rqs = RQS::default();
     rqs.run().await?;
+
+    let discovery_channel = mpsc::channel(10);
+
+    rqs.discovery(discovery_channel.0)?;
 
     // Wait for CTRL+C and then stop RQS
     let _ = tokio::signal::ctrl_c().await;

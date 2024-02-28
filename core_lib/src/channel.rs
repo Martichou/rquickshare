@@ -20,6 +20,13 @@ pub enum ChannelAction {
     CancelTransfer,
 }
 
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
+#[ts(export)]
+pub enum TransferType {
+    Inbound,
+    Outbound,
+}
+
 #[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
 #[ts(export)]
 pub struct ChannelMessage {
@@ -30,6 +37,7 @@ pub struct ChannelMessage {
     pub action: Option<ChannelAction>,
 
     // Only present when channelDirection is libToFront
+    pub rtype: Option<TransferType>,
     pub state: Option<State>,
     pub meta: Option<TransferMetadata>,
 }

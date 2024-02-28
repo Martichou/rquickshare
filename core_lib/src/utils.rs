@@ -1,11 +1,13 @@
+use std::net::Ipv4Addr;
 use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
+use get_if_addrs::get_if_addrs;
 use hkdf::Hkdf;
 use p256::{PublicKey, SecretKey};
-use rand::{thread_rng, Rng, RngCore};
+use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::digest::generic_array::GenericArray;
 use sha2::Sha256;
@@ -45,27 +47,19 @@ pub struct RemoteDeviceInfo {
 
 impl RemoteDeviceInfo {
     pub fn serialize(&self) -> Vec<u8> {
-        // Version(3 bits)|Visibility(1 bit)|Device Type(3 bits)|Reserved(1 bit)
-        // Assuming Version = 1, Visibility = 1 for demonstration
-        let version_and_visibility: u8 = 0b1000_0000; // Version 1 and visible
-        let device_type_bits: u8 = (self.device_type.clone() as u8) << 1;
-        let first_byte = version_and_visibility | device_type_bits;
+        // 1 byte: Version(3 bits)|Visibility(1 bit)|Device Type(3 bits)|Reserved(1 bit)
+        let mut endpoint_info: Vec<u8> = vec![((self.device_type.clone() as u8) << 1) & 0b111];
 
-        let mut endpoint_info = Vec::new();
-        endpoint_info.push(first_byte);
+        // 16 bytes: unknown random bytes
+        endpoint_info.extend((0..16).map(|_| rand::thread_rng().gen_range(0..=255)));
 
-        // Append 16 random bytes
-        let mut rng = thread_rng();
-        let random_bytes: Vec<u8> = (0..16).map(|_| rng.gen()).collect();
-        endpoint_info.extend(random_bytes);
-
-        // Appending device name in UTF-8 prefixed with 1-byte length
-        let mut name_bytes = self.name.as_bytes().to_vec();
-        if name_bytes.len() > 255 {
-            name_bytes.truncate(255);
+        // Device name in UTF-8 prefixed with 1-byte length
+        let mut name_chars = self.name.as_bytes().to_vec();
+        if name_chars.len() > 255 {
+            name_chars.truncate(255);
         }
-        endpoint_info.push(name_bytes.len() as u8);
-        endpoint_info.extend(name_bytes);
+        endpoint_info.push(name_chars.len() as u8);
+        endpoint_info.extend(name_chars);
 
         endpoint_info
     }
@@ -104,6 +98,25 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     record.extend_from_slice(device_name);
 
     URL_SAFE_NO_PAD.encode(&record)
+}
+
+pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String), anyhow::Error> {
+    let decoded_bytes = URL_SAFE_NO_PAD.decode(encoded_str)?;
+    if decoded_bytes.len() < 19 {
+        return Err(anyhow!("Invalid data length"));
+    }
+
+    let device_type_byte = decoded_bytes[0];
+    let device_type = (device_type_byte & 0b0111) >> 4;
+    let name_length = decoded_bytes[17] as usize;
+    if 18 + name_length > decoded_bytes.len() {
+        return Err(anyhow!("Invalid name length"));
+    }
+
+    let device_name_bytes = &decoded_bytes[18..18 + name_length];
+    let device_name = String::from_utf8(device_name_bytes.to_vec())?;
+
+    Ok((DeviceType::from_raw_value(device_type), device_name))
 }
 
 pub async fn stream_read_exact(
@@ -178,4 +191,16 @@ pub fn get_download_dir() -> PathBuf {
     }
 
     Path::new("/").to_path_buf()
+}
+
+pub fn is_not_self_ip(ip_address: &Ipv4Addr) -> bool {
+    if let Ok(if_addrs) = get_if_addrs() {
+        for if_addr in if_addrs {
+            if if_addr.ip() == *ip_address {
+                return false;
+            }
+        }
+    }
+
+    true
 }

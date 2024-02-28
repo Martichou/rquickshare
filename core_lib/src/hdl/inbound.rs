@@ -44,7 +44,7 @@ const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
 #[derive(Debug)]
 pub struct InboundRequest {
     socket: TcpStream,
-    state: InnerState,
+    pub state: InnerState,
     sender: Sender<ChannelMessage>,
     receiver: Receiver<ChannelMessage>,
 }
@@ -572,9 +572,9 @@ impl InboundRequest {
                                 current_offset
                             ));
                         }
-                        if current_offset + chunk.body().len() as i64 > file_internal.meta.size() {
+                        if current_offset + chunk.body().len() as i64 > file_internal.total_size {
                             return Err(anyhow!(
-                                "Transferred file size exceeds previously specified value"
+                                "Transferred file size exceeds previously specified value: {} vs {}", current_offset + chunk.body().len() as i64, file_internal.total_size
                             ));
                         }
 
@@ -753,10 +753,10 @@ impl InboundRequest {
                 }
 
                 let info = InternalFileInfo {
-                    meta: file.clone(),
                     payload_id: file.payload_id(),
-                    destination_url: dest,
+                    file_url: dest,
                     bytes_transferred: 0,
+                    total_size: file.size(),
                     file: None,
                 };
                 self.state.transferred_files.insert(file.payload_id(), info);
@@ -864,7 +864,7 @@ impl InboundRequest {
         for id in ids {
             let mfi = self.state.transferred_files.get_mut(&id).unwrap();
 
-            let file = File::create(&mfi.destination_url)?;
+            let file = File::create(&mfi.file_url)?;
             info!("Created file: {:?}", &file);
             mfi.file = Some(file);
         }
@@ -1190,6 +1190,7 @@ impl InboundRequest {
         let _ = self.sender.send(ChannelMessage {
             id: self.state.id.clone(),
             direction: ChannelDirection::LibToFront,
+            rtype: Some(crate::channel::TransferType::Inbound),
             state: Some(self.state.state.clone()),
             meta: self.state.transfer_metadata.clone(),
             ..Default::default()

@@ -6,15 +6,21 @@
 #[macro_use]
 extern crate log;
 
+use std::sync::Mutex;
+
 use rquickshare::channel::{ChannelDirection, ChannelMessage};
-use rquickshare::RQS;
+use rquickshare::{EndpointInfo, SendInfo, RQS};
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
 };
-use tokio::sync::broadcast::Sender;
+use tokio::sync::broadcast;
+use tokio::sync::mpsc;
 
 pub struct AppState {
-    pub sender: Sender<ChannelMessage>,
+    pub sender: broadcast::Sender<ChannelMessage>,
+    pub sender_file: mpsc::Sender<SendInfo>,
+    pub rqs: Mutex<RQS>,
+    pub dch_sender: mpsc::Sender<EndpointInfo>,
 }
 
 #[tokio::main]
@@ -35,33 +41,59 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Start the RQuickShare service
     let rqs = RQS::default();
-    rqs.run().await?;
+    let sender_file = rqs.run().await?;
 
-    let (sender, mut receiver) = rqs.channel;
+    let (dch_sender, mut dch_receiver) = mpsc::channel(10);
+    let (sender, mut receiver) = (rqs.channel.0.clone(), rqs.channel.1.resubscribe());
 
     // Configure System Tray
+    let test = CustomMenuItem::new("test".to_string(), "Test");
     let show = CustomMenuItem::new("show".to_string(), "Show");
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let tray_menu = SystemTrayMenu::new()
         .add_item(show)
         .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(quit);
+        .add_item(quit)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(test);
     let tray = SystemTray::new().with_menu(tray_menu);
 
     // Build and run Tauri app
     tauri::Builder::default()
-        .manage(AppState { sender })
-        .invoke_handler(tauri::generate_handler![js2rs, open])
+        .manage(AppState {
+            sender: sender,
+            sender_file: sender_file,
+            rqs: Mutex::new(rqs),
+            dch_sender: dch_sender,
+        })
+        .invoke_handler(tauri::generate_handler![
+            js2rs,
+            open,
+            send_payload,
+            start_discovery,
+            stop_discovery
+        ])
         .setup(|app| {
             let app_handle = app.handle();
             tauri::async_runtime::spawn(async move {
                 loop {
-                    if let Ok(info) = receiver.recv().await {
-                        rs2js(info, &app_handle);
-                    } else {
-                        error!("Error getting receiver message");
-                        // TODO - Handle error gracefully
-                        std::process::exit(0);
+                    match receiver.recv().await {
+                        Ok(info) => rs2js(info, &app_handle),
+                        Err(e) => {
+                            error!("Error getting receiver message: {}", e);
+                        }
+                    }
+                }
+            });
+
+            let capp_handle = app.handle();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    match dch_receiver.recv().await {
+                        Some(info) => rs2js_discovery(info, &capp_handle),
+                        None => {
+                            error!("Error getting dch_receiver message");
+                        }
                     }
                 }
             });
@@ -113,9 +145,25 @@ fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) 
     manager.emit_all("rs2js", &message).unwrap();
 }
 
+fn rs2js_discovery<R: tauri::Runtime>(message: EndpointInfo, manager: &impl Manager<R>) {
+    info!("rs2js_discovery: {:?}", &message);
+    manager.emit_all("rs2js_discovery", &message).unwrap();
+}
+
+#[tauri::command]
+async fn send_payload(message: SendInfo, state: tauri::State<'_, AppState>) -> Result<(), String> {
+    info!("send_payload: {:?}", &message);
+
+    state
+        .sender_file
+        .send(message)
+        .await
+        .map_err(|e| format!("couldn't send payload: {e}"))
+}
+
 #[tauri::command]
 fn open(message: String) -> Result<(), String> {
-    info!("js2rs: {:?}", &message);
+    info!("open: {:?}", &message);
 
     match open::that(message) {
         Ok(_) => Ok(()),
@@ -131,4 +179,23 @@ fn js2rs(message: ChannelMessage, state: tauri::State<'_, AppState>) -> Result<(
         Ok(_) => Ok(()),
         Err(e) => return Err(format!("Coudln't perform: {}", e)),
     }
+}
+
+#[tauri::command]
+async fn start_discovery(state: tauri::State<'_, AppState>) -> Result<(), String> {
+    info!("start_discovery");
+
+    state
+        .rqs
+        .lock()
+        .unwrap()
+        .discovery(state.dch_sender.clone())
+        .map_err(|e| format!("unable to start discovery: {}", e))
+}
+
+#[tauri::command]
+fn stop_discovery(state: tauri::State<'_, AppState>) {
+    info!("stop_discovery");
+
+    state.rqs.lock().unwrap().stop_discovery();
 }

@@ -1,17 +1,25 @@
+use anyhow::anyhow;
+use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::CancellationToken;
+use ts_rs::TS;
 
 use crate::channel::{ChannelDirection, ChannelMessage};
 use crate::errors::AppError;
 use crate::hdl::{InboundRequest, OutboundPayload, OutboundRequest, State};
+use crate::utils::RemoteDeviceInfo;
 
 const INNER_NAME: &str = "TcpServer";
 
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct SendInfo {
-    addr: String,
-    ob: OutboundPayload,
+    pub id: String,
+    pub name: String,
+    pub addr: String,
+    pub ob: OutboundPayload,
 }
 
 pub struct TcpServer {
@@ -48,7 +56,8 @@ impl TcpServer {
                     break;
                 }
                 Some(i) = self.connect_receiver.recv() => {
-                    if let Err(e) = self.connect(cctk, i.addr, i.ob).await {
+                    info!("{INNER_NAME}: connect_receiver: got {:?}", i);
+                    if let Err(e) = self.connect(cctk, i).await {
                         error!("{INNER_NAME}: error sending: {:?}", e);
                     }
                 }
@@ -68,13 +77,19 @@ impl TcpServer {
                                         Err(e) => match e.downcast_ref() {
                                             Some(AppError::NotAnError) => break,
                                             None => {
-                                                let _ = esender.send(ChannelMessage {
-                                                    id: remote_addr.to_string(),
-                                                    direction: ChannelDirection::LibToFront,
-                                                    state: Some(State::Disconnected),
-                                                    ..Default::default()
-                                                });
-                                                error!("{INNER_NAME}: error while handling client: {e}");
+                                                if ir.state.state == State::Initial {
+                                                    break;
+                                                }
+
+                                                if ir.state.state != State::Finished {
+                                                    let _ = esender.send(ChannelMessage {
+                                                        id: remote_addr.to_string(),
+                                                        direction: ChannelDirection::LibToFront,
+                                                        state: Some(State::Disconnected),
+                                                        ..Default::default()
+                                                    });
+                                                }
+                                                error!("{INNER_NAME}: error while handling client: {e} ({:?})", ir.state.state);
                                                 break;
                                             }
                                         },
@@ -95,19 +110,26 @@ impl TcpServer {
     }
 
     /// To be called inside a separate task if we want to handle concurrency
-    pub async fn connect(
-        &self,
-        ctk: CancellationToken,
-        addr: String,
-        ob: OutboundPayload,
-    ) -> Result<(), anyhow::Error> {
-        let socket = TcpStream::connect(addr.clone()).await?;
+    pub async fn connect(&self, ctk: CancellationToken, si: SendInfo) -> Result<(), anyhow::Error> {
+        debug!("{INNER_NAME}: Connecting to: {}", si.addr);
+        let socket = match TcpStream::connect(si.addr.clone()).await {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("Couldn't connect to {}: {}", si.addr, e);
+                return Err(anyhow!("failed to connect to {}", si.addr));
+            }
+        };
+
         let mut or = OutboundRequest::new(
             self.endpoint_id,
             socket,
-            addr.clone(),
+            si.id,
             self.sender.clone(),
-            ob,
+            si.ob,
+            RemoteDeviceInfo {
+                device_type: crate::DeviceType::Unknown,
+                name: si.name,
+            },
         );
 
         // Send connection request
@@ -126,13 +148,19 @@ impl TcpServer {
                         match e.downcast_ref() {
                             Some(AppError::NotAnError) => break,
                             None => {
-                                let _ = self.sender.clone().send(ChannelMessage {
-                                    id: addr,
-                                    direction: ChannelDirection::LibToFront,
-                                    state: Some(State::Disconnected),
-                                    ..Default::default()
-                                });
-                                error!("{INNER_NAME}: error while handling client: {e}");
+                                if or.state.state == State::Initial {
+                                    break;
+                                }
+
+                                if or.state.state != State::Finished {
+                                    let _ = self.sender.clone().send(ChannelMessage {
+                                        id: si.addr,
+                                        direction: ChannelDirection::LibToFront,
+                                        state: Some(State::Disconnected),
+                                        ..Default::default()
+                                    });
+                                }
+                                error!("{INNER_NAME}: error while handling client: {e} ({:?})", or.state.state);
                                 break;
                             }
                         }
