@@ -38,6 +38,7 @@ pub enum State {
     ReceivingFiles,
     SendingFiles,
     Disconnected,
+    Cancelled,
     Finished,
 }
 

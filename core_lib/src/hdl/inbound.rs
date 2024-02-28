@@ -96,7 +96,14 @@ impl InboundRequest {
                                 )).await?;
                             },
                             Some(ChannelAction::CancelTransfer) => {
-                                todo!()
+                                self.update_state(
+                                    |e| {
+                                        e.state = State::Cancelled;
+                                    },
+                                    true,
+                                );
+                                self.disconnection().await?;
+                                return Err(anyhow!(crate::errors::AppError::NotAnError));
                             },
                             None => {
                                 trace!("inbound: nothing to do")
@@ -634,7 +641,14 @@ impl InboundRequest {
 
         if v1_frame.r#type() == sharing_nearby::v1_frame::FrameType::Cancel {
             info!("Transfer canceled");
-            return self.disconnection().await;
+            self.update_state(
+                |e| {
+                    e.state = State::Disconnected;
+                },
+                true,
+            );
+            self.disconnection().await?;
+            return Err(anyhow!(crate::errors::AppError::NotAnError));
         }
 
         match self.state.state {

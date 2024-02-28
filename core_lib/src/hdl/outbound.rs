@@ -121,10 +121,17 @@ impl OutboundRequest {
                             return Ok(());
                         }
 
-                        debug!("inbound: got: {:?}", channel_msg);
+                        debug!("outbound: got: {:?}", channel_msg);
                         match channel_msg.action {
                             Some(ChannelAction::CancelTransfer) => {
-                                todo!()
+                                self.update_state(
+                                    |e| {
+                                        e.state = State::Cancelled;
+                                    },
+                                    true,
+                                );
+                                self.disconnection().await?;
+                                return Err(anyhow!(crate::errors::AppError::NotAnError));
                             },
                             None => {
                                 trace!("inbound: nothing to do")
@@ -551,7 +558,14 @@ impl OutboundRequest {
 
         if v1_frame.r#type() == sharing_nearby::v1_frame::FrameType::Cancel {
             info!("Transfer canceled");
-            return self.disconnection().await;
+            self.update_state(
+                |e| {
+                    e.state = State::Disconnected;
+                },
+                true,
+            );
+            self.disconnection().await?;
+            return Err(anyhow!(crate::errors::AppError::NotAnError));
         }
 
         match self.state.state {
@@ -750,13 +764,14 @@ impl OutboundRequest {
                         Some(i) => i,
                         None => {
                             info!("All files have been transferred");
-                            self.disconnection().await?;
                             self.update_state(
                                 |e| {
                                     e.state = State::Finished;
                                 },
                                 true,
                             );
+                            self.disconnection().await?;
+                            // Breaking instead of NotAnError to allow peacefull termination
                             break;
                         }
                     };
@@ -892,11 +907,23 @@ impl OutboundRequest {
                     "Cannot process: consent denied: {:?}",
                     v1_frame.connection_response.as_ref().unwrap().status()
                 );
+                self.update_state(
+                    |e| {
+                        e.state = State::Disconnected;
+                    },
+                    true,
+                );
                 self.disconnection().await?;
                 return Err(anyhow!(crate::errors::AppError::NotAnError));
             }
             sharing_nearby::connection_response_frame::Status::Unknown => {
                 error!("Unknown consent type: aborting");
+                self.update_state(
+                    |e| {
+                        e.state = State::Disconnected;
+                    },
+                    true,
+                );
                 self.disconnection().await?;
                 return Err(anyhow!(crate::errors::AppError::NotAnError));
             }

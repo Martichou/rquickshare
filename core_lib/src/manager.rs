@@ -152,7 +152,7 @@ impl TcpServer {
                                     break;
                                 }
 
-                                if or.state.state != State::Finished {
+                                if or.state.state != State::Finished && or.state.state != State::Cancelled {
                                     let _ = self.sender.clone().send(ChannelMessage {
                                         id: si.addr,
                                         direction: ChannelDirection::LibToFront,
