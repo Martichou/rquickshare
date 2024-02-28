@@ -29,7 +29,7 @@ jobs:
           cd ./core_lib
           cargo build
   build-tauri:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -49,4 +49,9 @@ jobs:
       - name: Build Vite + Tauri
         run: |
           cd ./frontend
-          pnpm build --debug
+          pnpm build
+      - name: Upload deb bundle
+        uses: actions/upload-artifact@v3
+        with:
+          name: Debian Bundle
+          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_0.1.0_amd64.deb
