@@ -2,6 +2,7 @@
 extern crate log;
 
 use channel::ChannelMessage;
+use hdl::BleAdvertiser;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use rand::{distributions, Rng};
 use serde::{Deserialize, Serialize};
@@ -47,6 +48,7 @@ pub struct RQS {
     tracker: TaskTracker,
     ctoken: CancellationToken,
     discovery_ctk: Option<CancellationToken>,
+    blea_ctk: Option<CancellationToken>,
     pub channel: (broadcast::Sender<ChannelMessage>, Receiver<ChannelMessage>),
 }
 
@@ -65,8 +67,9 @@ impl RQS {
         Self {
             tracker,
             ctoken,
-            discovery_ctk: None,
             channel,
+            discovery_ctk: None,
+            blea_ctk: None,
         }
     }
 
@@ -122,8 +125,25 @@ impl RQS {
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
 
+        let blea_ctk = CancellationToken::new();
+        self.blea_ctk = Some(blea_ctk.clone());
+
         let discovery = MDnsDiscovery::new(sender)?;
         self.tracker.spawn(async move { discovery.run(ctk).await });
+
+        self.tracker.spawn(async move {
+            let blea = match BleAdvertiser::new().await {
+                Ok(b) => b,
+                Err(e) => {
+                    error!("Couldn't init BleAdvertiser: {}", e);
+                    return;
+                }
+            };
+
+            if let Err(e) = blea.run(blea_ctk).await {
+                error!("Couldn't start BleAdvertiser: {}", e);
+            }
+        });
 
         Ok(())
     }
@@ -132,6 +152,11 @@ impl RQS {
         if let Some(discovert_ctk) = &self.discovery_ctk {
             discovert_ctk.cancel();
             self.discovery_ctk = None;
+        }
+
+        if let Some(blea_ctk) = &self.blea_ctk {
+            blea_ctk.cancel();
+            self.blea_ctk = None;
         }
     }
 

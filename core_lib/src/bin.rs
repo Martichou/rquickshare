@@ -22,7 +22,6 @@ async fn main() -> Result<(), anyhow::Error> {
     rqs.run().await?;
 
     let discovery_channel = mpsc::channel(10);
-
     rqs.discovery(discovery_channel.0)?;
 
     // Wait for CTRL+C and then stop RQS

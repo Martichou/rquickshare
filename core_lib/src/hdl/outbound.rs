@@ -77,9 +77,7 @@ impl OutboundRequest {
         rdi: RemoteDeviceInfo,
     ) -> Self {
         let receiver = sender.subscribe();
-        let files = match &payload {
-            OutboundPayload::Files(f) => f,
-        };
+        let OutboundPayload::Files(files) = &payload;
 
         Self {
             endpoint_id,
