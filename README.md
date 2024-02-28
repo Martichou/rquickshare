@@ -35,8 +35,8 @@ rquickshare offers two options for using its file sharing capabilities: command 
 	cargo run
 	```
 
-#### Frontend Application (Coming Soon)
-The frontend application, built with the Tauri framework, is currently under development and cannot be used yet. While you can try running it with the following commands, functionality is limited:
+#### Frontend Application
+The frontend application, built with the Tauri framework, is still under development. While you can run it with the following commands, functionality is limited:
 
 1. Install dependencies:
 
