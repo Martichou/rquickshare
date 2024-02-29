@@ -54,4 +54,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Debian Bundle
-          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_0.1.0_amd64.deb
+          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_*_amd64.deb
