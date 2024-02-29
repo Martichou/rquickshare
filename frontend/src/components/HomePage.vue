@@ -10,7 +10,10 @@
 					Rtin
 				</h2>
 			</div>
-			<div>
+			<div class="flex justify-center items-center gap-4">
+				<p class="text-sm">
+					v{{ version }}
+				</p>
 				<div class="hover:bg-gray-200 cursor-pointer p-2 rounded-lg active:scale-105 transition duration-150 ease-in-out">
 					<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
 						<!-- eslint-disable-next-line -->
@@ -253,6 +256,7 @@ import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from "@tauri-apps/api/core"
 import { getCurrent } from '@tauri-apps/api/webview';
+import { getVersion } from '@tauri-apps/api/app';
 import { enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 
@@ -289,7 +293,7 @@ export default {
 	name: "HomePage",
 
 	setup() {
-		return {stateToDisplay, invoke};
+		return {stateToDisplay, invoke, getVersion};
 	},
 
 	data() {
@@ -304,12 +308,16 @@ export default {
 			outboundPayload: ref<OutboundPayload | undefined>(),
 
 			cleanupInterval: opt<NodeJS.Timeout>(),
-			unlisten: Array<UnlistenFn>()
+			unlisten: Array<UnlistenFn>(),
+
+			version: opt<string>()
 		};
 	},
 
 	mounted: function () {
 		nextTick(async () => {
+			this.version = await getVersion();
+
 			// Check start at boot
 			await enable();
 			console.log(`Is auto start: ${await isEnabled()}`);
