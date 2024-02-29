@@ -3808,7 +3808,7 @@ dependencies = [
 
 [[package]]
 name = "rquickshare_frontend"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "anyhow",
  "log",
