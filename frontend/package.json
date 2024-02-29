@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\"",
+    "deb:build": "tauri build -b deb",
     "build": "tauri build",
     "vite:dev": "vite dev",
     "vite:build": "vite build",

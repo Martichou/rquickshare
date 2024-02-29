@@ -28,6 +28,7 @@ jobs:
       - run: |
           cd ./core_lib
           cargo build
+
   build-tauri:
     runs-on: ubuntu-latest
     steps:
@@ -49,9 +50,9 @@ jobs:
       - name: Build Vite + Tauri
         run: |
           cd ./frontend
-          pnpm build
+          pnpm deb:build
       - name: Upload deb bundle
         uses: actions/upload-artifact@v3
         with:
-          name: Debian Bundle
+          name: artifact-debug-rquickshare
           path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_*_amd64.*

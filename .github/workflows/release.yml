@@ -1,0 +1,41 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag Name'
+        required: true
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build-release:
+    if: startsWith(github.ref_name, 'rquickshare')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libjavascriptcoregtk-4.1-dev libdbus-1-dev libgtk-4-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Build Vite + Tauri
+        run: |
+          cd ./frontend
+          pnpm build
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_*_amd64.*
+          fail_on_unmatched_files: true
+
