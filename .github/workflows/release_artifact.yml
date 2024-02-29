@@ -1,8 +1,9 @@
 name: Include Artifact in Release
 
 on:
+  workflow_dispatch:
   release:
-    types: [created]
+    types: [published]
 
 permissions:
   contents: write
