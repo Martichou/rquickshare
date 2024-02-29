@@ -66,6 +66,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
         }))
+        .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             js2rs,
             open,
