@@ -40,8 +40,7 @@
     "devUrl": "http://localhost:1420"
   },
   "productName": "RQuickShare",
-  "version": "0.1.0",
-  "identifier": "net.uninen.dev",
+  "identifier": "dev.mandre.rquickshare",
   "plugins": {},
   "app": {
     "windows": [
