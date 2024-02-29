@@ -3774,7 +3774,7 @@ dependencies = [
 
 [[package]]
 name = "rquickshare"
-version = "1.0.2"
+version = "1.0.1"
 dependencies = [
  "anyhow",
  "log",
