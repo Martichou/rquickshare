@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/Martichou/rquickshare/compare/rquickshare_frontend-v1.0.0...rquickshare_frontend-v1.0.1) (2024-02-29)
+
+
+### Miscellaneous Chores
+
+* release 1.0.1 ([4a7538e](https://github.com/Martichou/rquickshare/commit/4a7538ec456684f2b6febc9f3aa9bbe5f9ffbeca))
+
 ## [1.0.0](https://github.com/Martichou/rquickshare/compare/rquickshare_frontend-v0.1.0...rquickshare_frontend-v1.0.0) (2024-02-29)
 
 
