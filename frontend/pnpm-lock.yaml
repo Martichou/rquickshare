@@ -11,6 +11,9 @@ dependencies:
   '@tauri-apps/api':
     specifier: 1.5.1
     version: 1.5.1
+  tauri-plugin-autostart-api:
+    specifier: github:tauri-apps/tauri-plugin-autostart#v1
+    version: github.com/tauri-apps/tauri-plugin-autostart/baadcffe9729f33c41baab7b23d83100960e22d5
   vue:
     specifier: 3.3.11
     version: 3.3.11(typescript@5.3.3)
@@ -698,6 +701,11 @@ packages:
 
   /@tauri-apps/api@1.5.1:
     resolution: {integrity: sha512-6unsZDOdlXTmauU3NhWhn+Cx0rODV+rvNvTdvolE5Kls5ybA6cqndQENDt1+FS0tF7ozCP66jwWoH6a5h90BrA==}
+    engines: {node: '>= 14.6.0', npm: '>= 6.6.0', yarn: '>= 1.19.1'}
+    dev: false
+
+  /@tauri-apps/api@1.5.3:
+    resolution: {integrity: sha512-zxnDjHHKjOsrIzZm6nO5Xapb/BxqUq1tc7cGkFXsFkGTsSWgCPH1D8mm0XS9weJY2OaR73I3k3S+b7eSzJDfqA==}
     engines: {node: '>= 14.6.0', npm: '>= 6.6.0', yarn: '>= 1.19.1'}
     dev: false
 
@@ -4189,3 +4197,11 @@ packages:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
     dev: true
+
+  github.com/tauri-apps/tauri-plugin-autostart/baadcffe9729f33c41baab7b23d83100960e22d5:
+    resolution: {tarball: https://codeload.github.com/tauri-apps/tauri-plugin-autostart/tar.gz/baadcffe9729f33c41baab7b23d83100960e22d5}
+    name: tauri-plugin-autostart-api
+    version: 0.0.0
+    dependencies:
+      '@tauri-apps/api': 1.5.3
+    dev: false

@@ -13,6 +13,7 @@ use rquickshare::{EndpointInfo, SendInfo, RQS};
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
 };
+use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use tokio::sync::broadcast;
 use tokio::sync::mpsc;
 
@@ -74,6 +75,11 @@ async fn main() -> Result<(), anyhow::Error> {
             stop_discovery
         ])
         .setup(|app| {
+            let autostart_manager = app.autolaunch();
+            let _ = autostart_manager.enable();
+
+            debug!("Autostart: {}", autostart_manager.is_enabled().unwrap());
+
             let app_handle = app.handle();
             tauri::async_runtime::spawn(async move {
                 loop {
@@ -124,6 +130,10 @@ async fn main() -> Result<(), anyhow::Error> {
             }
             _ => {}
         })
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app_handle, event| {

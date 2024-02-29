@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-	"dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\"",
+    "dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\"",
     "build": "tauri build",
     "vite:dev": "vite dev",
     "vite:build": "vite build",
@@ -16,12 +16,13 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore"
   },
   "dependencies": {
+    "@martichou/core_lib": "../core_lib",
     "@tauri-apps/api": "1.5.1",
-	"@martichou/core_lib": "../core_lib",
+    "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1",
     "vue": "3.3.11"
   },
   "devDependencies": {
-	"@stylistic/eslint-plugin": "^1.6.2",
+    "@stylistic/eslint-plugin": "^1.6.2",
     "@tailwindcss/typography": "^0.5.10",
     "@tauri-apps/cli": "1.5.7",
     "@types/node": "20.10.4",
