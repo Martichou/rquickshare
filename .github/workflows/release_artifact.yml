@@ -1,0 +1,54 @@
+name: Include Artifact in Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: arduino/setup-protoc@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libjavascriptcoregtk-4.1-dev libdbus-1-dev libgtk-4-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Build Vite + Tauri
+        run: |
+          cd ./frontend
+          pnpm build
+      - name: Upload deb bundle
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact-rquickshare
+          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_*_amd64.*
+
+  make-release:
+    name: Make release
+    runs-on: ubuntu-latest
+    needs: [build-release]
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: artifact-*
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/*
+          fail_on_unmatched_files: true
+          tag_name: ${{ github.event.release.tag_name }}

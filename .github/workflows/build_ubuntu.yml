@@ -50,7 +50,7 @@ jobs:
       - name: Build Vite + Tauri
         run: |
           cd ./frontend
-          pnpm build --debug
+          pnpm deb:build
       - name: Upload deb bundle
         uses: actions/upload-artifact@v3
         with:
