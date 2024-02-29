@@ -242,14 +242,6 @@
 							</div>
 						</div>
 					</div>
-
-					<div v-if="item.state === 'ReceivingFiles'" class="my-auto">
-						<div class="hover:bg-gray-200 cursor-pointer p-2 rounded-full active:scale-105 transition duration-150 ease-in-out">
-							<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-								<path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
-							</svg>
-						</div>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -258,7 +250,7 @@
 
 <script lang="ts">
 import { ref, nextTick } from 'vue'
-import { listen } from '@tauri-apps/api/event'
+import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
 import { appWindow } from "@tauri-apps/api/window";
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification'
@@ -311,6 +303,7 @@ export default {
 			outboundPayload: ref<OutboundPayload | undefined>(),
 
 			cleanupInterval: opt<NodeJS.Timeout>(),
+			unlisten: Array<UnlistenFn>()
 		};
 	},
 
@@ -343,78 +336,86 @@ export default {
 				});
 			}, 30000);
 
-			await listen('rs2js', (event) => {
-				const cm = event.payload as ChannelMessage;
-				console.log("rs2js:", cm);
+			this.unlisten.push(
+				await listen('rs2js', (event) => {
+					const cm = event.payload as ChannelMessage;
+					console.log("rs2js:", cm);
 
-				const idx = this.requests.findIndex((el) => el.id === cm.id);
+					const idx = this.requests.findIndex((el) => el.id === cm.id);
 
-				if (cm.state === "Disconnected") {
-					this.toDelete.push({
-						id: cm.id,
-						triggered: new Date().getTime()
-					});
-				}
-
-				if (idx !== -1) {
-					const prev = this.requests.at(idx);
-					// Update the existing message at index 'idx'
-					this.requests.splice(idx, 1, {
-						...cm,
-						state: cm.state ?? prev!.state,
-						meta: cm.meta ?? prev!.meta,
-					});
-				} else {
-					if (this.isAppInForeground && permissionGranted && cm.state === 'WaitingForUserConsent') {
-						sendNotification({ title: 'New transfer request', body: (cm.meta?.source?.name ?? 'Unknown') + ' want to initiate a transfer.' });
+					if (cm.state === "Disconnected") {
+						this.toDelete.push({
+							id: cm.id,
+							triggered: new Date().getTime()
+						});
 					}
 
-					// Push the new message if not found
-					this.requests.push(cm);
-				}
-			})
-
-			await listen('rs2js_discovery', (event) => {
-				const ei = event.payload as EndpointInfo;
-				console.log("rs2js:", ei);
-
-				const idx = this.endpointsInfo.findIndex((el) => el.id === ei.id);
-				if (!ei.present) {
 					if (idx !== -1) {
-						this.endpointsInfo.splice(idx, 1);
+						const prev = this.requests.at(idx);
+						// Update the existing message at index 'idx'
+						this.requests.splice(idx, 1, {
+							...cm,
+							state: cm.state ?? prev!.state,
+							meta: cm.meta ?? prev!.meta,
+						});
+					} else {
+						if (this.isAppInForeground && permissionGranted && cm.state === 'WaitingForUserConsent') {
+							sendNotification({ title: 'RQuickShare', body: (cm.meta?.source?.name ?? 'Unknown') + ' want to initiate a transfer' });
+						}
+
+						// Push the new message if not found
+						this.requests.push(cm);
+					}
+				})
+			);
+
+			this.unlisten.push(
+				await listen('rs2js_discovery', (event) => {
+					const ei = event.payload as EndpointInfo;
+					console.log("rs2js:", ei);
+
+					const idx = this.endpointsInfo.findIndex((el) => el.id === ei.id);
+					if (!ei.present) {
+						if (idx !== -1) {
+							this.endpointsInfo.splice(idx, 1);
+						}
+
+						return;
 					}
 
-					return;
-				}
+					if (idx !== -1) {
+						this.endpointsInfo.splice(idx, 1, ei);
+					} else {
+						this.endpointsInfo.push(ei);
+					}
+				})
+			);
 
-				if (idx !== -1) {
-					this.endpointsInfo.splice(idx, 1, ei);
-				} else {
-					this.endpointsInfo.push(ei);
-				}
-			});
-
-			await appWindow.onFileDropEvent(async (event) => {
-				if (event.payload.type === 'hover') {
-					this.isDragHovering = true;
-				} else if (event.payload.type === 'drop') {
-					console.log("Dropped");
-					this.isDragHovering = false;
-					this.outboundPayload = {
-						Files: event.payload.paths
-					} as OutboundPayload;
-					if (!this.discoveryRunning) await invoke('start_discovery');
-					this.discoveryRunning = true;
-				} else {
-					this.isDragHovering = false;
-				}
-			});
+			this.unlisten.push(
+				await appWindow.onFileDropEvent(async (event) => {
+					if (event.payload.type === 'hover') {
+						this.isDragHovering = true;
+					} else if (event.payload.type === 'drop') {
+						console.log("Dropped");
+						this.isDragHovering = false;
+						this.outboundPayload = {
+							Files: event.payload.paths
+						} as OutboundPayload;
+						if (!this.discoveryRunning) await invoke('start_discovery');
+						this.discoveryRunning = true;
+					} else {
+						this.isDragHovering = false;
+					}
+				})
+			);
 		});
 	},
 
 	unmounted: function() {
 		window.removeEventListener('focus', this._handleFocus);
 		window.removeEventListener('blur', this._handleBlur);
+
+		this.unlisten.forEach((el) => el());
 
 		if (this.cleanupInterval && this.cleanupInterval[Symbol.dispose]) {
 			this.cleanupInterval[Symbol.dispose]();
@@ -509,10 +510,12 @@ export default {
 			await invoke('js2rs', { message: cm });
 		},
 		_handleFocus: function() {
-			this.isAppInForeground = true;
+			this.isAppInForeground = false;
+			console.log("isAppInForeground: false");
 		},
 		_handleBlur: function() {
-			this.isAppInForeground = false;
+			this.isAppInForeground = true;
+			console.log("isAppInForeground: true");
 		}
 	},
 }

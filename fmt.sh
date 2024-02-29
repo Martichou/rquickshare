@@ -1,5 +1,8 @@
 #!/bin/bash
 
+cargo-sort ./core_lib/Cargo.toml
+cargo-sort ./frontend/src-tauri/Cargo.toml
+
 for dir in core_lib frontend/src-tauri; do
   find "$dir" -name '*.rs' -not -path "*/target/*" -exec rustfmt {} +
 done
@@ -16,5 +19,3 @@ if git diff --name-only HEAD | grep '^frontend/src/' >/dev/null; then
 else
     echo "No changes detected in /frontend/src."
 fi
-
-cargo-sort core_lib/Cargo.toml frontend/src-tauri/Cargo.toml
