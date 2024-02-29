@@ -1,5 +1,4 @@
 {
-	"bootstrap-sha": "45d9d7c61761e40114a6e96b4f6bc6069fc1487f",
     "packages": {
         "core_lib": {
             "changelog-path": "CHANGELOG.md",
@@ -7,9 +6,7 @@
         },
         "frontend/src-tauri": {
             "changelog-path": "CHANGELOG.md",
-            "release-type": "rust",
-            "skip-github-release": true
-        }
+            "release-type": "rust"        }
     },
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
 }
