@@ -49,7 +49,7 @@
 							<path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
 						</svg>
 					</div>
-					<p v-for="f in outboundPayload.Files" :key="f">
+					<p v-for="f in outboundPayload.Files" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
 						{{ f.split('/').pop() }}
 					</p>
 
@@ -170,14 +170,14 @@
 							</div>
 						</div>
 
-						<div v-else-if="['SentIntroduction', 'ReceivingFiles'].includes(item.state ?? 'Initial')">
-							<p class="mt-2" v-if="item.state === 'SentIntroduction'">
+						<div v-else-if="['SentIntroduction', 'SendingFiles', 'ReceivingFiles'].includes(item.state ?? 'Initial')">
+							<p class="mt-2" v-if="['SentIntroduction', 'SendingFiles'].includes(item.state ?? 'Initial')">
 								Sending...
 							</p>
 							<p class="mt-2" v-else>
 								Receiving...
 							</p>
-							<p v-for="f in item.files ?? []" :key="f">
+							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ f }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
@@ -251,9 +251,10 @@
 <script lang="ts">
 import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
-import { invoke } from '@tauri-apps/api/tauri'
-import { appWindow } from "@tauri-apps/api/window";
-import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/api/notification'
+import { invoke } from "@tauri-apps/api/core"
+import { getCurrent } from '@tauri-apps/api/webview';
+import { enable, isEnabled } from "@tauri-apps/plugin-autostart";
+import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 
 import { opt } from '../utils';
 import { ChannelMessage } from '../../../core_lib/bindings/ChannelMessage';
@@ -282,13 +283,13 @@ interface DisplayedItem {
 	destination?: string,
 }
 
-const _stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled"]
+const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled"]
 
 export default {
 	name: "HomePage",
 
 	setup() {
-		return {_stateToDisplay, invoke};
+		return {stateToDisplay, invoke};
 	},
 
 	data() {
@@ -309,16 +310,16 @@ export default {
 
 	mounted: function () {
 		nextTick(async () => {
-			let permissionGranted = await isPermissionGranted();
+			// Check start at boot
+			await enable();
+			console.log(`Is auto start: ${await isEnabled()}`);
 
-			// If not granted we need to request it
+			// Check permission for notification
+			let permissionGranted = await isPermissionGranted();
 			if (!permissionGranted) {
 				const permission = await requestPermission();
 				permissionGranted = permission === 'granted';
 			}
-
-			window.addEventListener('focus', this._handleFocus);
-			window.addEventListener('blur', this._handleBlur);
 
 			this.cleanupInterval = setInterval(() => {
 				this.toDelete.forEach((itemToDelete) => {
@@ -337,7 +338,7 @@ export default {
 			}, 30000);
 
 			this.unlisten.push(
-				await listen('rs2js', (event) => {
+				await listen('rs2js', async (event) => {
 					const cm = event.payload as ChannelMessage;
 					console.log("rs2js:", cm);
 
@@ -359,13 +360,11 @@ export default {
 							meta: cm.meta ?? prev!.meta,
 						});
 					} else {
-						if (this.isAppInForeground && permissionGranted && cm.state === 'WaitingForUserConsent') {
-							sendNotification({ title: 'RQuickShare', body: (cm.meta?.source?.name ?? 'Unknown') + ' want to initiate a transfer' });
-						}
-
 						// Push the new message if not found
 						this.requests.push(cm);
 					}
+
+					return;
 				})
 			);
 
@@ -392,7 +391,7 @@ export default {
 			);
 
 			this.unlisten.push(
-				await appWindow.onFileDropEvent(async (event) => {
+				await getCurrent().onFileDropEvent(async (event) => {
 					if (event.payload.type === 'hover') {
 						this.isDragHovering = true;
 					} else if (event.payload.type === 'drop') {
@@ -412,9 +411,6 @@ export default {
 	},
 
 	unmounted: function() {
-		window.removeEventListener('focus', this._handleFocus);
-		window.removeEventListener('blur', this._handleBlur);
-
 		this.unlisten.forEach((el) => el());
 
 		if (this.cleanupInterval && this.cleanupInterval[Symbol.dispose]) {
@@ -441,7 +437,7 @@ export default {
 				})
 			});
 
-			this.requests.filter((el) => _stateToDisplay.includes(el.state ?? 'Initial')).forEach((el) => {
+			this.requests.filter((el) => stateToDisplay.includes(el.state ?? 'Initial')).forEach((el) => {
 				const idx = ndisplayed.findIndex((nel) => el.id == nel.id);
 				const elem: DisplayedItem = {
 					id: el.id,
@@ -508,14 +504,6 @@ export default {
 			console.log("js2rs:", cm);
 
 			await invoke('js2rs', { message: cm });
-		},
-		_handleFocus: function() {
-			this.isAppInForeground = false;
-			console.log("isAppInForeground: false");
-		},
-		_handleBlur: function() {
-			this.isAppInForeground = true;
-			console.log("isAppInForeground: true");
 		}
 	},
 }

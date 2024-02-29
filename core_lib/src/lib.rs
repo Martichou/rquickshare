@@ -2,6 +2,7 @@
 extern crate log;
 
 use channel::ChannelMessage;
+#[cfg(feature = "experimental")]
 use hdl::BleAdvertiser;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use rand::{distributions, Rng};
@@ -23,7 +24,7 @@ mod hdl;
 mod manager;
 mod utils;
 
-pub use hdl::OutboundPayload;
+pub use hdl::{OutboundPayload, State};
 pub use manager::SendInfo;
 pub use utils::DeviceType;
 
@@ -131,6 +132,7 @@ impl RQS {
         let discovery = MDnsDiscovery::new(sender)?;
         self.tracker.spawn(async move { discovery.run(ctk).await });
 
+        #[cfg(feature = "experimental")]
         self.tracker.spawn(async move {
             let blea = match BleAdvertiser::new().await {
                 Ok(b) => b,

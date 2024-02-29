@@ -8,14 +8,17 @@ extern crate log;
 
 use std::sync::Mutex;
 
-use rquickshare::channel::{ChannelDirection, ChannelMessage};
-use rquickshare::{EndpointInfo, SendInfo, RQS};
-use tauri::{
-    CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
-};
-use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
-use tokio::sync::broadcast;
-use tokio::sync::mpsc;
+use notify_rust::Notification;
+use rquickshare::channel::{ChannelAction, ChannelDirection, ChannelMessage};
+use rquickshare::{EndpointInfo, SendInfo, State, RQS};
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::TrayIconBuilder;
+use tauri::{AppHandle, Manager};
+use tauri_plugin_autostart::MacosLauncher;
+use tokio::sync::{broadcast, mpsc};
+
+#[cfg(not(target_os = "linux"))]
+use tauri_plugin_notification::NotificationExt;
 
 pub struct AppState {
     pub sender: broadcast::Sender<ChannelMessage>,
@@ -47,18 +50,6 @@ async fn main() -> Result<(), anyhow::Error> {
     let (dch_sender, mut dch_receiver) = mpsc::channel(10);
     let (sender, mut receiver) = (rqs.channel.0.clone(), rqs.channel.1.resubscribe());
 
-    // Configure System Tray
-    let test = CustomMenuItem::new("test".to_string(), "Test");
-    let show = CustomMenuItem::new("show".to_string(), "Show");
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(show)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(quit)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(test);
-    let tray = SystemTray::new().with_menu(tray_menu);
-
     // Build and run Tauri app
     tauri::Builder::default()
         .manage(AppState {
@@ -67,24 +58,72 @@ async fn main() -> Result<(), anyhow::Error> {
             rqs: Mutex::new(rqs),
             dch_sender: dch_sender,
         })
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            println!("{}, {argv:?}, {cwd}", app.package_info().name);
+        }))
         .invoke_handler(tauri::generate_handler![
             js2rs,
             open,
             send_payload,
             start_discovery,
-            stop_discovery
+            stop_discovery,
+            sanity_check
         ])
         .setup(|app| {
-            let autostart_manager = app.autolaunch();
-            let _ = autostart_manager.enable();
+            debug!("Starting setup of Tauri app");
+            // Setup system tray
+            let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
+            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .on_menu_event(move |app, event| match event.id().as_ref() {
+                    "show" => {
+                        let app = app.app_handle();
+                        if let Some(webview_window) = app.get_webview_window("main") {
+                            let _ = webview_window.show();
+                            let _ = webview_window.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        tokio::task::block_in_place(|| {
+                            tauri::async_runtime::block_on(async move {
+                                let state: tauri::State<'_, AppState> = app.state();
+                                let _ = state.rqs.lock().unwrap().stop().await;
 
-            debug!("Autostart: {}", autostart_manager.is_enabled().unwrap());
+                                std::process::exit(0);
+                            });
+                        });
+                    }
+                    _ => (),
+                })
+                .build(app)?;
 
-            let app_handle = app.handle();
+            let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 loop {
                     match receiver.recv().await {
-                        Ok(info) => rs2js(info, &app_handle),
+                        Ok(info) => {
+                            if info.state.as_ref().unwrap_or(&State::Initial)
+                                == &State::WaitingForUserConsent
+                            {
+                                let name = info
+                                    .meta
+                                    .as_ref()
+                                    .and_then(|meta| meta.source.as_ref())
+                                    .map(|source| source.name.clone())
+                                    .unwrap_or_else(|| "Unknown".to_string());
+
+                                send_request_notification(name, info.id.clone(), &app_handle);
+                            }
+
+                            rs2js(info, &app_handle);
+                        }
                         Err(e) => {
                             error!("Error getting receiver message: {}", e);
                         }
@@ -92,11 +131,11 @@ async fn main() -> Result<(), anyhow::Error> {
                 }
             });
 
-            let capp_handle = app.handle();
+            let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 loop {
                     match dch_receiver.recv().await {
-                        Some(info) => rs2js_discovery(info, &capp_handle),
+                        Some(info) => rs2js_discovery(info, &app_handle),
                         None => {
                             error!("Error getting dch_receiver message");
                         }
@@ -106,34 +145,13 @@ async fn main() -> Result<(), anyhow::Error> {
 
             Ok(())
         })
-        .system_tray(tray)
-        .on_system_tray_event(|_app, event| {
-            if let SystemTrayEvent::MenuItemClick { id, .. } = event {
-                match id.as_str() {
-                    "show" => {
-                        let widow = _app.get_window("main").unwrap();
-                        let _ = widow.show();
-                        let _ = widow.set_focus();
-                    }
-                    "quit" => {
-                        // TODO - Clean exit
-                        std::process::exit(0);
-                    }
-                    _ => {}
-                }
-            }
-        })
-        .on_window_event(|event| match event.event() {
+        .on_window_event(|w, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                event.window().hide().unwrap();
+                w.hide().unwrap();
                 api.prevent_close();
             }
             _ => {}
         })
-        .plugin(tauri_plugin_autostart::init(
-            MacosLauncher::LaunchAgent,
-            None,
-        ))
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app_handle, event| {
@@ -152,12 +170,12 @@ fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) 
     }
 
     info!("rs2js: {:?}", &message);
-    manager.emit_all("rs2js", &message).unwrap();
+    manager.emit("rs2js", &message).unwrap();
 }
 
 fn rs2js_discovery<R: tauri::Runtime>(message: EndpointInfo, manager: &impl Manager<R>) {
     info!("rs2js_discovery: {:?}", &message);
-    manager.emit_all("rs2js_discovery", &message).unwrap();
+    manager.emit("rs2js_discovery", &message).unwrap();
 }
 
 #[tauri::command]
@@ -208,4 +226,61 @@ fn stop_discovery(state: tauri::State<'_, AppState>) {
     info!("stop_discovery");
 
     state.rqs.lock().unwrap().stop_discovery();
+}
+
+#[tauri::command]
+fn sanity_check() {
+    info!("sanity_check");
+}
+
+fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
+    let body = format!("{name} want to initiate a transfer");
+
+    #[cfg(target_os = "linux")]
+    match Notification::new()
+        .summary("RQuickShare")
+        .body(&body)
+        .action("accept", "Accept")
+        .action("reject", "Reject")
+        .show()
+    {
+        Ok(n) => {
+            n.wait_for_action(|action| match action {
+                "accept" => {
+                    let _ = js2rs(
+                        ChannelMessage {
+                            id,
+                            direction: ChannelDirection::FrontToLib,
+                            action: Some(ChannelAction::AcceptTransfer),
+                            ..Default::default()
+                        },
+                        app_handle.state(),
+                    );
+                }
+                "reject" => {
+                    let _ = js2rs(
+                        ChannelMessage {
+                            id,
+                            direction: ChannelDirection::FrontToLib,
+                            action: Some(ChannelAction::RejectTransfer),
+                            ..Default::default()
+                        },
+                        app_handle.state(),
+                    );
+                }
+                _ => (),
+            });
+        }
+        Err(e) => {
+            error!("Couldn't show notification: {}", e);
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    let _ = app_handle
+        .notification()
+        .builder()
+        .title("RQuickShare")
+        .body(&body)
+        .show();
 }
