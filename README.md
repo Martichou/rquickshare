@@ -10,10 +10,10 @@
 [![CI](https://github.com/Martichou/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 [![CI](https://github.com/Martichou/rquickshare/actions/workflows/clippy.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 
-[![AGPL License](https://img.shields.io/badge/license-AGPL-blue.svg)](LICENSE)
-
   </p>
 </div>
+
+![demo image](.github/demo.png)
 
 (WIP) How to use
 --------------------------
