@@ -1,8 +1,10 @@
 {
+	"bootstrap-sha": "45d9d7c61761e40114a6e96b4f6bc6069fc1487f",
     "packages": {
         "core_lib": {
             "changelog-path": "CHANGELOG.md",
-            "release-type": "rust"
+            "release-type": "rust",
+			"skip-github-release": true
         },
         "frontend/src-tauri": {
             "changelog-path": "CHANGELOG.md",
