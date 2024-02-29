@@ -3773,8 +3773,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "rquickshare"
-version = "0.1.0"
+name = "rqs_lib"
+version = "1.0.1"
 dependencies = [
  "anyhow",
  "base64",
@@ -3807,14 +3807,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "rquickshare_frontend"
-version = "0.1.0"
+name = "rquickshare"
+version = "1.0.2"
 dependencies = [
  "anyhow",
  "log",
  "notify-rust",
  "open",
- "rquickshare",
+ "rqs_lib",
  "serde",
  "serde_json",
  "tauri",

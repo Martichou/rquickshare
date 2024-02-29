@@ -1,0 +1,31 @@
+name: Release-please
+
+on:
+  push:
+    branches:
+      - master
+    tags-ignore:
+      - '**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release-please-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        with:
+          token: ${{ secrets.GH_PAT_RELEASE_ACCESS }}
+          skip-github-pull-request: true
+
+  release-please-pr:
+    runs-on: ubuntu-latest
+    needs: release-please-tag
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        with:
+          skip-github-release: true

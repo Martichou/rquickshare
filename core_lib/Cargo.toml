@@ -1,7 +1,8 @@
 [package]
-name = "rquickshare"
-version = "0.1.0"
+name = "rqs_lib"
+version = "1.0.1"
 edition = "2021"
+authors = ["martichou"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
