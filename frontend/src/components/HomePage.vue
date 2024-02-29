@@ -14,12 +14,24 @@
 				<p class="text-sm">
 					v{{ version }}
 				</p>
-				<div class="hover:bg-gray-200 cursor-pointer p-2 rounded-lg active:scale-105 transition duration-150 ease-in-out">
-					<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-						<!-- eslint-disable-next-line -->
-						<path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z" />
-					</svg>
-				</div>
+				<details class="dropdown dropdown-end">
+					<summary class="hover:bg-gray-200 cursor-pointer p-2 rounded-lg active:scale-105 transition duration-150 ease-in-out">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+							<!-- eslint-disable-next-line -->
+							<path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z" />
+						</svg>
+					</summary>
+					<ul class="mt-2 p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-56">
+						<li>
+							<span class="active:!bg-green-100 active:!text-black" v-if="autostart" @click="setAutostart(false)">
+								Disable start on boot
+							</span>
+							<span class="active:!bg-green-100 active:!text-black" v-else @click="setAutostart(true)">
+								Enable start on boot
+							</span>
+						</li>
+					</ul>
+				</details>
 			</div>
 		</div>
 		<div class="flex-1 flex flex-row">
@@ -257,7 +269,8 @@ import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from "@tauri-apps/api/core"
 import { getCurrent } from '@tauri-apps/api/webview';
 import { getVersion } from '@tauri-apps/api/app';
-import { enable, isEnabled } from "@tauri-apps/plugin-autostart";
+import { Store } from "@tauri-apps/plugin-store";
+import { disable, enable } from "@tauri-apps/plugin-autostart";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 
 import { opt } from '../utils';
@@ -287,13 +300,16 @@ interface DisplayedItem {
 	destination?: string,
 }
 
+const autostartKey = "autostart";
 const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled"]
 
 export default {
 	name: "HomePage",
 
 	setup() {
-		return {stateToDisplay, invoke, getVersion};
+		const store = new Store(".settings.json");
+
+		return {stateToDisplay, invoke, getVersion, store};
 	},
 
 	data() {
@@ -310,7 +326,9 @@ export default {
 			cleanupInterval: opt<NodeJS.Timeout>(),
 			unlisten: Array<UnlistenFn>(),
 
-			version: opt<string>()
+			version: opt<string>(),
+
+			autostart: ref<boolean>(true)
 		};
 	},
 
@@ -318,9 +336,12 @@ export default {
 		nextTick(async () => {
 			this.version = await getVersion();
 
-			// Check start at boot
-			await enable();
-			console.log(`Is auto start: ${await isEnabled()}`);
+			if (!await this.store.has(autostartKey)) {
+				await enable();
+				await this.setAutostart(true);
+			} else {
+				await this.getAutostart();
+			}
 
 			// Check permission for notification
 			let permissionGranted = await isPermissionGranted();
@@ -472,6 +493,22 @@ export default {
 	},
 
 	methods: {
+		setAutostart: async function(autostart: boolean) {
+			console.log(`setAutostart: ${autostart}`);
+			if (autostart) {
+				await enable();
+			} else {
+				await disable();
+			}
+
+			await this.store.set(autostartKey, autostart);
+			await this.store.save();
+			this.autostart = autostart;
+		},
+		getAutostart: async function() {
+			this.autostart = await this.store.get(autostartKey) ?? false;
+			return this.autostart;
+		},
 		clearSending: async function() {
 			await invoke('stop_discovery');
 			this.outboundPayload = undefined;

@@ -3822,6 +3822,7 @@ dependencies = [
  "tauri-plugin-autostart",
  "tauri-plugin-notification",
  "tauri-plugin-single-instance",
+ "tauri-plugin-store",
  "tokio",
  "tokio-util",
  "tracing-subscriber",
@@ -4722,6 +4723,20 @@ dependencies = [
  "thiserror",
  "windows-sys 0.52.0",
  "zbus 4.1.2",
+]
+
+[[package]]
+name = "tauri-plugin-store"
+version = "2.0.0-beta.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f023f235e8d505f4e6b6a5f15374e7e77e02223f5d56ba6bdcf4fb2dcfc66d96"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-plugin",
+ "thiserror",
 ]
 
 [[package]]

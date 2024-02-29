@@ -818,6 +818,174 @@
           ]
         },
         {
+          "description": "store:allow-clear -> Enables the clear command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-clear"
+          ]
+        },
+        {
+          "description": "store:allow-delete -> Enables the delete command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-delete"
+          ]
+        },
+        {
+          "description": "store:allow-entries -> Enables the entries command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-entries"
+          ]
+        },
+        {
+          "description": "store:allow-get -> Enables the get command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-get"
+          ]
+        },
+        {
+          "description": "store:allow-has -> Enables the has command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-has"
+          ]
+        },
+        {
+          "description": "store:allow-keys -> Enables the keys command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-keys"
+          ]
+        },
+        {
+          "description": "store:allow-length -> Enables the length command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-length"
+          ]
+        },
+        {
+          "description": "store:allow-load -> Enables the load command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-load"
+          ]
+        },
+        {
+          "description": "store:allow-reset -> Enables the reset command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-reset"
+          ]
+        },
+        {
+          "description": "store:allow-save -> Enables the save command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-save"
+          ]
+        },
+        {
+          "description": "store:allow-set -> Enables the set command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-set"
+          ]
+        },
+        {
+          "description": "store:allow-values -> Enables the values command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:allow-values"
+          ]
+        },
+        {
+          "description": "store:deny-clear -> Denies the clear command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-clear"
+          ]
+        },
+        {
+          "description": "store:deny-delete -> Denies the delete command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-delete"
+          ]
+        },
+        {
+          "description": "store:deny-entries -> Denies the entries command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-entries"
+          ]
+        },
+        {
+          "description": "store:deny-get -> Denies the get command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-get"
+          ]
+        },
+        {
+          "description": "store:deny-has -> Denies the has command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-has"
+          ]
+        },
+        {
+          "description": "store:deny-keys -> Denies the keys command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-keys"
+          ]
+        },
+        {
+          "description": "store:deny-length -> Denies the length command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-length"
+          ]
+        },
+        {
+          "description": "store:deny-load -> Denies the load command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-load"
+          ]
+        },
+        {
+          "description": "store:deny-reset -> Denies the reset command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-reset"
+          ]
+        },
+        {
+          "description": "store:deny-save -> Denies the save command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-save"
+          ]
+        },
+        {
+          "description": "store:deny-set -> Denies the set command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-set"
+          ]
+        },
+        {
+          "description": "store:deny-values -> Denies the values command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "store:deny-values"
+          ]
+        },
+        {
           "description": "tray:default -> Default permissions for the plugin.",
           "type": "string",
           "enum": [
