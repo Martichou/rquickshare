@@ -1641,7 +1641,7 @@ dependencies = [
 
 [[package]]
 name = "rqs_lib"
-version = "1.0.1"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "base64",
