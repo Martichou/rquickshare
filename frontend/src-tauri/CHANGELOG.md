@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/Martichou/rquickshare/compare/rquickshare-v1.0.1...rquickshare-v1.0.2) (2024-02-29)
+
+
+### Bug Fixes
+
+* improve release process ([f08f42b](https://github.com/Martichou/rquickshare/commit/f08f42b7ab33e9bb35e7f5afa556997269f872c1))
+* rename pkg for prettier name ([122d38a](https://github.com/Martichou/rquickshare/commit/122d38a2dff944e0d3e2aa5c90138cb586467d0a))
+
 ## [1.0.1](https://github.com/Martichou/rquickshare/compare/rquickshare_frontend-v1.0.0...rquickshare_frontend-v1.0.1) (2024-02-29)
 
 
