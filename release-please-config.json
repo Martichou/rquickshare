@@ -7,9 +7,7 @@
         },
         "frontend/src-tauri": {
             "changelog-path": "CHANGELOG.md",
-            "release-type": "rust",
-			"skip-github-release": true
-		}
+            "release-type": "rust"		}
     },
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
 }
