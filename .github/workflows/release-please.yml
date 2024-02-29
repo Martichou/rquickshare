@@ -12,12 +12,8 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
 
-    permissions:
-      issues: write
-      contents: write
-      packages: write
-      pull-requests: write
-
     steps:
       - uses: google-github-actions/release-please-action@v4
         id: release
+        with:
+          token: ${{ secrets.GH_PAT_RELEASE_ACCESS }}
