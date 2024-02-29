@@ -1,5 +1,6 @@
 <div align="center">
   <h1>rquickshare</h1>
+
   <p>
     <strong>NearbyShare/QuickShare for Linux</strong>
   </p>

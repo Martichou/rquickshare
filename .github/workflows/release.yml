@@ -1,13 +1,10 @@
-name: Include Artifact in Release
+name: Create Release
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
-
-permissions:
-  contents: write
-  actions: read
+  push:
+    tags:
+      - '*'
 
 jobs:
   build-release:
@@ -32,24 +29,8 @@ jobs:
         run: |
           cd ./frontend
           pnpm build
-      - name: Upload deb bundle
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifact-rquickshare
-          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_*_amd64.*
-
-  make-release:
-    name: Make release
-    runs-on: ubuntu-latest
-    needs: [build-release]
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-          pattern: artifact-*
-          merge-multiple: true
       - uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/*
+          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_*_amd64.*
           fail_on_unmatched_files: true
-          tag_name: ${{ github.event.release.tag_name }}
+
