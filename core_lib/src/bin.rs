@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use rquickshare::RQS;
+use rquickshare_core::RQS;
 use tokio::sync::mpsc;
 
 #[tokio::main]

@@ -3777,6 +3777,27 @@ name = "rquickshare"
 version = "1.0.1"
 dependencies = [
  "anyhow",
+ "log",
+ "notify-rust",
+ "open",
+ "rquickshare_core",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "tauri-plugin-notification",
+ "tauri-plugin-single-instance",
+ "tokio",
+ "tokio-util",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "rquickshare_core"
+version = "1.0.1"
+dependencies = [
+ "anyhow",
  "base64",
  "btleplug",
  "bytes",
@@ -3804,27 +3825,6 @@ dependencies = [
  "tracing-subscriber",
  "ts-rs",
  "uuid",
-]
-
-[[package]]
-name = "rquickshare_frontend"
-version = "1.0.1"
-dependencies = [
- "anyhow",
- "log",
- "notify-rust",
- "open",
- "rquickshare",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "tauri-plugin-notification",
- "tauri-plugin-single-instance",
- "tokio",
- "tokio-util",
- "tracing-subscriber",
 ]
 
 [[package]]

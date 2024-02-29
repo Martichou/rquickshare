@@ -9,8 +9,8 @@ extern crate log;
 use std::sync::Mutex;
 
 use notify_rust::Notification;
-use rquickshare::channel::{ChannelAction, ChannelDirection, ChannelMessage};
-use rquickshare::{EndpointInfo, SendInfo, State, RQS};
+use rquickshare_core::channel::{ChannelAction, ChannelDirection, ChannelMessage};
+use rquickshare_core::{EndpointInfo, SendInfo, State, RQS};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager};

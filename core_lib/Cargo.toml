@@ -1,5 +1,5 @@
 [package]
-name = "rquickshare"
+name = "rquickshare_core"
 version = "1.0.1"
 edition = "2021"
 authors = ["martichou"]

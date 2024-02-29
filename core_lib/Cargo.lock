@@ -1640,7 +1640,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rquickshare"
+name = "rquickshare_core"
 version = "1.0.1"
 dependencies = [
  "anyhow",
