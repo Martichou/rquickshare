@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use bluer::adv::{Advertisement, Feature, SecondaryChannel};
+use bluer::UuidExt;
 use bytes::Bytes;
 use tokio_util::sync::CancellationToken;
-use uuid::uuid;
 use uuid::Uuid;
 
-const SERVICE_UUID_SHARING: Uuid = uuid!("0000fe2c-0000-1000-8000-00805f9b34fb");
 const SERVICE_DATA: Bytes = Bytes::from_static(&[
-    252, 18, 142, 1, 66, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    252, 18, 142, 7, 66, 47, 226, 147, 129, 18, 72, 93, 15, 230, 180, 225, 83, 75, 101, 17, 229,
+    106, 29, 0,
 ]);
 
 const INNER_NAME: &str = "BleAdvertiser";
@@ -36,9 +36,10 @@ impl BleAdvertiser {
             self.adapter.address().await?
         );
 
+        let service_uuid = Uuid::from_u16(0xFE2C);
         let handle = self
             .adapter
-            .advertise(self.get_advertisment(SERVICE_UUID_SHARING, SERVICE_DATA))
+            .advertise(self.get_advertisment(service_uuid, SERVICE_DATA))
             .await?;
         ctk.cancelled().await;
         info!("{INNER_NAME}: tracker cancelled, returning");

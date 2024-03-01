@@ -16,7 +16,7 @@ anyhow = "1.0"
 log = "0.4"
 notify-rust = "4.10.0"
 open = "5.0"
-rqs_lib = { path = "../../core_lib" }
+rqs_lib = { path = "../../core_lib", features = ["experimental"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sys_metrics = "0.2"

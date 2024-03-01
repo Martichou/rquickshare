@@ -43,5 +43,5 @@ uuid = "1.7.0"
 prost-build = "0.12"
 
 [features]
-default = []
+default = ["experimental"]
 experimental = ["bluer"]
