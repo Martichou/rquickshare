@@ -13,7 +13,7 @@ on:
 jobs:
   build-release:
     if: startsWith(github.ref_name, 'rquickshare')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -36,6 +36,6 @@ jobs:
           pnpm build
       - uses: softprops/action-gh-release@v1
         with:
-          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_*
+          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
           fail_on_unmatched_files: true
 
