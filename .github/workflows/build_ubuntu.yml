@@ -55,4 +55,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact-debug-rquickshare
-          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share_*_amd64.*
+          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
