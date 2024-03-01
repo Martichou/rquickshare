@@ -33,10 +33,16 @@ async fn main() -> Result<(), anyhow::Error> {
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
     // Define log level
+    let default_level = if cfg!(debug_assertions) {
+        "TRACE"
+    } else {
+        "INFO"
+    };
+
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var(
             "RUST_LOG",
-            "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR,bluer=ERROR,async_io=ERROR",
+            format!("{default_level},mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR,bluer=ERROR,async_io=ERROR"),
         );
     }
 
