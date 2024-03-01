@@ -36,6 +36,6 @@ jobs:
           pnpm build
       - uses: softprops/action-gh-release@v1
         with:
-          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_*
+          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
           fail_on_unmatched_files: true
 
