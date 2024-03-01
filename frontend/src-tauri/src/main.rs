@@ -246,30 +246,34 @@ fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
         .show()
     {
         Ok(n) => {
-            n.wait_for_action(|action| match action {
-                "accept" => {
-                    let _ = js2rs(
-                        ChannelMessage {
-                            id,
-                            direction: ChannelDirection::FrontToLib,
-                            action: Some(ChannelAction::AcceptTransfer),
-                            ..Default::default()
-                        },
-                        app_handle.state(),
-                    );
-                }
-                "reject" => {
-                    let _ = js2rs(
-                        ChannelMessage {
-                            id,
-                            direction: ChannelDirection::FrontToLib,
-                            action: Some(ChannelAction::RejectTransfer),
-                            ..Default::default()
-                        },
-                        app_handle.state(),
-                    );
-                }
-                _ => (),
+            let capp_handle = app_handle.clone();
+            // TODO - Meh, untracked, unwaited tasks...
+            tokio::task::spawn(async move {
+                n.wait_for_action(|action| match action {
+                    "accept" => {
+                        let _ = js2rs(
+                            ChannelMessage {
+                                id,
+                                direction: ChannelDirection::FrontToLib,
+                                action: Some(ChannelAction::AcceptTransfer),
+                                ..Default::default()
+                            },
+                            capp_handle.state(),
+                        );
+                    }
+                    "reject" => {
+                        let _ = js2rs(
+                            ChannelMessage {
+                                id,
+                                direction: ChannelDirection::FrontToLib,
+                                action: Some(ChannelAction::RejectTransfer),
+                                ..Default::default()
+                            },
+                            capp_handle.state(),
+                        );
+                    }
+                    _ => (),
+                });
             });
         }
         Err(e) => {
