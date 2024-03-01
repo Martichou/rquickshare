@@ -3817,6 +3817,7 @@ dependencies = [
  "rqs_lib",
  "serde",
  "serde_json",
+ "sys_metrics",
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",
