@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/Martichou/rquickshare/compare/rquickshare-v0.1.0...rquickshare-v0.2.0) (2024-03-01)
+
+
+### Features
+
+* add disable/enable start on boot ([c74b3c5](https://github.com/Martichou/rquickshare/commit/c74b3c535e6103d3054847f7cd8f311d26414872))
+* real hostname in UI ([42d6167](https://github.com/Martichou/rquickshare/commit/42d6167da3f2f4cad11da595d74174752cec12ba))
+
+
+### Bug Fixes
+
+* notifications blocked the thread ([7987f0b](https://github.com/Martichou/rquickshare/commit/7987f0bf870b50fabd7301e11361930ca5990de6))
+
 ## 0.1.0 (2024-02-29)
 
 
