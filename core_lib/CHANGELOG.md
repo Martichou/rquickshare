@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Martichou/rquickshare/compare/rqs_lib-v0.1.0...rqs_lib-v0.2.2) (2024-03-01)
+
+
+### Miscellaneous Chores
+
+* release 0.2.2 ([912fe2c](https://github.com/Martichou/rquickshare/commit/912fe2c7eb5c2d19813147f821ff3c97ddaf7c75))
+
 ## 0.1.0 (2024-02-29)
 
 

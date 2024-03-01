@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.2](https://github.com/Martichou/rquickshare/compare/rquickshare-v0.2.0...rquickshare-v0.2.2) (2024-03-01)
+
+### Miscellaneous Chores
+
+* release 0.2.2 ([912fe2c](https://github.com/Martichou/rquickshare/commit/912fe2c7eb5c2d19813147f821ff3c97ddaf7c75))
+
 ## [0.2.0](https://github.com/Martichou/rquickshare/compare/rquickshare-v0.1.0...rquickshare-v0.2.0) (2024-03-01)
 
 
