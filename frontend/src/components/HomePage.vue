@@ -340,10 +340,9 @@ export default {
 			this.version = await getVersion();
 
 			if (!await this.store.has(autostartKey)) {
-				await enable();
 				await this.setAutostart(true);
 			} else {
-				await this.getAutostart();
+				await this.applyAutostart();
 			}
 
 			// Check permission for notification
@@ -497,7 +496,6 @@ export default {
 
 	methods: {
 		setAutostart: async function(autostart: boolean) {
-			console.log(`setAutostart: ${autostart}`);
 			if (autostart) {
 				await enable();
 			} else {
@@ -508,9 +506,14 @@ export default {
 			await this.store.save();
 			this.autostart = autostart;
 		},
-		getAutostart: async function() {
+		applyAutostart: async function() {
 			this.autostart = await this.store.get(autostartKey) ?? false;
-			return this.autostart;
+
+			if (this.autostart) {
+				await enable();
+			} else {
+				await disable();
+			}
 		},
 		clearSending: async function() {
 			await invoke('stop_discovery');
