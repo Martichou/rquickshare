@@ -7,7 +7,7 @@
 					Device name
 				</h4>
 				<h2 class="text-2xl font-medium">
-					Rtin
+					{{ hostname }}
 				</h2>
 			</div>
 			<div class="flex justify-center items-center gap-4">
@@ -328,12 +328,15 @@ export default {
 
 			version: opt<string>(),
 
-			autostart: ref<boolean>(true)
+			autostart: ref<boolean>(true),
+
+			hostname: ref<string>()
 		};
 	},
 
 	mounted: function () {
 		nextTick(async () => {
+			this.hostname = await invoke('get_hostname');
 			this.version = await getVersion();
 
 			if (!await this.store.has(autostartKey)) {

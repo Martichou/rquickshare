@@ -19,6 +19,7 @@ open = "5.0"
 rqs_lib = { path = "../../core_lib" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sys_metrics = "0.2"
 tauri = { version = "2.0.0-beta", features = ["native-tls-vendored", "tray-icon", "icon-png"] }
 tauri-plugin-autostart = "2.0.0-beta"
 tauri-plugin-notification = "2.0.0-beta"

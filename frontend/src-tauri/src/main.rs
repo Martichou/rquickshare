@@ -36,7 +36,7 @@ async fn main() -> Result<(), anyhow::Error> {
     if std::env::var("RUST_LOG").is_err() {
         std::env::set_var(
             "RUST_LOG",
-            "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR,bluer=ERROR",
+            "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR,bluer=ERROR,async_io=ERROR",
         );
     }
 
@@ -73,6 +73,7 @@ async fn main() -> Result<(), anyhow::Error> {
             send_payload,
             start_discovery,
             stop_discovery,
+            get_hostname,
             sanity_check
         ])
         .setup(|app| {
@@ -227,6 +228,11 @@ fn stop_discovery(state: tauri::State<'_, AppState>) {
     info!("stop_discovery");
 
     state.rqs.lock().unwrap().stop_discovery();
+}
+
+#[tauri::command]
+fn get_hostname() -> String {
+    return sys_metrics::host::get_hostname().unwrap_or(String::from("Unknown"));
 }
 
 #[tauri::command]
