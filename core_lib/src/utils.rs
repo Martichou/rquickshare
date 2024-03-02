@@ -16,7 +16,7 @@ use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 use ts_rs::TS;
 
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize, TS)]
 #[ts(export)]
 #[allow(dead_code)]
 pub enum DeviceType {
@@ -107,8 +107,7 @@ pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String
         return Err(anyhow!("Invalid data length"));
     }
 
-    let device_type_byte = decoded_bytes[0];
-    let device_type = (device_type_byte & 0b0111) >> 4;
+    let device_type = (decoded_bytes[0] >> 1) & 0x7;
     let name_length = decoded_bytes[17] as usize;
     if 18 + name_length > decoded_bytes.len() {
         return Err(anyhow!("Invalid name length"));
@@ -165,9 +164,7 @@ pub fn to_four_digit_string(bytes: &Vec<u8>) -> String {
     let mut hash = 0;
     let mut multiplier = 1;
     for &byte in bytes {
-        // Cast u8 to i8 (assuming that's what's intended by static_cast<int8_t>(byte))
-        // Rust by default treats i8 as signed, matching the C++ behavior here
-        let byte = byte as i8 as i32; // `as i32` to perform calculation correctly
+        let byte = byte as i8 as i32;
         hash = (hash + byte * multiplier) % k_hash_modulo;
         multiplier = (multiplier * k_hash_base_multiplier) % k_hash_modulo;
     }
@@ -204,4 +201,24 @@ pub fn is_not_self_ip(ip_address: &Ipv4Addr) -> bool {
     }
 
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gen_and_parse_mdns_info() {
+        let device_name = "a_device_name";
+        let device_type = DeviceType::Laptop;
+
+        dbg!(&device_type);
+        dbg!(device_type.clone() as u8);
+
+        let info = gen_mdns_endpoint_info(device_type.clone() as u8, device_name);
+        let parse_info = parse_mdns_endpoint_info(&info).unwrap();
+
+        assert_eq!(parse_info.1, device_name);
+        assert_eq!(parse_info.0, device_type);
+    }
 }
