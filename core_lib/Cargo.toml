@@ -46,3 +46,8 @@ prost-build = "0.12"
 [features]
 default = ["experimental"]
 experimental = ["bluer"]
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
