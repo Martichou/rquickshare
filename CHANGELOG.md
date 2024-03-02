@@ -1,0 +1,58 @@
+# Changelog
+
+## 1.0.0 (2024-03-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* add frontend(tauri) & move current to core_lib
+
+### Features
+
+* add BLE listening for nearby device sharing ([b400275](https://github.com/Martichou/rquickshare/commit/b40027548238d146b3d64c7cb3421c58c25d4a79))
+* add disable/enable start on boot ([de66a09](https://github.com/Martichou/rquickshare/commit/de66a099eb38681c810c1433cb448b364ad0c9d7))
+* add frontend(tauri) & move current to core_lib ([d989683](https://github.com/Martichou/rquickshare/commit/d9896837d9c00c687deb66663cd9a7ed264574ac))
+* add notifications ([ba050bb](https://github.com/Martichou/rquickshare/commit/ba050bb2a9737f69e1297cd70ec5280c7deff43b))
+* add TcpListener & parse proto ([76c28b7](https://github.com/Martichou/rquickshare/commit/76c28b7e4eb918e4974d29165d1a91a91941a560))
+* auto_addr only V4 ([ccbc08d](https://github.com/Martichou/rquickshare/commit/ccbc08db5144008921bdc7de8088722d9e2b05f3))
+* autostart at boot ([e904683](https://github.com/Martichou/rquickshare/commit/e90468311f10f95ed01ff72b98977d533dc454ee))
+* display if the user rejected ([42f901f](https://github.com/Martichou/rquickshare/commit/42f901fd525b5dab1d54cefcb8467972409313c6))
+* don't use hardcoded key anymore ([f36316d](https://github.com/Martichou/rquickshare/commit/f36316d230e4991dbe7275fec50697e346e70ccf))
+* export common structs to TS ([c2072b5](https://github.com/Martichou/rquickshare/commit/c2072b5260938317128c022fe8ac9ac687ea8eaf))
+* front-backend communication channel ([45d9d7c](https://github.com/Martichou/rquickshare/commit/45d9d7c61761e40114a6e96b4f6bc6069fc1487f))
+* implement encrypted files transfer ([b1e26ce](https://github.com/Martichou/rquickshare/commit/b1e26ce688a6b203ab66f67aaabf6fe1c6b46591))
+* implement key-exchange, pre-encryption ([c1b9edc](https://github.com/Martichou/rquickshare/commit/c1b9edcc8aeb28219335cab72186c4419d8d2f66))
+* implement mDNS service broadcast ([ebd2386](https://github.com/Martichou/rquickshare/commit/ebd23866930cd99f5a0e865f24c34760a4a228b5))
+* improve UI & handling of requests ([4bd3e83](https://github.com/Martichou/rquickshare/commit/4bd3e832cca133dbe0f6193ffcd9b0b7be42cff2))
+* **improve:** stabilise UI & communication ([7120162](https://github.com/Martichou/rquickshare/commit/712016280a33542774458cf25ae8666db803e1dd))
+* init ([143df16](https://github.com/Martichou/rquickshare/commit/143df16153c6ddcd03876aa24f1f57cff714c288))
+* make the core_lib actually being a lib ([becf516](https://github.com/Martichou/rquickshare/commit/becf5164e8f5a47e8bb22617ab947cf85c0e1fac))
+* move tauri to V2 & BLEA behind feature ([1187b44](https://github.com/Martichou/rquickshare/commit/1187b447336ba0446264c53fb1e86f61d3e45c35))
+* prepare tauri to send cmd ([fc2a28a](https://github.com/Martichou/rquickshare/commit/fc2a28a493ada7e9ffe1611bdcb960a727ea1764))
+* real hostname in UI ([f9661fd](https://github.com/Martichou/rquickshare/commit/f9661fd52443413e041a6b5a5c3183cc10a7bcbb))
+* release process ([b989b05](https://github.com/Martichou/rquickshare/commit/b989b05e6151d618d77b8e6379518eb55f9c1b1a))
+* remove random mdns name ([6d83183](https://github.com/Martichou/rquickshare/commit/6d83183c0bb3df3f70276d2d6ad72b3820541a8c))
+* resend broadcast mdns if nearby sharing ([2aa4701](https://github.com/Martichou/rquickshare/commit/2aa4701dd3d3ae447f1035ede0dbf0b56e777b63))
+* sending file working (and wip UI) ([53890f0](https://github.com/Martichou/rquickshare/commit/53890f08dde4261f1775f925ee6a3084fbe76eae))
+* somewhat working UI channel with Rust ([6452132](https://github.com/Martichou/rquickshare/commit/6452132c976d0f02574855953a2f1b3431a5c28d))
+* **ui:** add version info ([db14a39](https://github.com/Martichou/rquickshare/commit/db14a396c127dc793d98a966e5f34b96460c15b9))
+* **ui:** tray allow to open app ([748cbbb](https://github.com/Martichou/rquickshare/commit/748cbbbccf165b4429c49fd5ee88f4e86405c11a))
+* update transfer_metadata for future use ([cde67c0](https://github.com/Martichou/rquickshare/commit/cde67c04a55c4f06c5c3aaa65ff87810b56f39af))
+* **wip:** implement base for outbound transfer ([d4f2da5](https://github.com/Martichou/rquickshare/commit/d4f2da5842033d893d62b9b1a54fbc979a640b16))
+* **wip:** outbound handle connection response ([21c7dd8](https://github.com/Martichou/rquickshare/commit/21c7dd8e7e6b5075fc155f824918a1892d3a92a4))
+* **wip:** outbound handle paired_key_result ([56e32c1](https://github.com/Martichou/rquickshare/commit/56e32c15a0fcf71eb821dca70960d9a64539a4a7))
+* **wip:** try to send BLE advertisment when sending ([d8ae730](https://github.com/Martichou/rquickshare/commit/d8ae730ed09df3d28b5870e63c8a42423780d310))
+
+
+### Bug Fixes
+
+* apply autostart if no value ([87f49a8](https://github.com/Martichou/rquickshare/commit/87f49a854ae486cbdf9918c387ec95dfc3fade8c))
+* linting ([428e141](https://github.com/Martichou/rquickshare/commit/428e141895ae687bd6e8befe30a2bfebe761dfb4))
+* notifications blocked the thread ([566894c](https://github.com/Martichou/rquickshare/commit/566894c2fd754e4e586d091ef4a8b602528753e5))
+* only handle own id for inbound channel ([ed7453b](https://github.com/Martichou/rquickshare/commit/ed7453baae966284afcc92d55b3f39c36a1bcacc))
+* release all linux bundles ([ade8a94](https://github.com/Martichou/rquickshare/commit/ade8a94164b27087abaebddff59c162b5d87f0c6))
+* release: correct process (attempt[#1](https://github.com/Martichou/rquickshare/issues/1)) ([d301593](https://github.com/Martichou/rquickshare/commit/d3015930c20cdce4060a604e25a16e8301e39855))
+* **ui:** improve style ([d402374](https://github.com/Martichou/rquickshare/commit/d40237413239ba07f3aee4b66deaedc42640bc7c))
+* unlisten & blur/focus fixes ([a6f52b4](https://github.com/Martichou/rquickshare/commit/a6f52b41468b3f448d4f234fa34b3c57b92f59ef))
+* use vendored tls ([8c5b954](https://github.com/Martichou/rquickshare/commit/8c5b954645c996a7d2fdc2457ae257cd88cab464))
+* wrong path for dep ([72ef7bc](https://github.com/Martichou/rquickshare/commit/72ef7bc26ba7c1c1ad017a232e9f4a3bd25fe8c5))
