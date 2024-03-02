@@ -14,41 +14,38 @@
 
 ![demo image](.github/demo.png)
 
-(WIP) How to use
+Installation
 --------------------------
 
-rquickshare offers two options for using its file sharing capabilities: command line (CMD) and a frontend application. However, please note that currently only the CMD mode is functional and limited to receiving files. Sending files from your computer will be implemented later.
+You simply have to download the latest release.
+At the moment, only **Deb**, **Rpm** and **AppImage** are generated and supported.
 
-#### Cmd line mode
+#### Debian
 
-1. Open a terminal.
+```
+sudo dpkg -i r-quick-share_${VERSION}_amd64.deb
+```
 
-2. Navigate to the core_lib directory: Replace [path] with the actual installation directory of rquickshare:
+#### RPM
 
-	```
-	cd [path]/core_lib
-	```
+```
+sudo rpm -i r-quick-share-${VERSION}-1.x86_64.rpm
 
-3. Run the core service: Launch the application and make your computer discoverable by nearby Android devices:
+```
 
-	```
-	cargo run
-	```
+#### AppImage (no root required)
 
-#### Frontend Application
-The frontend application, built with the Tauri framework, is still under development. While you can run it with the following commands, functionality is limited:
+AppImage is a little different. There's no installation needed, you simply have to give it the executable permission (+x on a chmod) to run it.
 
-1. Install dependencies:
+```
+chmod +x r-quick-share_${VERSION}_amd64.AppImage
+```
 
-	```
-	pnpm install
-	```
+You can then either double click on it, or run it from the cmd line:
 
-2. Start development server:
-
-	```
-	pnpm dev
-	```
+```
+./r-quick-share_${VERSION}_amd64.AppImage
+```
 
 Limitations
 --------------------------
@@ -60,7 +57,7 @@ Limitations
 WIP Notes
 --------------------------
 
-`rquickshare` is still in development (WIP) and currently only supports Linux. Keep in mind that the design may change between versions, so flexibility is key.
+`rquickshare` is still in development (WIP) and currently only supports Linux even tho it should be compatible with macOS too. Keep in mind that the design may change between versions, so flexibility is key.
 
 Got feedback or suggestions? We'd love to hear them! Feel free to open an issue and share your thoughts.
 
@@ -72,8 +69,6 @@ This project wouldn't exist without those amazing open-source project:
 
 - https://github.com/grishka/NearDrop
 - https://github.com/vicr123/QNearbyShare
-
-And of course the code source for NearbyShare and all directly from Google.
 
 
 Contributing
