@@ -8,7 +8,6 @@
 
 [![CI](https://github.com/Martichou/rquickshare/actions/workflows/build_ubuntu.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 [![CI](https://github.com/Martichou/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
-[![CI](https://github.com/Martichou/rquickshare/actions/workflows/clippy.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 
   </p>
 </div>
