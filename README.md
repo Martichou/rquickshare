@@ -54,6 +54,31 @@ Limitations
 
 - **Visible to everyone** on your network at all times while the app is running.
 
+FAQ
+--------------------------
+
+### My Android device doesn't see my laptop
+
+Make sure both your devices are on the same WiFi network. mDNS communication should be allowed on the network; it may not be the case if you're on a public network (coffee shops, airports, ...).
+
+### My laptop doesn't see my Android device
+
+For some reason, Android doesn't broadcast it's mDNS service all the time; even when in "Everyone" mode.
+
+As a workaround, you can use the "Files" app on your android device and go to "Nearby Share" tab (it it's not present, continue reading).
+
+A second workaround, you can download a Shortcut maker (see here) to create a shortcut to the particular intent:
+
+- Method A:
+	- Activity: `com.google.android.gms.nearby.sharing.ReceiveSurfaceActivity`
+
+- Method B:
+	- Action: `com.google.android.gms.RECEIVE_NEARBY`
+	- Mime type: `*/*`
+
+_Note: there's a current WIP to add a BLE advertisment in RQuickShare to overcome this._
+
+
 WIP Notes
 --------------------------
 
