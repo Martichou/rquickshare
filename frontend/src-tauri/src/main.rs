@@ -13,7 +13,7 @@ use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, RQS};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Icon, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::{broadcast, mpsc};
 
@@ -89,6 +89,7 @@ async fn main() -> Result<(), anyhow::Error> {
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
             let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
             let _tray = TrayIconBuilder::new()
+                .icon(Icon::Raw(include_bytes!("../icons/icon.png").to_vec()))
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show" => {
