@@ -67,7 +67,7 @@ For some reason, Android doesn't broadcast it's mDNS service all the time; even 
 
 As a workaround, you can use the "Files" app on your android device and go to "Nearby Share" tab (it it's not present, continue reading).
 
-A second workaround, you can download a Shortcut maker (see here) to create a shortcut to the particular intent:
+A second workaround, you can download a Shortcut maker (see [here](https://xdaforums.com/t/how-to-manually-create-a-homescreen-shortcut-to-a-known-unique-android-activity.4336833)) to create a shortcut to the particular intent:
 
 - Method A:
 	- Activity: `com.google.android.gms.nearby.sharing.ReceiveSurfaceActivity`
