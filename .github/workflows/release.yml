@@ -12,7 +12,6 @@ on:
 
 jobs:
   build-release:
-    if: startsWith(github.ref_name, 'rquickshare')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
