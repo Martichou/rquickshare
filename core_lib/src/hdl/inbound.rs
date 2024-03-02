@@ -2,6 +2,7 @@ use std::fs::File;
 use std::os::unix::fs::FileExt;
 
 use anyhow::anyhow;
+use bytes::Bytes;
 use hmac::{Hmac, Mac};
 use libaes::{Cipher, AES_256_KEY_LEN};
 use p256::ecdh::diffie_hellman;
@@ -32,8 +33,8 @@ use crate::securemessage::{
 };
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::utils::{
-    gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand, stream_read_exact,
-    to_four_digit_string, DeviceType, RemoteDeviceInfo,
+    encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
+    stream_read_exact, to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
 use crate::{location_nearby_connections, sharing_nearby};
 
@@ -314,14 +315,16 @@ impl InboundRequest {
         let (secret_key, public_key) = gen_ecdsa_keypair();
 
         let encoded_point = public_key.to_encoded_point(false);
-        let x = encoded_point.x().unwrap().to_vec();
-        let y = encoded_point.y().unwrap().to_vec();
+        let x = encoded_point.x().unwrap();
+        let y = encoded_point.y().unwrap();
 
         let pkey = GenericPublicKey {
             r#type: PublicKeyType::EcP256.into(),
-            ec_p256_public_key: Some(EcP256PublicKey { x, y }),
-            dh2048_public_key: None,
-            rsa2048_public_key: None,
+            ec_p256_public_key: Some(EcP256PublicKey {
+                x: encode_point(Bytes::from(x.to_vec()))?,
+                y: encode_point(Bytes::from(y.to_vec()))?,
+            }),
+            ..Default::default()
         };
 
         let server_init = Ukey2ServerInit {
