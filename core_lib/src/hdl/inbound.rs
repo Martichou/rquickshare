@@ -836,7 +836,6 @@ impl InboundRequest {
                 text_metadata::Type::PhoneNumber
                 | text_metadata::Type::Address
                 | text_metadata::Type::Text => {
-                    // TODO - Handle
                     // Reject transfer
                     self.reject_transfer(Some(
 						sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
