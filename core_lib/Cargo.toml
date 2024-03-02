@@ -1,5 +1,4 @@
-
-package]
+[package]
 name = "rqs_lib"
 version = "0.2.2"
 edition = "2021"

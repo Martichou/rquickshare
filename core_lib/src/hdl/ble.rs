@@ -37,7 +37,6 @@ impl BleListener {
 
         let mut events = self.adapter.events().await?;
         // Filter on the NearyShare/QuickShare services UUID
-        // TODO - Determine if it's common for everyone.
         self.adapter
             .start_scan(ScanFilter {
                 services: vec![SERVICE_UUID_SHARING],
