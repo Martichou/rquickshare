@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1](https://github.com/Martichou/rquickshare/compare/v0.1.0...v0.1.1) (2024-03-02)
+
+
+### Bug Fixes
+
+* don't crash if no BT & fix some unwrap ([18d0fba](https://github.com/Martichou/rquickshare/commit/18d0fbaafc246a94b266faaa476b860f1c9ac653))
+* icon in systemtray is now ok ([67be6a7](https://github.com/Martichou/rquickshare/commit/67be6a7a6ad0154215413b751435bb426a795bd1))
+
 ## 0.1.0 (2024-03-02)
 
 
