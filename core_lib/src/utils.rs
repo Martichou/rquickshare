@@ -4,12 +4,13 @@ use std::path::{Path, PathBuf};
 use anyhow::anyhow;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
+use bytes::Bytes;
 use get_if_addrs::get_if_addrs;
 use hkdf::Hkdf;
+use num_bigint::{BigUint, ToBigInt};
 use p256::{PublicKey, SecretKey};
-use rand::{Rng, RngCore};
+use rand::{thread_rng, Rng, RngCore};
 use serde::{Deserialize, Serialize};
-use sha2::digest::generic_array::GenericArray;
 use sha2::Sha256;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
@@ -130,18 +131,18 @@ pub async fn stream_read_exact(
 }
 
 pub fn gen_ecdsa_keypair() -> (SecretKey, PublicKey) {
-    // TODO - not sure why, but when using a random generator, 90% of the keys
-    // generated won't works with android (the error doesn't make sense as it's u8):
-    // Cannot parse public key: Point encoding must use only non-negative integers
-    // So for now, use a hardcoded key that for some reason works.
-    let ga = GenericArray::from_slice(&[
-        105, 205, 243, 134, 222, 182, 205, 89, 155, 24, 188, 47, 119, 109, 222, 245, 25, 52, 8,
-        195, 162, 68, 9, 241, 138, 225, 80, 106, 111, 224, 254, 32,
-    ]);
-    let secret_key = SecretKey::from_bytes(ga).unwrap();
+    let secret_key = SecretKey::random(&mut thread_rng());
     let public_key = secret_key.public_key();
 
     (secret_key, public_key)
+}
+
+pub fn encode_point(unsigned: Bytes) -> Result<Vec<u8>, anyhow::Error> {
+    let big_int = BigUint::from_bytes_be(&unsigned)
+        .to_bigint()
+        .ok_or_else(|| anyhow!("Failed to convert to bigint"))?;
+
+    Ok(big_int.to_signed_bytes_be())
 }
 
 pub fn hkdf_extract_expand(

@@ -59,14 +59,13 @@ impl BleListener {
                             let _ = service_data;
                             let now = SystemTime::now();
 
-                            debug!("BLEA HERE: {:?}", service_data);
-
                             // Don't spam, max once per 15s
                             if now.duration_since(last_alert)? <= Duration::from_secs(15) {
                                 continue;
                             }
 
                             debug!("{INNER_NAME}: A device is sharing nearby");
+                            trace!("{INNER_NAME}: {:?}", service_data);
                             self.sender.send(())?;
                             last_alert = now;
                         },
