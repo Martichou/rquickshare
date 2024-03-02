@@ -210,11 +210,15 @@ impl MDnsDiscovery {
                             match event {
                                 ServiceEvent::ServiceResolved(info) => {
                                     let port = info.get_port();
+
                                     let ip_hash = info.get_addresses_v4();
-                                    let ip = if !ip_hash.is_empty() {
-                                        ip_hash.iter().next().unwrap()
-                                    } else {
+                                    if ip_hash.is_empty() {
                                         continue;
+                                    }
+
+                                    let ip = match ip_hash.iter().next() {
+                                        Some(i) => i,
+                                        None => continue,
                                     };
 
                                     // Check that the IP is not a "self IP"
@@ -223,11 +227,13 @@ impl MDnsDiscovery {
                                     }
 
                                     // Decode the "n" text properties
-                                    let n = info.get_property("n");
-                                    if n.is_none() {
-                                        continue;
-                                    }
-                                    let (dt, dn) = match parse_mdns_endpoint_info(n.unwrap().val_str()) {
+                                    let n = match info.get_property("n") {
+                                        Some(_n) => _n,
+                                        None => continue,
+                                    };
+
+                                    // Parse the endpoint info
+                                    let (dt, dn) = match parse_mdns_endpoint_info(n.val_str()) {
                                         Ok(r) => r,
                                         Err(_) => continue
                                     };

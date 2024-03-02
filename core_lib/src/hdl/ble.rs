@@ -21,7 +21,7 @@ pub struct BleListener {
 impl BleListener {
     pub async fn new(sender: Sender<()>) -> Result<Self, anyhow::Error> {
         let manager = Manager::new().await?;
-        let adapters = manager.adapters().await.unwrap();
+        let adapters = manager.adapters().await?;
         if adapters.is_empty() {
             return Err(anyhow!("no bluetooth adapter"));
         }
