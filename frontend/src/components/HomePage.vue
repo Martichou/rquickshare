@@ -243,6 +243,20 @@
 							</div>
 						</div>
 
+						<div v-else-if="item.state === 'Rejected'">
+							<p class="mt-2">
+								Transfer rejected
+							</p>
+							<div class="flex flex-row justify-end gap-4 mt-1">
+								<p
+									@click="removeRequest(item.id)"
+									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
+									font-medium active:scale-105 transition duration-150 ease-in-out">
+									Clear
+								</p>
+							</div>
+						</div>
+
 						<div v-else-if="item.state === 'Disconnected'">
 							<p class="mt-2">
 								Unexpected disconnection
@@ -301,7 +315,7 @@ interface DisplayedItem {
 }
 
 const autostartKey = "autostart";
-const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled"]
+const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
 export default {
 	name: "HomePage",

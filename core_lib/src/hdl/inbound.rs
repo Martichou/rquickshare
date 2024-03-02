@@ -92,9 +92,17 @@ impl InboundRequest {
                                 self.accept_transfer().await?;
                             },
                             Some(ChannelAction::RejectTransfer) => {
+                                self.update_state(
+                                    |e| {
+                                        e.state = State::Rejected;
+                                    },
+                                    true,
+                                );
+
                                 self.reject_transfer(Some(
                                     sharing_nearby::connection_response_frame::Status::Reject
                                 )).await?;
+                                return Err(anyhow!(crate::errors::AppError::NotAnError));
                             },
                             Some(ChannelAction::CancelTransfer) => {
                                 self.update_state(
