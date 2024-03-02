@@ -5,7 +5,6 @@ on:
     branches: [ "master" ]
   pull_request:
 
-# cancel ongoing jobs:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -28,6 +27,7 @@ jobs:
       - run: |
           cd ${{ matrix.directory }}
           cargo fmt --all --check
+
   style_tauri:
     runs-on: ubuntu-latest
     steps:
@@ -43,3 +43,31 @@ jobs:
       - run: |
           cd ./frontend
           pnpm lint
+
+  clippy_check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - directory: ./core_lib
+            clippy_args: "--all-features --all"
+          - directory: ./frontend/src-tauri
+            clippy_args: "--no-default-features"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev
+      - name: Install Linux dependencies
+        if: matrix.directory == './frontend/src-tauri'
+        run: |
+          sudo apt-get install -y libjavascriptcoregtk-4.1-dev libdbus-1-dev libgtk-4-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+      - name: Clippy Check
+        run: |
+          cd ${{ matrix.directory }}
+          cargo clippy ${{ matrix.clippy_args }}
