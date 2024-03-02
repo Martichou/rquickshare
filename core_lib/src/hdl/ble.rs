@@ -6,8 +6,7 @@ use btleplug::platform::{Adapter, Manager};
 use futures::stream::StreamExt;
 use tokio::sync::broadcast::Sender;
 use tokio_util::sync::CancellationToken;
-use uuid::uuid;
-use uuid::Uuid;
+use uuid::{uuid, Uuid};
 
 const SERVICE_UUID_SHARING: Uuid = uuid!("0000fe2c-0000-1000-8000-00805f9b34fb");
 

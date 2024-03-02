@@ -2,7 +2,7 @@
 extern crate log;
 
 use rqs_lib::RQS;
-use tokio::sync::mpsc;
+use tokio::sync::broadcast;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -21,7 +21,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let mut rqs = RQS::default();
     rqs.run().await?;
 
-    let discovery_channel = mpsc::channel(10);
+    let discovery_channel = broadcast::channel(10);
     rqs.discovery(discovery_channel.0)?;
 
     // Wait for CTRL+C and then stop RQS

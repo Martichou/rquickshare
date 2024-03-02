@@ -13,6 +13,8 @@ tauri-build = { version = "2.0.0-beta", features = [] }
 
 [dependencies]
 anyhow = "1.0"
+fern = { version = "0.6.2", features = ["colored"] }
+humantime = "2.1.0"
 log = "0.4"
 notify-rust = "4.10.0"
 open = "5.0"
@@ -25,9 +27,9 @@ tauri-plugin-autostart = "2.0.0-beta"
 tauri-plugin-notification = "2.0.0-beta"
 tauri-plugin-single-instance = "2.0.0-beta"
 tauri-plugin-store = "2.0.0-beta"
+time = "0.3.34"
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [features]
 # by default Tauri runs in production mode

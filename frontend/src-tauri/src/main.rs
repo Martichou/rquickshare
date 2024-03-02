@@ -15,16 +15,19 @@ use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Icon, Manager};
 use tauri_plugin_autostart::MacosLauncher;
-use tokio::sync::{broadcast, mpsc};
-
 #[cfg(not(target_os = "linux"))]
 use tauri_plugin_notification::NotificationExt;
+use tokio::sync::{broadcast, mpsc};
+
+use crate::logger::set_up_logging;
+
+mod logger;
 
 pub struct AppState {
     pub sender: broadcast::Sender<ChannelMessage>,
+    pub dch_sender: broadcast::Sender<EndpointInfo>,
     pub sender_file: mpsc::Sender<SendInfo>,
     pub rqs: Mutex<RQS>,
-    pub dch_sender: mpsc::Sender<EndpointInfo>,
 }
 
 #[tokio::main]
@@ -32,38 +35,8 @@ async fn main() -> Result<(), anyhow::Error> {
     // Define tauri async runtime to be tokio
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
-    // Define log level
-    let default_level = if cfg!(debug_assertions) {
-        "TRACE"
-    } else {
-        "INFO"
-    };
-
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var(
-            "RUST_LOG",
-            format!("{default_level},mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR,bluer=ERROR,async_io=ERROR"),
-        );
-    }
-
-    // Init logger/tracing
-    tracing_subscriber::fmt::init();
-
-    // Start the RQuickShare service
-    let rqs = RQS::default();
-    let sender_file = rqs.run().await?;
-
-    let (dch_sender, mut dch_receiver) = mpsc::channel(10);
-    let (sender, mut receiver) = (rqs.channel.0.clone(), rqs.channel.1.resubscribe());
-
     // Build and run Tauri app
     tauri::Builder::default()
-        .manage(AppState {
-            sender: sender,
-            sender_file: sender_file,
-            rqs: Mutex::new(rqs),
-            dch_sender: dch_sender,
-        })
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             None,
@@ -83,7 +56,38 @@ async fn main() -> Result<(), anyhow::Error> {
             sanity_check
         ])
         .setup(|app| {
-            debug!("Starting setup of Tauri app");
+            set_up_logging(app.app_handle())?;
+            debug!("Starting setup of RQuickShare app");
+
+            let app_handle = app.handle().clone();
+            // This is not optimal, but until I find a better way to init log
+            // (inside file and stdout) before starting the lib, I'll keep it as
+            // is. This allow me to get the whole log :)
+            tokio::task::block_in_place(|| {
+                tauri::async_runtime::block_on(async move {
+                    trace!("Begining of RQS start");
+                    // Start the RQuickShare service
+                    let rqs = RQS::default();
+                    // Need to be waited, but blocked on
+                    let sender_file = rqs.run().await.unwrap();
+                    trace!("Ran RQS run");
+
+                    // Init the channels for use
+                    let (dch_sender, _) = broadcast::channel(10);
+                    let sender = rqs.channel.0.clone();
+
+                    // Define state for tauri app
+                    app_handle.manage(AppState {
+                        sender: sender,
+                        dch_sender: dch_sender,
+                        sender_file: sender_file,
+                        rqs: Mutex::new(rqs),
+                    });
+                });
+            });
+
+            debug!("Done starting RQS lib");
+
             // Setup system tray
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
@@ -115,6 +119,9 @@ async fn main() -> Result<(), anyhow::Error> {
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = app_handle.state();
+                let mut receiver = state.sender.subscribe();
+
                 loop {
                     match receiver.recv().await {
                         Ok(info) => {
@@ -142,11 +149,14 @@ async fn main() -> Result<(), anyhow::Error> {
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = app_handle.state();
+                let mut dch_receiver = state.dch_sender.subscribe();
+
                 loop {
                     match dch_receiver.recv().await {
-                        Some(info) => rs2js_discovery(info, &app_handle),
-                        None => {
-                            error!("Error getting dch_receiver message");
+                        Ok(info) => rs2js_discovery(info, &app_handle),
+                        Err(e) => {
+                            error!("Error getting dch_receiver message: {}", e);
                         }
                     }
                 }

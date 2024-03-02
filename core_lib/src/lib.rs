@@ -122,7 +122,10 @@ impl RQS {
         Ok(send_channel.0)
     }
 
-    pub fn discovery(&mut self, sender: mpsc::Sender<EndpointInfo>) -> Result<(), anyhow::Error> {
+    pub fn discovery(
+        &mut self,
+        sender: broadcast::Sender<EndpointInfo>,
+    ) -> Result<(), anyhow::Error> {
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
 
@@ -182,11 +185,11 @@ pub struct EndpointInfo {
 
 pub struct MDnsDiscovery {
     daemon: ServiceDaemon,
-    sender: mpsc::Sender<EndpointInfo>,
+    sender: broadcast::Sender<EndpointInfo>,
 }
 
 impl MDnsDiscovery {
-    pub fn new(sender: mpsc::Sender<EndpointInfo>) -> Result<Self, anyhow::Error> {
+    pub fn new(sender: broadcast::Sender<EndpointInfo>) -> Result<Self, anyhow::Error> {
         let daemon = ServiceDaemon::new()?;
 
         Ok(Self { daemon, sender })
@@ -248,7 +251,7 @@ impl MDnsDiscovery {
                                             present: Some(true),
                                         };
                                         info!("Resolved a new service: {:?}", ei);
-                                        let _ = self.sender.send(ei).await;
+                                        let _ = self.sender.send(ei);
                                     }
                                 }
                                 ServiceEvent::ServiceRemoved(_, fullname) => {
@@ -256,7 +259,7 @@ impl MDnsDiscovery {
                                     let _ = self.sender.send(EndpointInfo {
                                         id: fullname,
                                         ..Default::default()
-                                    }).await;
+                                    });
                                 }
                                 ServiceEvent::SearchStarted(_) | ServiceEvent::SearchStopped(_) => {}
                                 _ => {}
