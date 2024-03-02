@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Martichou/rquickshare/compare/rquickshare-v0.2.2...rquickshare-v0.3.0) (2024-03-02)
+
+
+### Features
+
+* don't use hardcoded key anymore ([c63f223](https://github.com/Martichou/rquickshare/commit/c63f223ca855e4bb9013a397d47ccaa12ea0d61d))
+
 ## [0.2.2](https://github.com/Martichou/rquickshare/compare/rquickshare-v0.2.0...rquickshare-v0.2.2) (2024-03-01)
 
 ### Miscellaneous Chores
