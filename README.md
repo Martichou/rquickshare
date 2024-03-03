@@ -65,7 +65,7 @@ Make sure both your devices are on the same WiFi network. mDNS communication sho
 
 For some reason, Android doesn't broadcast it's mDNS service all the time; even when in "Everyone" mode.
 
-As a workaround, you can use the "Files" app on your android device and go to "Nearby Share" tab (it it's not present, continue reading).
+As a workaround, you can use the "[Files](https://play.google.com/store/apps/details?id=com.google.android.apps.nbu.files)" app on your android device and go to "Nearby Share" tab (if it's not present, continue reading).
 
 A second workaround, you can download a Shortcut maker (see [here](https://xdaforums.com/t/how-to-manually-create-a-homescreen-shortcut-to-a-known-unique-android-activity.4336833)) to create a shortcut to the particular intent:
 
