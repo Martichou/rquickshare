@@ -23,7 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
       - run: |
           cd ${{ matrix.directory }}
           cargo fmt --all --check
