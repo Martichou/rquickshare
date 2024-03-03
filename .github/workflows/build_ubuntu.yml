@@ -61,7 +61,9 @@ jobs:
           cd ./frontend
           pnpm deb:build
       - name: Upload deb bundle
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact-debug-rquickshare
-          path: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
+          path: |
+            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share*.deb
+            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/appimage/r-quick-share*.AppImage
