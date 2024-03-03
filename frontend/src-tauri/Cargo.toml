@@ -9,7 +9,7 @@ license = "AGPL-3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0.0-beta", features = [] }
+tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
 anyhow = "1.0"
@@ -22,21 +22,17 @@ rqs_lib = { path = "../../core_lib", features = ["experimental"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sys_metrics = "0.2"
-tauri = { version = "2.0.0-beta", features = ["native-tls-vendored", "tray-icon", "icon-png"] }
-tauri-plugin-autostart = "2.0.0-beta"
-tauri-plugin-notification = "2.0.0-beta"
-tauri-plugin-single-instance = "2.0.0-beta"
-tauri-plugin-store = "2.0.0-beta"
-time = "0.3.34"
+tauri = { version = "1.5", features = ["api-all", "reqwest-native-tls-vendored", "system-tray"] }
+tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+time = { version = "0.3", features = ["formatting"] }
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 
 [features]
-# by default Tauri runs in production mode
-# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
-default = ["custom-protocol"]
-# this feature is used used for production builds where `devPath` points to the filesystem
-# DO NOT remove this
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
 custom-protocol = ["tauri/custom-protocol"]
 
 [profile.release]

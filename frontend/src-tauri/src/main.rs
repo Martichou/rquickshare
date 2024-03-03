@@ -11,9 +11,10 @@ use std::sync::Mutex;
 use notify_rust::Notification;
 use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, RQS};
-use tauri::menu::{MenuBuilder, MenuItemBuilder};
-use tauri::tray::TrayIconBuilder;
-use tauri::{AppHandle, Icon, Manager};
+use tauri::{
+    AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
+    SystemTrayMenuItem,
+};
 use tauri_plugin_autostart::MacosLauncher;
 #[cfg(not(target_os = "linux"))]
 use tauri_plugin_notification::NotificationExt;
@@ -36,13 +37,22 @@ async fn main() -> Result<(), anyhow::Error> {
     // Define tauri async runtime to be tokio
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
+    // Configure System Tray
+    let show = CustomMenuItem::new("show".to_string(), "Show");
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(CustomMenuItem::new("rqs", "RQuickShare").disabled())
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(show)
+        .add_item(quit);
+    let tray = SystemTray::new().with_menu(tray_menu);
+
     // Build and run Tauri app
     tauri::Builder::default()
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             None,
         ))
-        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
         }))
@@ -57,7 +67,7 @@ async fn main() -> Result<(), anyhow::Error> {
             sanity_check
         ])
         .setup(|app| {
-            set_up_logging(app.app_handle())?;
+            set_up_logging(&app.app_handle())?;
             debug!("Starting setup of RQuickShare app");
 
             let app_handle = app.handle().clone();
@@ -88,36 +98,6 @@ async fn main() -> Result<(), anyhow::Error> {
             });
 
             debug!("Done starting RQS lib");
-
-            // Setup system tray
-            let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
-            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
-            let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
-            let _tray = TrayIconBuilder::new()
-                .icon(Icon::Raw(include_bytes!("../icons/icon.png").to_vec()))
-                .menu(&menu)
-                .on_menu_event(move |app, event| match event.id().as_ref() {
-                    "show" => {
-                        let app = app.app_handle();
-                        if let Some(webview_window) = app.get_webview_window("main") {
-                            let _ = webview_window.show();
-                            let _ = webview_window.set_focus();
-                        }
-                    }
-                    "quit" => {
-                        tokio::task::block_in_place(|| {
-                            tauri::async_runtime::block_on(async move {
-                                let state: tauri::State<'_, AppState> = app.state();
-                                let _ = state.rqs.lock().unwrap().stop().await;
-
-                                app.app_handle().cleanup_before_exit();
-                                std::process::exit(0);
-                            });
-                        });
-                    }
-                    _ => (),
-                })
-                .build(app)?;
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -166,13 +146,39 @@ async fn main() -> Result<(), anyhow::Error> {
 
             Ok(())
         })
-        .on_window_event(|w, event| match event {
+        .system_tray(tray)
+        .on_system_tray_event(|app, event| {
+            if let SystemTrayEvent::MenuItemClick { id, .. } = event {
+                match id.as_str() {
+                    "show" => {
+                        let app = app.app_handle();
+                        if let Some(webview_window) = app.get_window("main") {
+                            let _ = webview_window.show();
+                            let _ = webview_window.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        tokio::task::block_in_place(|| {
+                            tauri::async_runtime::block_on(async move {
+                                let state: tauri::State<'_, AppState> = app.state();
+                                let _ = state.rqs.lock().unwrap().stop().await;
+
+                                app.app_handle().exit(0);
+                            });
+                        });
+                    }
+                    _ => {}
+                }
+            }
+        })
+        .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
+                let app_handle = event.window().app_handle();
                 // This can never be an Err. We check for the realclose key, then convert the json to a bool
                 // and handle default to be "false".
                 let realclose = with_store(
-                    w.app_handle().clone(),
-                    w.state(),
+                    app_handle.clone(),
+                    app_handle.state(),
                     ".settings.json",
                     |store| {
                         return Ok(store
@@ -185,17 +191,17 @@ async fn main() -> Result<(), anyhow::Error> {
 
                 if !realclose {
                     trace!("Prevent close");
-                    w.hide().unwrap();
+                    event.window().hide().unwrap();
                     api.prevent_close();
                 } else {
                     trace!("Real close");
                     tokio::task::block_in_place(|| {
                         tauri::async_runtime::block_on(async move {
-                            let state: tauri::State<'_, AppState> = w.state();
+                            let app_handle = event.window().app_handle();
+                            let state: tauri::State<'_, AppState> = app_handle.state();
                             let _ = state.rqs.lock().unwrap().stop().await;
 
-                            w.app_handle().cleanup_before_exit();
-                            std::process::exit(0);
+                            app_handle.exit(0);
                         });
                     });
                 }
@@ -220,12 +226,12 @@ fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) 
     }
 
     info!("rs2js: {:?}", &message);
-    manager.emit("rs2js", &message).unwrap();
+    manager.emit_all("rs2js", &message).unwrap();
 }
 
 fn rs2js_discovery<R: tauri::Runtime>(message: EndpointInfo, manager: &impl Manager<R>) {
     info!("rs2js_discovery: {:?}", &message);
-    manager.emit("rs2js_discovery", &message).unwrap();
+    manager.emit_all("rs2js_discovery", &message).unwrap();
 }
 
 #[tauri::command]

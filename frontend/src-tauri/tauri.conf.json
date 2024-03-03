@@ -1,48 +1,57 @@
 {
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "windows": {
-      "certificateThumbprint": null,
-      "digestAlgorithm": "sha256",
-      "timestampUrl": ""
-    },
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "resources": [],
-    "externalBin": [],
-    "copyright": "",
-    "category": "DeveloperTool",
-    "shortDescription": "",
-    "longDescription": "",
-    "macOS": {
-      "frameworks": [],
-      "exceptionDomain": "",
-      "signingIdentity": null,
-      "providerShortName": null,
-      "entitlements": null
-    },
-    "linux": {
-      "deb": {
-        "depends": []
-      }
-    }
+  "package": {
+    "productName": "RQuickShare"
   },
   "build": {
-    "beforeBuildCommand": "pnpm vite:build",
-    "frontendDist": "../dist",
-    "beforeDevCommand": "pnpm vite:dev",
-    "devUrl": "http://localhost:1420"
+    "distDir": "../dist",
+    "devPath": "http://localhost:1420",
+	"beforeDevCommand": "pnpm vite:dev",
+    "beforeBuildCommand": "pnpm vite:build"
   },
-  "productName": "RQuickShare",
-  "identifier": "dev.mandre.rquickshare",
-  "plugins": {},
-  "app": {
+  "tauri": {
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "dev.mandre.rquickshare",
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "resources": [],
+      "externalBin": [],
+      "copyright": "",
+      "category": "DeveloperTool",
+      "shortDescription": "",
+      "longDescription": "",
+      "deb": {
+        "depends": []
+      },
+      "macOS": {
+        "frameworks": [],
+        "exceptionDomain": "",
+        "signingIdentity": null,
+        "providerShortName": null,
+        "entitlements": null
+      },
+      "windows": {
+        "certificateThumbprint": null,
+        "digestAlgorithm": "sha256",
+        "timestampUrl": ""
+      }
+    },
+    "updater": {
+      "active": false
+    },
+    "allowlist": {
+      "all": true
+    },
     "windows": [
       {
         "title": "RQuickShare",
@@ -54,10 +63,6 @@
     ],
     "security": {
       "csp": null
-    },
-    "trayIcon": {
-      "iconPath": "icons/icon.png",
-      "iconAsTemplate": true
     }
   }
 }

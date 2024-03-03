@@ -288,12 +288,12 @@
 <script lang="ts">
 import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
-import { invoke } from "@tauri-apps/api/core"
-import { getCurrent } from '@tauri-apps/api/webview';
+import { Store } from 'tauri-plugin-store-api';
+import { invoke } from '@tauri-apps/api/tauri'
 import { getVersion } from '@tauri-apps/api/app';
-import { Store } from "@tauri-apps/plugin-store";
-import { disable, enable } from "@tauri-apps/plugin-autostart";
-import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
+import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification';
+import { getCurrent } from '@tauri-apps/api/window';
+import { disable, enable } from 'tauri-plugin-autostart-api';
 
 import { opt } from '../utils';
 import { ChannelMessage } from '../../../core_lib/bindings/ChannelMessage';

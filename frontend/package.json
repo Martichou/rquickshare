@@ -1,7 +1,6 @@
 {
   "name": "rquickshare",
   "private": true,
-  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\" \"pnpm devtools\"",
@@ -19,16 +18,15 @@
   },
   "dependencies": {
     "@martichou/core_lib": "../core_lib",
-    "@tauri-apps/api": "2.0.0-beta.3",
-    "@tauri-apps/plugin-autostart": "2.0.0-beta.1",
-    "@tauri-apps/plugin-notification": "2.0.0-beta.1",
-    "@tauri-apps/plugin-store": "2.0.0-beta.1",
+    "@tauri-apps/api": "1.5.1",
+    "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1",
+    "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
     "vue": "3.3.11"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^1.6.2",
     "@tailwindcss/typography": "^0.5.10",
-    "@tauri-apps/cli": "2.0.0-beta.6",
+    "@tauri-apps/cli": "1.5.7",
     "@types/node": "20.10.4",
     "@vitejs/plugin-vue": "4.5.2",
     "@vue/devtools": "6.5.1",
