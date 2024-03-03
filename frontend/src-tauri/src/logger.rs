@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use fern::colors::{Color, ColoredLevelConfig};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use time::OffsetDateTime;
 
 pub fn set_up_logging(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
@@ -41,15 +41,19 @@ pub fn set_up_logging(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
         .level_for("polling", log::LevelFilter::Error)
         .chain(std::io::stdout());
 
-    let app_name = &app_handle.package_info().name;
-    let path = app_handle.path().app_log_dir()?;
-    if !path.exists() {
-        std::fs::create_dir_all(&path)?;
+    if let Some(path) = app_handle.path_resolver().app_log_dir() {
+        if !path.exists() {
+            std::fs::create_dir_all(&path)?;
+        }
+
+        let app_name = &app_handle.package_info().name;
+        let file_logger = fern::log_file(get_log_file_path(&path, app_name, 40000)?)?;
+
+        dispatch.chain(file_logger).apply()?;
+    } else {
+        dispatch.apply()?;
     }
 
-    let file_logger = fern::log_file(get_log_file_path(&path, app_name, 40000)?)?;
-
-    dispatch.chain(file_logger).apply()?;
     debug!("Finished setting up logging! yay!");
     Ok(())
 }
