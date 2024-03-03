@@ -23,12 +23,20 @@
 					</summary>
 					<ul class="mt-2 p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-56">
 						<li>
-							<span class="active:!bg-green-100 active:!text-black" v-if="autostart" @click="setAutostart(false)">
-								Disable start on boot
-							</span>
-							<span class="active:!bg-green-100 active:!text-black" v-else @click="setAutostart(true)">
-								Enable start on boot
-							</span>
+							<div class="form-control active:!bg-green-100 active:!text-black w-52">
+								<label class="label cursor-pointer min-w-full">
+									<span class="label-text">Start on boot</span>
+									<input type="checkbox" :checked="autostart" class="checkbox checkbox-sm" @click="setAutostart(!autostart)">
+								</label>
+							</div>
+						</li>
+						<li>
+							<div class="form-control active:!bg-green-100 active:!text-black w-52">
+								<label class="label cursor-pointer min-w-full">
+									<span class="label-text">Keep running on close</span>
+									<input type="checkbox" :checked="!realclose" class="checkbox checkbox-sm" @click="setRealclose(!realclose)">
+								</label>
+							</div>
 						</li>
 					</ul>
 				</details>
@@ -315,6 +323,7 @@ interface DisplayedItem {
 }
 
 const autostartKey = "autostart";
+const realcloseKey = "realclose";
 const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
 export default {
@@ -343,6 +352,7 @@ export default {
 			version: opt<string>(),
 
 			autostart: ref<boolean>(true),
+			realclose: ref<boolean>(false),
 
 			hostname: ref<string>()
 		};
@@ -358,6 +368,8 @@ export default {
 			} else {
 				await this.applyAutostart();
 			}
+
+			this.getRealclose();
 
 			// Check permission for notification
 			let permissionGranted = await isPermissionGranted();
@@ -528,6 +540,14 @@ export default {
 			} else {
 				await disable();
 			}
+		},
+		setRealclose: async function(realclose: boolean) {
+			await this.store.set(realcloseKey, realclose);
+			await this.store.save();
+			this.realclose = realclose;
+		},
+		getRealclose: async function() {
+			this.realclose = await this.store.get(realcloseKey) ?? false;
 		},
 		clearSending: async function() {
 			await invoke('stop_discovery');

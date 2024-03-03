@@ -17,6 +17,7 @@ use tauri::{AppHandle, Icon, Manager};
 use tauri_plugin_autostart::MacosLauncher;
 #[cfg(not(target_os = "linux"))]
 use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_store::with_store;
 use tokio::sync::{broadcast, mpsc};
 
 use crate::logger::set_up_logging;
@@ -109,6 +110,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                 let state: tauri::State<'_, AppState> = app.state();
                                 let _ = state.rqs.lock().unwrap().stop().await;
 
+                                app.app_handle().cleanup_before_exit();
                                 std::process::exit(0);
                             });
                         });
@@ -166,8 +168,37 @@ async fn main() -> Result<(), anyhow::Error> {
         })
         .on_window_event(|w, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                w.hide().unwrap();
-                api.prevent_close();
+                // This can never be an Err. We check for the realclose key, then convert the json to a bool
+                // and handle default to be "false".
+                let realclose = with_store(
+                    w.app_handle().clone(),
+                    w.state(),
+                    ".settings.json",
+                    |store| {
+                        return Ok(store
+                            .get("realclose")
+                            .and_then(|json| json.as_bool())
+                            .unwrap_or(false));
+                    },
+                )
+                .unwrap();
+
+                if !realclose {
+                    trace!("Prevent close");
+                    w.hide().unwrap();
+                    api.prevent_close();
+                } else {
+                    trace!("Real close");
+                    tokio::task::block_in_place(|| {
+                        tauri::async_runtime::block_on(async move {
+                            let state: tauri::State<'_, AppState> = w.state();
+                            let _ = state.rqs.lock().unwrap().stop().await;
+
+                            w.app_handle().cleanup_before_exit();
+                            std::process::exit(0);
+                        });
+                    });
+                }
             }
             _ => {}
         })

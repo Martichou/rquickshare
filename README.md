@@ -78,6 +78,15 @@ A second workaround, you can download a Shortcut maker (see [here](https://xdafo
 
 _Note: there's a current WIP to add a BLE advertisment in RQuickShare to overcome this._
 
+### Once I close the app, it won't reopen
+
+Make sure the app is really closed by running:
+```
+ps aux | grep r-quick-share
+```
+If you see that the process is still running, it's because the app is not closed. This may be an intended behavior: when closing the window, the app won't stop and instead is still running and accessible via the system tray icon. But if your distribution doesn't support/don't have enabled them, it may be an issue for you.
+
+If you want to **really** close the app when clicking on the close button, you can change that inside the app by clicking on the three dots and then "Stop app on close".
 
 WIP Notes
 --------------------------
