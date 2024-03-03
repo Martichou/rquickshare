@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0](https://github.com/Martichou/rquickshare/compare/v0.1.1...v0.2.0) (2024-03-03)
+
+
+### Features
+
+* add optimization profile for release ([5203a1e](https://github.com/Martichou/rquickshare/commit/5203a1eb81965cedaf3d39850487e2bcfca41d90))
+* add option to configure close action ([64c1ca9](https://github.com/Martichou/rquickshare/commit/64c1ca963a73bf0fb23561528b0ba1292c0d541b))
+* implement logging into a file ([1f7c986](https://github.com/Martichou/rquickshare/commit/1f7c98668968d9c96be3c8e3ba12b4e207ff5d13))
+* release process specify GLIBC version in filename ([9711ab3](https://github.com/Martichou/rquickshare/commit/9711ab30e195719df0c026657ba736b067a7db1a))
+* tauri v1 & build on 20.04 ([#24](https://github.com/Martichou/rquickshare/issues/24)) ([5516783](https://github.com/Martichou/rquickshare/commit/55167836a962daef3b384ad3f32014c0511f113a))
+
+
+### Bug Fixes
+
+* parse_mdns_info fix device_type & test ([8f11566](https://github.com/Martichou/rquickshare/commit/8f115667a68bb33ad7fa916d365105022598ebc8))
+
 ## [0.1.1](https://github.com/Martichou/rquickshare/compare/v0.1.0...v0.1.1) (2024-03-02)
 
 
