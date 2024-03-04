@@ -2,7 +2,8 @@
 extern crate log;
 
 use channel::ChannelMessage;
-#[cfg(feature = "experimental")]
+// #[cfg(feature = "experimental")]
+#[cfg(not(target_os = "macos"))]
 use hdl::BleAdvertiser;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use rand::{distributions, Rng};
@@ -13,8 +14,9 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 use ts_rs::TS;
-
-use crate::hdl::{BleListener, MDnsServer};
+#[cfg(not(target_os = "macos"))]
+use crate::hdl::{BleListener};
+use crate::hdl::{MDnsServer};
 use crate::manager::TcpServer;
 use crate::utils::{is_not_self_ip, parse_mdns_endpoint_info};
 
@@ -100,8 +102,10 @@ impl RQS {
         self.tracker.spawn(async move { server.run(ctk).await });
 
         // Start BleListener in own "task"
+        // #[cfg(not(target_os = "macos"))]
         let ble_channel = broadcast::channel(10);
         // Don't threat BleListener error as fatal, it's a nice to have.
+        #[cfg(not(target_os = "macos"))]
         if let Ok(ble) = BleListener::new(ble_channel.0).await {
             let ctk = self.ctoken.clone();
             self.tracker.spawn(async move { ble.run(ctk).await });
@@ -129,13 +133,16 @@ impl RQS {
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
 
+        // #[cfg(not(target_os = "macos"))]
         let blea_ctk = CancellationToken::new();
+        // #[cfg(not(target_os = "macos"))]
         self.blea_ctk = Some(blea_ctk.clone());
 
         let discovery = MDnsDiscovery::new(sender)?;
         self.tracker.spawn(async move { discovery.run(ctk).await });
 
-        #[cfg(feature = "experimental")]
+        // #[cfg(feature = "experimental")]
+        #[cfg(not(target_os = "macos"))]
         self.tracker.spawn(async move {
             let blea = match BleAdvertiser::new().await {
                 Ok(b) => b,
@@ -158,7 +165,7 @@ impl RQS {
             discovert_ctk.cancel();
             self.discovery_ctk = None;
         }
-
+        #[cfg(not(target_os = "macos"))]
         if let Some(blea_ctk) = &self.blea_ctk {
             blea_ctk.cancel();
             self.blea_ctk = None;

@@ -1,7 +1,9 @@
 use std::time::{Duration, SystemTime};
 
 use anyhow::anyhow;
+#[cfg(not(target_os = "macos"))]
 use btleplug::api::{Central, CentralEvent, Manager as _, ScanFilter};
+#[cfg(not(target_os = "macos"))]
 use btleplug::platform::{Adapter, Manager};
 use futures::stream::StreamExt;
 use tokio::sync::broadcast::Sender;
@@ -10,13 +12,15 @@ use uuid::{uuid, Uuid};
 
 const SERVICE_UUID_SHARING: Uuid = uuid!("0000fe2c-0000-1000-8000-00805f9b34fb");
 
+#[cfg(not(target_os = "macos"))]
 const INNER_NAME: &str = "BleListener";
 
+#[cfg(not(target_os = "macos"))]
 pub struct BleListener {
     adapter: Adapter,
     sender: Sender<()>,
 }
-
+#[cfg(not(target_os = "macos"))]
 impl BleListener {
     pub async fn new(sender: Sender<()>) -> Result<Self, anyhow::Error> {
         let manager = Manager::new().await?;
@@ -30,7 +34,7 @@ impl BleListener {
             sender,
         })
     }
-
+    #[cfg(not(target_os = "macos"))]
     pub async fn run(self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
         info!("{INNER_NAME}: service starting");
 

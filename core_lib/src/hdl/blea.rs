@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
+#[cfg(not(target_os = "macos"))]
 use bluer::adv::{Advertisement, Feature, SecondaryChannel};
+#[cfg(not(target_os = "macos"))]
 use bluer::UuidExt;
 use bytes::Bytes;
 use tokio_util::sync::CancellationToken;
@@ -11,13 +13,16 @@ const SERVICE_DATA: Bytes = Bytes::from_static(&[
     106, 29, 0,
 ]);
 
+#[cfg(not(target_os = "macos"))]
 const INNER_NAME: &str = "BleAdvertiser";
 
 #[derive(Debug, Clone)]
+#[cfg(not(target_os = "macos"))]
 pub struct BleAdvertiser {
     adapter: Arc<bluer::Adapter>,
 }
 
+#[cfg(not(target_os = "macos"))]
 impl BleAdvertiser {
     pub async fn new() -> Result<Self, anyhow::Error> {
         let session = bluer::Session::new().await?;
