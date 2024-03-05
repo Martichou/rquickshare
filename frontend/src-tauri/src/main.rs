@@ -17,6 +17,7 @@ use tauri::{
 };
 use tauri_plugin_autostart::MacosLauncher;
 #[cfg(not(target_os = "linux"))]
+#[cfg(not(target_os = "macos"))]
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_store::with_store;
 use tokio::sync::{broadcast, mpsc};
@@ -342,6 +343,7 @@ fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
     }
 
     #[cfg(not(target_os = "linux"))]
+    #[cfg(not(target_os = "macos"))]
     let _ = app_handle
         .notification()
         .builder()
