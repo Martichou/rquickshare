@@ -1,8 +1,5 @@
 #!/bin/bash
 
-cargo-sort ./core_lib/Cargo.toml
-cargo-sort ./frontend/src-tauri/Cargo.toml
-
 for dir in core_lib frontend/src-tauri; do
   find "$dir" -name '*.rs' -not -path "*/target/*" -exec rustfmt {} +
 done
