@@ -6,19 +6,19 @@
 #[macro_use]
 extern crate log;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
-use rqs_lib::{EndpointInfo, SendInfo, State, RQS};
+use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
 };
 use tauri_plugin_autostart::MacosLauncher;
-use tokio::sync::{broadcast, mpsc};
+use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::logger::set_up_logging;
-use crate::notification::send_request_notification;
-use crate::store::{get_realclose, get_visibility};
+use crate::notification::{send_request_notification, send_temporarily_notification};
+use crate::store::{get_realclose, get_visibility, init_default, set_visibility};
 
 mod cmds;
 mod logger;
@@ -29,6 +29,8 @@ pub struct AppState {
     pub sender: broadcast::Sender<ChannelMessage>,
     pub dch_sender: broadcast::Sender<EndpointInfo>,
     pub sender_file: mpsc::Sender<SendInfo>,
+    pub ble_receiver: broadcast::Receiver<()>,
+    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     pub rqs: Mutex<RQS>,
 }
 
@@ -70,6 +72,9 @@ async fn main() -> Result<(), anyhow::Error> {
             set_up_logging(&app.app_handle())?;
             debug!("Starting setup of RQuickShare app");
 
+            // Initialize default value for the store
+            init_default(&app.app_handle());
+
             // Fetch default or previously saved visibility
             let visibility = get_visibility(&app.app_handle());
 
@@ -83,17 +88,21 @@ async fn main() -> Result<(), anyhow::Error> {
                     // Start the RQuickShare service
                     let mut rqs = RQS::new(visibility);
                     // Need to be waited, but blocked on
-                    let sender_file = rqs.run().await.unwrap();
+                    let (sender_file, ble_receiver) = rqs.run().await.unwrap();
 
                     // Init the channels for use
                     let (dch_sender, _) = broadcast::channel(10);
                     let sender = rqs.message_sender.clone();
+
+                    let visibility_sender = rqs.visibility_sender.clone();
 
                     // Define state for tauri app
                     app_handle.manage(AppState {
                         sender,
                         dch_sender,
                         sender_file,
+                        ble_receiver,
+                        visibility_sender,
                         rqs: Mutex::new(rqs),
                     });
                 });
@@ -139,6 +148,49 @@ async fn main() -> Result<(), anyhow::Error> {
                         Ok(info) => rs2js_endpointinfo(info, &app_handle),
                         Err(e) => {
                             error!("Error getting dch_receiver message: {}", e);
+                        }
+                    }
+                }
+            });
+
+            // Sync visibility with the store (mainly used for Temporarily)
+            let app_handle = app.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = app_handle.state();
+                let mut visibility_receiver = state.visibility_sender.lock().unwrap().subscribe();
+
+                loop {
+                    match visibility_receiver.changed().await {
+                        Ok(_) => {
+                            let v = visibility_receiver.borrow_and_update();
+                            let _ = set_visibility(&app_handle, v.clone());
+                        }
+                        Err(e) => {
+                            error!("Error getting visibility_receiver update: {}", e);
+                        }
+                    }
+                }
+            });
+
+            // React to device sharing nearby
+            let app_handle = app.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = app_handle.state();
+                let mut ble_receiver = state.ble_receiver.resubscribe();
+
+                loop {
+                    match ble_receiver.recv().await {
+                        Ok(_) => {
+                            let v = get_visibility(&app_handle);
+                            trace!("Tauri: ble received: {:?}", v);
+
+                            if v == Visibility::Invisible {
+                                // Show notification to pass to temporarily mdns mode
+                                send_temporarily_notification(&app_handle);
+                            }
+                        }
+                        Err(e) => {
+                            error!("Error getting ble_receiver message: {}", e);
                         }
                     }
                 }

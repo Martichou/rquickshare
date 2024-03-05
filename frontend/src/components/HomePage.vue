@@ -3,7 +3,7 @@
 		<!-- Settings dialog -->
 		<dialog id="settings_modal" class="modal">
 			<div class="modal-box">
-				<h3 class="font-bold text-lg">
+				<h3 class="font-medium text-xl">
 					Settings
 				</h3>
 				<p class="py-4">
@@ -82,7 +82,8 @@
 						class="font-medium flex flex-row justify-between gap-2 items-center rounded-xl active:scale-95
 							hover:bg-green-200 hover:bg-opacity-50 cursor-pointer transition duration-150 ease-in-out p-3">
 						<span v-if="visibility === 'Visible'">Always visible</span>
-						<span v-else>Hidden from everyone</span>
+						<span v-else-if="visibility === 'Invisible'">Hidden from everyone</span>
+						<span v-else>Temporarily visible</span>
 						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
 							<path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z" />
 						</svg>
@@ -94,7 +95,7 @@
 								Always visible
 							</a>
 						</li>
-						<li v-else>
+						<li v-if="visibility !== 'Invisible'">
 							<a
 								class="active:!bg-green-100 active:!text-black hover:!bg-green-50" @click="setVisibility('Invisible');blured()">
 								Hidden from everyone
@@ -104,11 +105,19 @@
 				</div>
 				<p class="text-sm mt-1 pb-3 px-3">
 					<span v-if="visibility === 'Visible'">
-						Everyone can share with you (you still need to approve each transfer).
+						Nearby devices can share files with you, but you'll always be
+						notified and have to approve each transfer before receiving it.
+					</span>
+					<span v-else-if="visibility === 'Invisible'">
+						No one can see your device at the moment. However, keep in mind that if another
+						device has saved yours before, it might still attempt to start a transfer with you.
+						<br>
+						<br>
+						You will get a notification when someone nearby is sharing
+						giving you the ability to become visible for 1 minute.
 					</span>
 					<span v-else>
-						Nobody can see your device. Keep in mind that if a device have
-						yours in memory, it can still try to initiate a transfer.
+						You are temporarily visible to everyone.
 					</span>
 				</p>
 			</div>
@@ -376,10 +385,23 @@ interface DisplayedItem {
 	destination?: string,
 }
 
+const visibilityToNumber: { [key in Visibility]: number } = {
+	'Visible': 0,
+	'Invisible': 1,
+	'Temporarily': 2,
+};
+
+const numberToVisibility: { [key: number]: Visibility } = {
+	0: "Visible",
+	1: "Invisible",
+	2: "Temporarily",
+};
+
 const autostartKey = "autostart";
 const realcloseKey = "realclose";
 const visibilityKey = "visibility";
-const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
+const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
+	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
 export default {
 	name: "HomePage",
@@ -418,6 +440,8 @@ export default {
 		nextTick(async () => {
 			this.hostname = await invoke('get_hostname');
 			this.version = await getVersion();
+
+			await this.getVisibility();
 
 			if (!await this.store.has(autostartKey)) {
 				await this.setAutostart(true);
@@ -497,6 +521,13 @@ export default {
 					} else {
 						this.endpointsInfo.push(ei);
 					}
+				})
+			);
+
+			this.unlisten.push(
+				await listen('visibility_updated', async () => {
+					console.log("Visibility changed");
+					await this.getVisibility();
 				})
 			);
 
@@ -604,12 +635,12 @@ export default {
 		},
 		setVisibility: async function(visibility: Visibility) {
 			await invoke('change_visibility', { message: visibility });
-			await this.store.set(visibilityKey, visibility);
+			await this.store.set(visibilityKey, visibilityToNumber[visibility]);
 			await this.store.save();
 			this.visibility = visibility;
 		},
 		getVisibility: async function() {
-			this.visibility = await this.store.get(visibilityKey) ?? 'Visible';
+			this.visibility = numberToVisibility[(await this.store.get(visibilityKey) ?? 0) as number];
 		},
 		clearSending: async function() {
 			await invoke('stop_discovery');

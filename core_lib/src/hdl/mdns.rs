@@ -1,18 +1,28 @@
+use std::{
+    sync::{Arc, Mutex},
+    time::Duration,
+};
+
 use mdns_sd::{AddrType, ServiceDaemon, ServiceInfo};
 use serde::{Deserialize, Serialize};
-use tokio::sync::{broadcast::Receiver, watch};
+use tokio::{
+    sync::{broadcast::Receiver, watch},
+    time::{interval_at, Instant},
+};
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
 
 const INNER_NAME: &str = "MDnsServer";
+const TICK_INTERVAL: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub enum Visibility {
     Visible = 0,
     Invisible = 1,
+    Temporarily = 2,
 }
 
 #[allow(dead_code)]
@@ -20,7 +30,9 @@ impl Visibility {
     pub fn from_raw_value(value: u8) -> Self {
         match value {
             0 => Visibility::Visible,
-            _ => Visibility::Invisible,
+            1 => Visibility::Invisible,
+            2 => Visibility::Temporarily,
+            _ => unreachable!(),
         }
     }
 }
@@ -29,6 +41,7 @@ pub struct MDnsServer {
     daemon: ServiceDaemon,
     service_info: ServiceInfo,
     ble_receiver: Receiver<()>,
+    visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     visibility_receiver: watch::Receiver<Visibility>,
 }
 
@@ -37,6 +50,7 @@ impl MDnsServer {
         endpoint_id: [u8; 4],
         service_port: u16,
         ble_receiver: Receiver<()>,
+        visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
         visibility_receiver: watch::Receiver<Visibility>,
     ) -> Result<Self, anyhow::Error> {
         let service_info = Self::build_service(endpoint_id, service_port, DeviceType::Laptop)?;
@@ -45,6 +59,7 @@ impl MDnsServer {
             daemon: ServiceDaemon::new()?,
             service_info,
             ble_receiver,
+            visibility_sender,
             visibility_receiver,
         })
     }
@@ -54,6 +69,7 @@ impl MDnsServer {
         let monitor = self.daemon.monitor()?;
         let ble_receiver = &mut self.ble_receiver;
         let mut visibility = *self.visibility_receiver.borrow();
+        let mut interval = interval_at(Instant::now() + TICK_INTERVAL, TICK_INTERVAL);
 
         loop {
             tokio::select! {
@@ -76,6 +92,9 @@ impl MDnsServer {
                     } else if visibility == Visibility::Invisible {
                         let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
                         let _ = receiver.recv();
+                    } else if visibility == Visibility::Temporarily {
+                        self.daemon.register(self.service_info.clone())?;
+                        interval.reset();
                     }
                 }
                 _ = ble_receiver.recv() => {
@@ -84,7 +103,7 @@ impl MDnsServer {
                     }
 
                     debug!("{INNER_NAME}: ble_receiver: got event");
-                    if visibility == Visibility::Visible {
+                    if visibility == Visibility::Visible || visibility == Visibility::Temporarily {
                         // Android can sometime not see the mDNS service if the service
                         // was running BEFORE Android started the Discovery phase for QuickShare.
                         // So resend a broadcast if there's a android device sending.
@@ -92,6 +111,15 @@ impl MDnsServer {
                     } else {
                         self.daemon.register(self.service_info.clone())?;
                     }
+                },
+                _ = interval.tick() => {
+                    if visibility != Visibility::Temporarily {
+                        continue;
+                    }
+
+                    let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
+                    let _ = receiver.recv();
+                    let _ = self.visibility_sender.lock().unwrap().send(Visibility::Invisible);
                 }
             }
         }

@@ -42,7 +42,7 @@ impl BleListener {
             })
             .await?;
 
-        let mut last_alert = SystemTime::now();
+        let mut last_alert = SystemTime::UNIX_EPOCH;
 
         loop {
             tokio::select! {
