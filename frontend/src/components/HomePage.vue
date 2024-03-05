@@ -9,7 +9,9 @@
 				<p class="py-4">
 					<ul>
 						<li>
-							<div class="form-control active:!bg-green-100 active:!text-black p-2 px-3 rounded-xl transition duration-150 ease-in-out">
+							<div
+								class="form-control active:!bg-green-100 hover:!bg-green-50 active:!text-black
+									p-2 px-3 rounded-xl transition duration-150 ease-in-out">
 								<label class="label cursor-pointer min-w-full">
 									<span class="label-text">Start on boot</span>
 									<input
@@ -19,7 +21,9 @@
 							</div>
 						</li>
 						<li>
-							<div class="form-control active:!bg-green-100 active:!text-black p-2 px-3 rounded-xl transition duration-150 ease-in-out">
+							<div
+								class="form-control active:!bg-green-100 hover:!bg-green-50 active:!text-black
+								p-2 px-3 rounded-xl transition duration-150 ease-in-out">
 								<label class="label cursor-pointer min-w-full">
 									<span class="label-text">Keep running on close</span>
 									<input
@@ -51,7 +55,7 @@
 					v{{ version }}
 				</p>
 				<div
-					class="hover:bg-gray-200 cursor-pointer p-2 rounded-xl active:scale-95 transition duration-150 ease-in-out"
+					class="hover:bg-green-200 hover:bg-opacity-50 cursor-pointer p-2 rounded-xl active:scale-95 transition duration-150 ease-in-out"
 					onclick="settings_modal.showModal()">
 					<svg
 						xmlns="http://www.w3.org/2000/svg" height="24"
@@ -76,7 +80,7 @@
 					<h4
 						tabindex="0" role="button"
 						class="font-medium flex flex-row justify-between gap-2 items-center rounded-xl active:scale-95
-							hover:bg-gray-200 cursor-pointer transition duration-150 ease-in-out p-3">
+							hover:bg-green-200 hover:bg-opacity-50 cursor-pointer transition duration-150 ease-in-out p-3">
 						<span v-if="visibility === 'Visible'">Always visible</span>
 						<span v-else>Hidden from everyone</span>
 						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
@@ -86,13 +90,13 @@
 					<ul tabindex="0" class="mt-2 p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-64">
 						<li v-if="visibility !== 'Visible'">
 							<a
-								class="active:!bg-green-100 active:!text-black" @click="setVisibility('Visible');blured()">
+								class="active:!bg-green-100 active:!text-black hover:!bg-green-50" @click="setVisibility('Visible');blured()">
 								Always visible
 							</a>
 						</li>
 						<li v-else>
 							<a
-								class="active:!bg-green-100 active:!text-black" @click="setVisibility('Invisible');blured()">
+								class="active:!bg-green-100 active:!text-black hover:!bg-green-50" @click="setVisibility('Invisible');blured()">
 								Hidden from everyone
 							</a>
 						</li>
@@ -133,7 +137,7 @@
 
 				<p
 					@click="clearSending()"
-					class="outline outline-1 outline-gray-700 cursor-pointer p-1 px-3 rounded-full
+					class="my-0 cursor-pointer p-2 px-3 hover:bg-green-200 hover:bg-opacity-50 rounded-full
 					font-medium active:scale-95 transition duration-150 ease-in-out w-fit">
 					Cancel
 				</p>
