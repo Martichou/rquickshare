@@ -272,7 +272,7 @@
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
 									v-if="item.destination"
-									@click="invoke('open', { message: item.destination })"
+									@click="invoke('open_url', { message: item.destination })"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
 									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Open
@@ -447,10 +447,8 @@ export default {
 			}, 30000);
 
 			this.unlisten.push(
-				await listen('rs2js', async (event) => {
+				await listen('rs2js_channelmessage', async (event) => {
 					const cm = event.payload as ChannelMessage;
-					console.log("rs2js:", cm);
-
 					const idx = this.requests.findIndex((el) => el.id === cm.id);
 
 					if (cm.state === "Disconnected") {
@@ -478,11 +476,10 @@ export default {
 			);
 
 			this.unlisten.push(
-				await listen('rs2js_discovery', (event) => {
+				await listen('rs2js_endpointinfo', (event) => {
 					const ei = event.payload as EndpointInfo;
-					console.log("rs2js:", ei);
-
 					const idx = this.endpointsInfo.findIndex((el) => el.id === ei.id);
+
 					if (!ei.present) {
 						if (idx !== -1) {
 							this.endpointsInfo.splice(idx, 1);
@@ -649,7 +646,7 @@ export default {
 			};
 			console.log("js2rs:", cm);
 
-			await invoke('js2rs', { message: cm });
+			await invoke('send_to_rs', { message: cm });
 		},
 		blured: function() {
 			(document.activeElement as any).blur();
