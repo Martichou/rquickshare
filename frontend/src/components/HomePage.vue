@@ -1,5 +1,41 @@
 <template>
-	<div class="flex flex-col bg-green-50 w-full h-full max-w-full max-h-full">
+	<div class="flex flex-col bg-green-50 text-black w-full h-full max-w-full max-h-full">
+		<!-- Settings dialog -->
+		<dialog id="settings_modal" class="modal">
+			<div class="modal-box">
+				<h3 class="font-bold text-lg">
+					Settings
+				</h3>
+				<p class="py-4">
+					<ul>
+						<li>
+							<div class="form-control active:!bg-green-100 active:!text-black p-2 px-3 rounded-xl transition duration-150 ease-in-out">
+								<label class="label cursor-pointer min-w-full">
+									<span class="label-text">Start on boot</span>
+									<input
+										type="checkbox" :checked="autostart" class="checkbox checkbox-sm focus-visible:outline-none"
+										@click="setAutostart(!autostart)">
+								</label>
+							</div>
+						</li>
+						<li>
+							<div class="form-control active:!bg-green-100 active:!text-black p-2 px-3 rounded-xl transition duration-150 ease-in-out">
+								<label class="label cursor-pointer min-w-full">
+									<span class="label-text">Keep running on close</span>
+									<input
+										type="checkbox" :checked="!realclose" class="checkbox checkbox-sm focus-visible:outline-none"
+										@click="setRealclose(!realclose)">
+								</label>
+							</div>
+						</li>
+					</ul>
+				</p>
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button>close</button>
+			</form>
+		</dialog>
+
 		<div class="flex flex-row justify-between items-center px-6 py-4">
 			<!-- Header, Pc name left and options right -->
 			<div>
@@ -14,32 +50,16 @@
 				<p class="text-sm">
 					v{{ version }}
 				</p>
-				<details class="dropdown dropdown-end">
-					<summary class="hover:bg-gray-200 cursor-pointer p-2 rounded-lg active:scale-105 transition duration-150 ease-in-out">
-						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-							<!-- eslint-disable-next-line -->
-							<path d="M480-160q-33 0-56.5-23.5T400-240q0-33 23.5-56.5T480-320q33 0 56.5 23.5T560-240q0 33-23.5 56.5T480-160Zm0-240q-33 0-56.5-23.5T400-480q0-33 23.5-56.5T480-560q33 0 56.5 23.5T560-480q0 33-23.5 56.5T480-400Zm0-240q-33 0-56.5-23.5T400-720q0-33 23.5-56.5T480-800q33 0 56.5 23.5T560-720q0 33-23.5 56.5T480-640Z" />
-						</svg>
-					</summary>
-					<ul class="mt-2 p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-56">
-						<li>
-							<div class="form-control active:!bg-green-100 active:!text-black w-52">
-								<label class="label cursor-pointer min-w-full">
-									<span class="label-text">Start on boot</span>
-									<input type="checkbox" :checked="autostart" class="checkbox checkbox-sm" @click="setAutostart(!autostart)">
-								</label>
-							</div>
-						</li>
-						<li>
-							<div class="form-control active:!bg-green-100 active:!text-black w-52">
-								<label class="label cursor-pointer min-w-full">
-									<span class="label-text">Keep running on close</span>
-									<input type="checkbox" :checked="!realclose" class="checkbox checkbox-sm" @click="setRealclose(!realclose)">
-								</label>
-							</div>
-						</li>
-					</ul>
-				</details>
+				<div
+					class="hover:bg-gray-200 cursor-pointer p-2 rounded-xl active:scale-95 transition duration-150 ease-in-out"
+					onclick="settings_modal.showModal()">
+					<svg
+						xmlns="http://www.w3.org/2000/svg" height="24"
+						viewBox="0 -960 960 960" width="24" class="fill-gray-700">
+						<!-- eslint-disable-next-line -->
+						<path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/>
+					</svg>
+				</div>
 			</div>
 		</div>
 		<div class="flex-1 flex flex-row">
@@ -48,15 +68,44 @@
 			<!-- 				 right, list of nearby devices -->
 			<!-- Default: left settings about visibility -->
 			<!-- 		  right, ready to receive with hint for drag & drop, then request (to accept or not) -->
-			<div class="w-72 p-6" v-if="outboundPayload === undefined">
-				<p class="mt-4 mb-2">
-					Currently
+			<div class="w-72 p-3" v-if="outboundPayload === undefined">
+				<p class="mt-4 mb-2 pt-3 px-3">
+					Visibility state
 				</p>
-				<h4 class="font-medium">
-					Receiving from everyone
-				</h4>
-				<p class="text-sm mt-1">
-					Everyone can share with you (you still need to approve each transfer).
+				<div class="dropdown w-full">
+					<h4
+						tabindex="0" role="button"
+						class="font-medium flex flex-row justify-between gap-2 items-center rounded-xl active:scale-95
+							hover:bg-gray-200 cursor-pointer transition duration-150 ease-in-out p-3">
+						<span v-if="visibility === 'Visible'">Always visible</span>
+						<span v-else>Hidden from everyone</span>
+						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+							<path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z" />
+						</svg>
+					</h4>
+					<ul tabindex="0" class="mt-2 p-2 shadow menu dropdown-content z-[1] bg-base-100 rounded-box w-64">
+						<li v-if="visibility !== 'Visible'">
+							<a
+								class="active:!bg-green-100 active:!text-black" @click="setVisibility('Visible');blured()">
+								Always visible
+							</a>
+						</li>
+						<li v-else>
+							<a
+								class="active:!bg-green-100 active:!text-black" @click="setVisibility('Invisible');blured()">
+								Hidden from everyone
+							</a>
+						</li>
+					</ul>
+				</div>
+				<p class="text-sm mt-1 pb-3 px-3">
+					<span v-if="visibility === 'Visible'">
+						Everyone can share with you (you still need to approve each transfer).
+					</span>
+					<span v-else>
+						Nobody can see your device. Keep in mind that if a device have
+						yours in memory, it can still try to initiate a transfer.
+					</span>
 				</p>
 			</div>
 			<div class="w-72 p-6 flex flex-col justify-between" v-else>
@@ -85,7 +134,7 @@
 				<p
 					@click="clearSending()"
 					class="outline outline-1 outline-gray-700 cursor-pointer p-1 px-3 rounded-full
-					font-medium active:scale-105 transition duration-150 ease-in-out w-fit">
+					font-medium active:scale-95 transition duration-150 ease-in-out w-fit">
 					Cancel
 				</p>
 			</div>
@@ -181,13 +230,13 @@
 								<p
 									@click="sendCmd(item.id, 'AcceptTransfer')"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Accept
 								</p>
 								<p
 									@click="sendCmd(item.id, 'RejectTransfer')"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Decline
 								</p>
 							</div>
@@ -207,7 +256,7 @@
 								<p
 									@click="sendCmd(item.id, 'CancelTransfer')"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Cancel
 								</p>
 							</div>
@@ -225,13 +274,13 @@
 									v-if="item.destination"
 									@click="invoke('open', { message: item.destination })"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Open
 								</p>
 								<p
 									@click="removeRequest(item.id)"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Clear
 								</p>
 							</div>
@@ -245,7 +294,7 @@
 								<p
 									@click="removeRequest(item.id)"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Clear
 								</p>
 							</div>
@@ -259,7 +308,7 @@
 								<p
 									@click="removeRequest(item.id)"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Clear
 								</p>
 							</div>
@@ -273,7 +322,7 @@
 								<p
 									@click="removeRequest(item.id)"
 									class="my-0 cursor-pointer p-2 px-3 hover:bg-green-50 rounded-full
-									font-medium active:scale-105 transition duration-150 ease-in-out">
+									font-medium active:scale-95 transition duration-150 ease-in-out">
 									Clear
 								</p>
 							</div>
@@ -303,6 +352,7 @@ import { OutboundPayload } from '../../../core_lib/bindings/OutboundPayload';
 import { SendInfo } from '../../../core_lib/bindings/SendInfo';
 import { State } from '../../../core_lib/bindings/State';
 import { DeviceType } from '../../../core_lib/bindings/DeviceType';
+import { Visibility } from '../../../core_lib/bindings/Visibility';
 
 interface ToDelete {
 	id: string,
@@ -324,6 +374,7 @@ interface DisplayedItem {
 
 const autostartKey = "autostart";
 const realcloseKey = "realclose";
+const visibilityKey = "visibility";
 const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected", "Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
 export default {
@@ -353,6 +404,7 @@ export default {
 
 			autostart: ref<boolean>(true),
 			realclose: ref<boolean>(false),
+			visibility: ref<Visibility>('Visible'),
 
 			hostname: ref<string>()
 		};
@@ -549,6 +601,15 @@ export default {
 		getRealclose: async function() {
 			this.realclose = await this.store.get(realcloseKey) ?? false;
 		},
+		setVisibility: async function(visibility: Visibility) {
+			await invoke('change_visibility', { message: visibility });
+			await this.store.set(visibilityKey, visibility);
+			await this.store.save();
+			this.visibility = visibility;
+		},
+		getVisibility: async function() {
+			this.visibility = await this.store.get(visibilityKey) ?? 'Visible';
+		},
 		clearSending: async function() {
 			await invoke('stop_discovery');
 			this.outboundPayload = undefined;
@@ -589,6 +650,9 @@ export default {
 			console.log("js2rs:", cm);
 
 			await invoke('js2rs', { message: cm });
+		},
+		blured: function() {
+			(document.activeElement as any).blur();
 		}
 	},
 }

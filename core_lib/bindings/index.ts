@@ -1,5 +1,6 @@
 export * from "./ChannelDirection"
 export * from "./DeviceType"
+export * from "./Visibility"
 export * from "./ChannelMessage"
 export * from "./TransferType"
 export * from "./OutboundPayload"

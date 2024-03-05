@@ -17,6 +17,8 @@ pub use blea::*;
 mod inbound;
 pub use inbound::*;
 pub(crate) mod info;
+mod mdns_discovery;
+pub use mdns_discovery::*;
 mod mdns;
 pub use mdns::*;
 mod outbound;

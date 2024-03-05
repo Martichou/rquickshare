@@ -10,7 +10,7 @@ use std::sync::Mutex;
 
 use notify_rust::Notification;
 use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
-use rqs_lib::{EndpointInfo, SendInfo, State, RQS};
+use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem,
@@ -64,11 +64,28 @@ async fn main() -> Result<(), anyhow::Error> {
             start_discovery,
             stop_discovery,
             get_hostname,
-            sanity_check
+            sanity_check,
+            change_visibility
         ])
         .setup(|app| {
             set_up_logging(&app.app_handle())?;
             debug!("Starting setup of RQuickShare app");
+
+            // Fetch default or previously saved visibility
+            let visibility = Visibility::from_raw_value(
+                with_store(
+                    app.app_handle().clone(),
+                    app.app_handle().state(),
+                    ".settings.json",
+                    |store| {
+                        return Ok(store
+                            .get("visibility")
+                            .and_then(|json| json.as_u64())
+                            .unwrap_or(0));
+                    },
+                )
+                .unwrap_or(0) as u8,
+            );
 
             let app_handle = app.handle().clone();
             // This is not optimal, but until I find a better way to init log
@@ -78,26 +95,23 @@ async fn main() -> Result<(), anyhow::Error> {
                 tauri::async_runtime::block_on(async move {
                     trace!("Begining of RQS start");
                     // Start the RQuickShare service
-                    let rqs = RQS::default();
+                    let mut rqs = RQS::new(visibility);
                     // Need to be waited, but blocked on
                     let sender_file = rqs.run().await.unwrap();
-                    trace!("Ran RQS run");
 
                     // Init the channels for use
                     let (dch_sender, _) = broadcast::channel(10);
-                    let sender = rqs.channel.0.clone();
+                    let sender = rqs.message_sender.clone();
 
                     // Define state for tauri app
                     app_handle.manage(AppState {
-                        sender: sender,
-                        dch_sender: dch_sender,
-                        sender_file: sender_file,
+                        sender,
+                        dch_sender,
+                        sender_file,
                         rqs: Mutex::new(rqs),
                     });
                 });
             });
-
-            debug!("Done starting RQS lib");
 
             let app_handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -251,7 +265,7 @@ fn open(message: String) -> Result<(), String> {
 
     match open::that(message) {
         Ok(_) => Ok(()),
-        Err(e) => return Err(format!("Coudln't open: {}", e)),
+        Err(e) => Err(format!("Coudln't open: {}", e)),
     }
 }
 
@@ -261,7 +275,7 @@ fn js2rs(message: ChannelMessage, state: tauri::State<'_, AppState>) -> Result<(
 
     match state.sender.send(message) {
         Ok(_) => Ok(()),
-        Err(e) => return Err(format!("Coudln't perform: {}", e)),
+        Err(e) => Err(format!("Coudln't perform: {}", e)),
     }
 }
 
@@ -285,8 +299,15 @@ fn stop_discovery(state: tauri::State<'_, AppState>) {
 }
 
 #[tauri::command]
+fn change_visibility(message: Visibility, state: tauri::State<'_, AppState>) {
+    info!("change_visibility: {message:?}");
+
+    state.rqs.lock().unwrap().change_visibility(message);
+}
+
+#[tauri::command]
 fn get_hostname() -> String {
-    return sys_metrics::host::get_hostname().unwrap_or(String::from("Unknown"));
+    sys_metrics::host::get_hostname().unwrap_or(String::from("Unknown"))
 }
 
 #[tauri::command]
