@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/Martichou/rquickshare/compare/v0.2.0...v0.3.0) (2024-03-06)
+
+
+### Features
+
+* add ability to change device visibility ([860dff9](https://github.com/Martichou/rquickshare/commit/860dff9ec969445230e735198a4f59b4d1fb61de))
+* temporarily visible mode (need ble) ([#33](https://github.com/Martichou/rquickshare/issues/33)) ([cb9b17b](https://github.com/Martichou/rquickshare/commit/cb9b17bb9f61afa716a7614e9899680bb731f79e))
+
+
+### Bug Fixes
+
+* correct color for hover on light green ([0a20588](https://github.com/Martichou/rquickshare/commit/0a20588fc673ee9e7b23da02efb5665a0374e051))
+
 ## [0.2.0](https://github.com/Martichou/rquickshare/compare/v0.1.1...v0.2.0) (2024-03-03)
 
 
