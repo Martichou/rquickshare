@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate log;
 
+use std::sync::{Arc, Mutex};
+
 use anyhow::anyhow;
 use channel::ChannelMessage;
 #[cfg(feature = "experimental")]
@@ -51,7 +53,8 @@ pub struct RQS {
     discovery_ctk: Option<CancellationToken>,
 
     // Used to trigger a change in the mDNS visibility (and later on, BLE)
-    visibility_channel: (watch::Sender<Visibility>, watch::Receiver<Visibility>),
+    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
+    visibility_receiver: watch::Receiver<Visibility>,
 
     // Only used to send the info "a nearby device is sharing"
     ble_sender: broadcast::Sender<()>,
@@ -67,24 +70,27 @@ impl Default for RQS {
 
 impl RQS {
     pub fn new(visibility: Visibility) -> Self {
-        let (message_sender, _) = broadcast::channel(10);
-        let (ble_sender, _) = broadcast::channel(10);
+        let (message_sender, _) = broadcast::channel(50);
+        let (ble_sender, _) = broadcast::channel(5);
 
         // Define default visibility as per the args inside the new()
-        let visibility_channel = watch::channel(Visibility::Invisible);
-        let _ = visibility_channel.0.send(visibility);
+        let (visibility_sender, visibility_receiver) = watch::channel(Visibility::Invisible);
+        let _ = visibility_sender.send(visibility);
 
         Self {
             tracker: None,
             ctoken: None,
             discovery_ctk: None,
-            visibility_channel,
+            visibility_sender: Arc::new(Mutex::new(visibility_sender)),
+            visibility_receiver,
             ble_sender,
             message_sender,
         }
     }
 
-    pub async fn run(&mut self) -> Result<mpsc::Sender<SendInfo>, anyhow::Error> {
+    pub async fn run(
+        &mut self,
+    ) -> Result<(mpsc::Sender<SendInfo>, broadcast::Receiver<()>), anyhow::Error> {
         let tracker = TaskTracker::new();
         let ctoken = CancellationToken::new();
         self.tracker = Some(tracker.clone());
@@ -122,14 +128,15 @@ impl RQS {
             endpoint_id[..4].try_into()?,
             binded_addr.port(),
             self.ble_sender.subscribe(),
-            self.visibility_channel.1.clone(),
+            self.visibility_sender.clone(),
+            self.visibility_receiver.clone(),
         )?;
         let ctk = ctoken.clone();
         tracker.spawn(async move { mdns.run(ctk).await });
 
         tracker.close();
 
-        Ok(send_channel.0)
+        Ok((send_channel.0, self.ble_sender.subscribe()))
     }
 
     pub fn discovery(
@@ -176,7 +183,10 @@ impl RQS {
     }
 
     pub fn change_visibility(&mut self, nv: Visibility) {
-        self.visibility_channel.0.send_modify(|state| *state = nv);
+        self.visibility_sender
+            .lock()
+            .unwrap()
+            .send_modify(|state| *state = nv);
     }
 
     pub async fn stop(&mut self) {
