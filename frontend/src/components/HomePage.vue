@@ -162,6 +162,12 @@
 					<h4 class="mt-2 font-medium">
 						Drop files to send
 					</h4>
+					<div class="btn btn-ghost mt-2" @click="openFilePicker()">
+						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+							<path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+						</svg>
+						<span class="ml-2">Select</span>
+					</div>
 				</div>
 
 				<div
@@ -338,6 +344,7 @@ import { SendInfo } from '../../../core_lib/bindings/SendInfo';
 import { State } from '../../../core_lib/bindings/State';
 import { DeviceType } from '../../../core_lib/bindings/DeviceType';
 import { Visibility } from '../../../core_lib/bindings/Visibility';
+import { dialog } from '@tauri-apps/api';
 
 interface ToDelete {
 	id: string,
@@ -657,6 +664,34 @@ export default {
 		},
 		blured: function() {
 			(document.activeElement as any).blur();
+		},
+		openFilePicker: function() {
+			dialog.open({
+				title: "Select a file to send",
+				directory: false,
+				multiple: true,
+			}).then(async (el) => {
+				let elem;
+				if (el === null) {
+					return;
+				}
+
+				console.log("Selected", el);
+				if (el instanceof Array) {
+					console.log("Is an array");
+					elem = el;
+				} else {
+					console.log("Is not an array");
+					elem = [el];
+				}
+
+
+				this.outboundPayload = {
+					Files: elem
+				} as OutboundPayload;
+				if (!this.discoveryRunning) await invoke('start_discovery');
+				this.discoveryRunning = true;
+			})
 		}
 	},
 }
