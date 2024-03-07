@@ -3,7 +3,7 @@ extern crate log;
 
 use channel::ChannelMessage;
 // #[cfg(feature = "experimental")]
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(feature = "experimental", not(target_os = "macos")))]  
 use hdl::BleAdvertiser;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use rand::{distributions, Rng};
@@ -142,7 +142,7 @@ impl RQS {
         self.tracker.spawn(async move { discovery.run(ctk).await });
 
         // #[cfg(feature = "experimental")]
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(all(feature = "experimental", not(target_os = "macos")))]  
         self.tracker.spawn(async move {
             let blea = match BleAdvertiser::new().await {
                 Ok(b) => b,
@@ -165,7 +165,7 @@ impl RQS {
             discovert_ctk.cancel();
             self.discovery_ctk = None;
         }
-        #[cfg(not(target_os = "macos"))]
+        // #[cfg(not(target_os = "macos"))]
         if let Some(blea_ctk) = &self.blea_ctk {
             blea_ctk.cancel();
             self.blea_ctk = None;
