@@ -504,8 +504,6 @@ impl OutboundRequest {
                             debug!("Chunk flags & 1 == 1 ?? End of data ??");
 
                             if payload_id == self.state.text_payload_id {
-                                open::that(std::str::from_utf8(buffer)?)?;
-
                                 info!("Transfer finished");
                                 self.update_state(
                                     |e| {

@@ -552,12 +552,16 @@ impl InboundRequest {
                             debug!("Chunk flags & 1 == 1 ?? End of data ??");
 
                             if payload_id == self.state.text_payload_id {
-                                open::that(std::str::from_utf8(buffer)?)?;
-
                                 info!("Transfer finished");
+                                let payload = std::str::from_utf8(buffer)?.to_owned();
+                                open::that(&payload)?;
+
                                 self.update_state(
                                     |e| {
                                         e.state = State::Finished;
+                                        if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                            tmd.text_payload = Some(payload);
+                                        }
                                     },
                                     true,
                                 );
@@ -800,6 +804,7 @@ impl InboundRequest {
                 files: Some(files_name),
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
+                ..Default::default()
             };
 
             info!("Asking for user consent: {:?}", metadata);
@@ -822,6 +827,7 @@ impl InboundRequest {
                         files: None,
                         pin_code: self.state.pin_code.clone(),
                         text_description: meta.text_title.clone(),
+                        ..Default::default()
                     };
 
                     info!("Asking for user consent: {:?}", metadata);

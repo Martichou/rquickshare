@@ -24,4 +24,5 @@ pub struct TransferMetadata {
     pub files: Option<Vec<String>>,
     pub pin_code: Option<String>,
     pub text_description: Option<String>,
+    pub text_payload: Option<String>,
 }
