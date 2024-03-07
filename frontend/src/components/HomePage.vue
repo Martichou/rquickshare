@@ -16,7 +16,7 @@
 					<div class="form-control hover:bg-base-content hover:bg-opacity-10 rounded-xl p-2">
 						<label class="cursor-pointer label" @click="setRealclose(!realclose)">
 							<span class="label-text">Keep running on close</span>
-							<input type="checkbox" :checked="realclose" class="checkbox checkbox-primary focus:outline-none">
+							<input type="checkbox" :checked="!realclose" class="checkbox checkbox-primary focus:outline-none">
 						</label>
 					</div>
 				</div>
