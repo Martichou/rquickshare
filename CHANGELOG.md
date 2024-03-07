@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.4.0](https://github.com/Martichou/rquickshare/compare/v0.3.0...v0.4.0) (2024-03-07)
+
+
+### Features
+
+* add ability to reopen received links ([#35](https://github.com/Martichou/rquickshare/issues/35)) ([f8ee0be](https://github.com/Martichou/rquickshare/commit/f8ee0befe98294ea2a6701f5e0fb408e7e4aca1c))
+* add file selector to send ([1e470cf](https://github.com/Martichou/rquickshare/commit/1e470cf70b5990c09cea346393bb1eecfaf2d997))
+
+
+### Bug Fixes
+
+* get rid of daisyui ([b94b019](https://github.com/Martichou/rquickshare/commit/b94b01970130534f0492f6cf5b65ca4a3474484b))
+* realclose is inverted ([412f024](https://github.com/Martichou/rquickshare/commit/412f024c86deb80e6821f4b8402be42a4839dd54))
+
 ## [0.3.0](https://github.com/Martichou/rquickshare/compare/v0.2.0...v0.3.0) (2024-03-06)
 
 
