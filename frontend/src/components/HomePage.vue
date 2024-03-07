@@ -1,30 +1,31 @@
 <template>
-	<div class="flex flex-col w-full h-full bg-base-100 text-primary-content max-w-full max-h-full">
-		<!-- Settings dialog -->
-		<dialog id="settings_modal" class="modal">
-			<div class="modal-box shadow-sm bg-secondary">
-				<h3 class="font-medium text-xl">
-					Settings
-				</h3>
+	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full">
+		<div v-if="settingsOpen" class="absolute z-10 w-full h-full flex justify-center items-center bg-black bg-opacity-25">
+			<div class="bg-white rounded-xl shadow-xl p-4 w-[24rem]">
+				<div class="flex flex-row justify-between items-center">
+					<h3 class="font-medium text-xl">
+						Settings
+					</h3>
+					<div class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out" @click="settingsOpen = false">
+						Close
+					</div>
+				</div>
 				<div class="py-4 flex flex-col">
-					<div class="form-control hover:bg-base-content hover:bg-opacity-10 rounded-xl p-2">
-						<label class="cursor-pointer label" @click="setAutostart(!autostart)">
+					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setAutostart(!autostart)">
 							<span class="label-text">Start on boot</span>
-							<input type="checkbox" :checked="autostart" class="checkbox checkbox-primary focus:outline-none">
+							<input type="checkbox" :checked="autostart" class="checkbox focus:outline-none">
 						</label>
 					</div>
-					<div class="form-control hover:bg-base-content hover:bg-opacity-10 rounded-xl p-2">
-						<label class="cursor-pointer label" @click="setRealclose(!realclose)">
+					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setRealclose(!realclose)">
 							<span class="label-text">Keep running on close</span>
-							<input type="checkbox" :checked="!realclose" class="checkbox checkbox-primary focus:outline-none">
+							<input type="checkbox" :checked="!realclose" class="checkbox focus:outline-none">
 						</label>
 					</div>
 				</div>
 			</div>
-			<form method="dialog" class="modal-backdrop">
-				<button>close</button>
-			</form>
-		</dialog>
+		</div>
 
 		<div class="flex flex-row justify-between items-center px-6 py-4">
 			<!-- Header, Pc name left and options right -->
@@ -40,10 +41,10 @@
 				<p class="text-sm">
 					v{{ version }}
 				</p>
-				<div class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out" onclick="settings_modal.showModal()">
+				<div class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out" @click="settingsOpen = true">
 					<svg
 						xmlns="http://www.w3.org/2000/svg" height="24"
-						viewBox="0 -960 960 960" width="24" class="fill-base-content">
+						viewBox="0 -960 960 960" width="24">
 						<!-- eslint-disable-next-line -->
 						<path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/>
 					</svg>
@@ -60,34 +61,19 @@
 				<p class="mt-4 mb-2 pt-3 px-3">
 					Visibility state
 				</p>
-				<div class="dropdown w-full">
-					<h4
-						tabindex="0" role="button" class="btn font-medium flex flex-row justify-between
-						items-center rounded-xl active:scale-95 transition duration-150 ease-in-out p-3">
-						<span v-if="visibility === 'Visible'">Always visible</span>
-						<span v-else-if="visibility === 'Invisible'">Hidden from everyone</span>
-						<span v-else>Temporarily visible</span>
-						<svg
-							xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
-							class="fill-base-content">
-							<path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z" />
-						</svg>
-					</h4>
-					<ul tabindex="0" class="mt-1 dropdown-content z-[1] menu p-2 shadow-sm bg-secondary rounded-xl w-full">
-						<li v-if="visibility !== 'Visible'">
-							<a
-								@click="setVisibility('Visible');blured()">
-								Always visible
-							</a>
-						</li>
-						<li v-if="visibility !== 'Invisible'">
-							<a
-								@click="setVisibility('Invisible');blured()">
-								Hidden from everyone
-							</a>
-						</li>
-					</ul>
-				</div>
+				<h4
+					tabindex="0" role="button" class="btn font-medium flex flex-row !justify-between w-full
+					items-center rounded-xl active:scale-95 transition duration-150 ease-in-out p-3" @click="invertVisibility()">
+					<span v-if="visibility === 'Visible'">Always visible</span>
+					<span v-else-if="visibility === 'Invisible'">Hidden from everyone</span>
+					<span v-else>Temporarily visible</span>
+
+					<svg
+						xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
+						:class="{'rotate-180': visibility === 'Invisible'}">
+						<path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
+					</svg>
+				</h4>
 				<p class="text-xs mt-2 pb-3 px-3">
 					<span v-if="visibility === 'Visible'">
 						Nearby devices can share files with you, but you'll always be
@@ -111,7 +97,7 @@
 					<p class="mt-4 mb-2">
 						Sharing {{ outboundPayload.Files.length }} file{{ outboundPayload.Files.length > 1 ? 's' : '' }}
 					</p>
-					<div class="bg-secondary w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
+					<div class="bg-white w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
 						<svg
 							xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
 							class="w-8 h-8">
@@ -136,7 +122,7 @@
 				</p>
 			</div>
 			<div
-				class="flex-1 grid grid-cols-1 bg-secondary text-secondary-content w-full max-w-full min-w-0 h-full rounded-tl-[3rem] p-12"
+				class="flex-1 grid grid-cols-1 bg-white w-full max-w-full min-w-0 h-full rounded-tl-[3rem] p-12"
 				:class="{'grid-template-rows-auto': !displayedIsEmpty}">
 				<h3 class="mb-4 font-medium text-xl">
 					<span v-if="displayedIsEmpty">Ready to receive{{ outboundPayload != undefined ? ' / send' : '' }}</span>
@@ -150,19 +136,19 @@
 				</div>
 
 				<div
-					v-if="displayedIsEmpty && outboundPayload === undefined" class="w-full border border-secondary-content
+					v-if="displayedIsEmpty && outboundPayload === undefined" class="w-full border
 					rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-auto"
 					:class="{'border-green-200 bg-green-100 scale-105': isDragHovering}">
 					<svg
-						xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
-						class="w-8 h-8 fill-secondary-content">
+						xmlns="http://www.w3.org/2000/svg" height="24"
+						viewBox="0 -960 960 960" width="24" class="w-8 h-8">
 						<!-- eslint-disable-next-line -->
 						<path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
 					</svg>
 					<h4 class="mt-2 font-medium">
 						Drop files to send
 					</h4>
-					<div class="btn btn-ghost mt-2" @click="openFilePicker()">
+					<div class="btn mt-2 active:scale-95 transition duration-150 ease-in-out" @click="openFilePicker()">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
 							<path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
 						</svg>
@@ -171,10 +157,10 @@
 				</div>
 
 				<div
-					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-base-300"
+					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
 					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(item.id)">
 					<div>
-						<div class="h-16 w-16 rounded-full bg-secondary">
+						<div class="h-16 w-16 rounded-full bg-white">
 							<svg
 								v-if="item.state === 'Finished'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
 								width="24" class="w-full h-full p-4">
@@ -228,12 +214,12 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="sendCmd(item.id, 'AcceptTransfer')" class="btn btn-ghost px-3
+									@click="sendCmd(item.id, 'AcceptTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Accept
 								</p>
 								<p
-									@click="sendCmd(item.id, 'RejectTransfer')" class="btn btn-ghost px-3
+									@click="sendCmd(item.id, 'RejectTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Decline
 								</p>
@@ -252,7 +238,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="sendCmd(item.id, 'CancelTransfer')" class="btn btn-ghost px-3
+									@click="sendCmd(item.id, 'CancelTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Cancel
 								</p>
@@ -269,11 +255,11 @@
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
 									v-if="item.destination" @click="invoke('open_url', { message: item.destination })"
-									class="btn btn-ghost px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
+									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Open
 								</p>
 								<p
-									@click="removeRequest(item.id)" class="btn btn-ghost px-3
+									@click="removeRequest(item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -286,7 +272,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(item.id)" class="btn btn-ghost px-3
+									@click="removeRequest(item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -299,7 +285,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(item.id)" class="btn btn-ghost px-3
+									@click="removeRequest(item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -312,7 +298,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(item.id)" class="btn px-3 btn-ghost
+									@click="removeRequest(item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -411,7 +397,9 @@ export default {
 			realclose: ref<boolean>(false),
 			visibility: ref<Visibility>('Visible'),
 
-			hostname: ref<string>()
+			hostname: ref<string>(),
+
+			settingsOpen: ref<boolean>(false)
 		};
 	},
 
@@ -620,6 +608,17 @@ export default {
 		},
 		getVisibility: async function() {
 			this.visibility = numberToVisibility[(await this.store.get(visibilityKey) ?? 0) as number];
+		},
+		invertVisibility: async function() {
+			if (this.visibility === 'Temporarily') {
+				return;
+			}
+
+			if (this.visibility === 'Visible') {
+				return this.setVisibility('Invisible');
+			}
+
+			return this.setVisibility('Visible');
 		},
 		clearSending: async function() {
 			await invoke('stop_discovery');
