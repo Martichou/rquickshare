@@ -1,23 +1,23 @@
 #[macro_use]
 extern crate log;
 
+use std::sync::{Arc, Mutex};
+
+use anyhow::anyhow;
 use channel::ChannelMessage;
 #[cfg(all(feature = "experimental", not(target_os = "macos")))]  
 use hdl::BleAdvertiser;
-use mdns_sd::{ServiceDaemon, ServiceEvent};
+use hdl::MDnsDiscovery;
 use rand::{distributions, Rng};
-use serde::{Deserialize, Serialize};
-use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::broadcast::{self, Receiver};
-use tokio::sync::mpsc;
+use tokio::net::TcpListener;
+use tokio::sync::broadcast;
+use tokio::sync::{mpsc, watch};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
-use ts_rs::TS;
 #[cfg(not(target_os = "macos"))]
 use crate::hdl::{BleListener};
 use crate::hdl::{MDnsServer};
 use crate::manager::TcpServer;
-use crate::utils::{is_not_self_ip, parse_mdns_endpoint_info};
 
 pub mod channel;
 mod errors;
@@ -25,7 +25,7 @@ mod hdl;
 mod manager;
 mod utils;
 
-pub use hdl::{OutboundPayload, State};
+pub use hdl::{EndpointInfo, OutboundPayload, State, Visibility};
 pub use manager::SendInfo;
 pub use utils::DeviceType;
 
@@ -47,35 +47,56 @@ pub mod location_nearby_connections {
 
 #[derive(Debug)]
 pub struct RQS {
-    tracker: TaskTracker,
-    ctoken: CancellationToken,
+    tracker: Option<TaskTracker>,
+    ctoken: Option<CancellationToken>,
+    // Discovery token is different than ctoken because he is on his own
+    // - can be cancelled while the ctoken is still active
     discovery_ctk: Option<CancellationToken>,
-    blea_ctk: Option<CancellationToken>,
-    pub channel: (broadcast::Sender<ChannelMessage>, Receiver<ChannelMessage>),
+
+    // Used to trigger a change in the mDNS visibility (and later on, BLE)
+    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
+    visibility_receiver: watch::Receiver<Visibility>,
+
+    // Only used to send the info "a nearby device is sharing"
+    ble_sender: broadcast::Sender<()>,
+
+    pub message_sender: broadcast::Sender<ChannelMessage>,
 }
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new()
+        Self::new(Visibility::Visible)
     }
 }
 
 impl RQS {
-    fn new() -> Self {
-        let tracker = TaskTracker::new();
-        let ctoken = CancellationToken::new();
-        let channel = broadcast::channel(10);
+    pub fn new(visibility: Visibility) -> Self {
+        let (message_sender, _) = broadcast::channel(50);
+        let (ble_sender, _) = broadcast::channel(5);
+
+        // Define default visibility as per the args inside the new()
+        let (visibility_sender, visibility_receiver) = watch::channel(Visibility::Invisible);
+        let _ = visibility_sender.send(visibility);
 
         Self {
-            tracker,
-            ctoken,
-            channel,
+            tracker: None,
+            ctoken: None,
             discovery_ctk: None,
-            blea_ctk: None,
+            visibility_sender: Arc::new(Mutex::new(visibility_sender)),
+            visibility_receiver,
+            ble_sender,
+            message_sender,
         }
     }
 
-    pub async fn run(&self) -> Result<mpsc::Sender<SendInfo>, anyhow::Error> {
+    pub async fn run(
+        &mut self,
+    ) -> Result<(mpsc::Sender<SendInfo>, broadcast::Receiver<()>), anyhow::Error> {
+        let tracker = TaskTracker::new();
+        let ctoken = CancellationToken::new();
+        self.tracker = Some(tracker.clone());
+        self.ctoken = Some(ctoken.clone());
+
         let endpoint_id: Vec<u8> = rand::thread_rng()
             .sample_iter(distributions::Alphanumeric)
             .take(4)
@@ -85,24 +106,22 @@ impl RQS {
         let binded_addr = tcp_listener.local_addr()?;
         info!("TcpListener on: {}", binded_addr);
 
-        // Sender for the TcpServer
-        let sender = self.channel.0.clone();
-
+        // MPSC for the TcpServer
         let send_channel = mpsc::channel(10);
-
         // Start TcpServer in own "task"
         let mut server = TcpServer::new(
             endpoint_id[..4].try_into()?,
             tcp_listener,
-            sender,
+            self.message_sender.clone(),
             send_channel.1,
         )?;
-        let ctk = self.ctoken.clone();
-        self.tracker.spawn(async move { server.run(ctk).await });
+        let ctk = ctoken.clone();
+        tracker.spawn(async move { server.run(ctk).await });
 
-        // Start BleListener in own "task"
-        let ble_channel = broadcast::channel(10);
         // Don't threat BleListener error as fatal, it's a nice to have.
+        if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
+            let ctk = ctoken.clone();
+            tracker.spawn(async move { ble.run(ctk).await });
         #[cfg(not(target_os = "macos"))]
         if let Ok(ble) = BleListener::new(ble_channel.0).await {
             let ctk = self.ctoken.clone();
@@ -110,32 +129,32 @@ impl RQS {
         }
 
         // Start MDnsServer in own "task"
-        let mdns = MDnsServer::new(
+        let mut mdns = MDnsServer::new(
             endpoint_id[..4].try_into()?,
             binded_addr.port(),
-            DeviceType::Laptop,
-            ble_channel.1,
+            self.ble_sender.subscribe(),
+            self.visibility_sender.clone(),
+            self.visibility_receiver.clone(),
         )?;
-        let ctk = self.ctoken.clone();
-        self.tracker.spawn(async move { mdns.run(ctk).await });
+        let ctk = ctoken.clone();
+        tracker.spawn(async move { mdns.run(ctk).await });
 
-        self.tracker.close();
+        tracker.close();
 
-        Ok(send_channel.0)
+        Ok((send_channel.0, self.ble_sender.subscribe()))
     }
 
     pub fn discovery(
         &mut self,
         sender: broadcast::Sender<EndpointInfo>,
     ) -> Result<(), anyhow::Error> {
+        let tracker = match &self.tracker {
+            Some(t) => t,
+            None => return Err(anyhow!("The service wasn't first started")),
+        };
+
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
-
-        let blea_ctk = CancellationToken::new();
-        self.blea_ctk = Some(blea_ctk.clone());
-
-        let discovery = MDnsDiscovery::new(sender)?;
-        self.tracker.spawn(async move { discovery.run(ctk).await });
 
         #[cfg(all(feature = "experimental", not(target_os = "macos")))]  
         self.tracker.spawn(async move {
@@ -147,10 +166,14 @@ impl RQS {
                 }
             };
 
-            if let Err(e) = blea.run(blea_ctk).await {
-                error!("Couldn't start BleAdvertiser: {}", e);
-            }
-        });
+                if let Err(e) = blea.run(ctk_blea).await {
+                    error!("Couldn't start BleAdvertiser: {}", e);
+                }
+            });
+        }
+
+        let discovery = MDnsDiscovery::new(sender)?;
+        tracker.spawn(async move { discovery.run(ctk.clone()).await });
 
         Ok(())
     }
@@ -160,118 +183,27 @@ impl RQS {
             discovert_ctk.cancel();
             self.discovery_ctk = None;
         }
-        if let Some(blea_ctk) = &self.blea_ctk {
-            blea_ctk.cancel();
-            self.blea_ctk = None;
-        }
+    }
+
+    pub fn change_visibility(&mut self, nv: Visibility) {
+        self.visibility_sender
+            .lock()
+            .unwrap()
+            .send_modify(|state| *state = nv);
     }
 
     pub async fn stop(&mut self) {
         self.stop_discovery();
-        self.ctoken.cancel();
-        self.tracker.wait().await;
-    }
-}
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
-#[ts(export)]
-pub struct EndpointInfo {
-    pub id: String,
-    pub name: Option<String>,
-    pub ip: Option<String>,
-    pub port: Option<String>,
-    pub rtype: Option<DeviceType>,
-    pub present: Option<bool>,
-}
-
-pub struct MDnsDiscovery {
-    daemon: ServiceDaemon,
-    sender: broadcast::Sender<EndpointInfo>,
-}
-
-impl MDnsDiscovery {
-    pub fn new(sender: broadcast::Sender<EndpointInfo>) -> Result<Self, anyhow::Error> {
-        let daemon = ServiceDaemon::new()?;
-
-        Ok(Self { daemon, sender })
-    }
-
-    pub async fn run(self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
-        info!("MDnsDiscovery: service starting");
-
-        let service_type = "_FC9F5ED42C8A._tcp.local.";
-        let receiver = self.daemon.browse(service_type)?;
-
-        loop {
-            tokio::select! {
-                _ = ctk.cancelled() => {
-                    info!("MDnsDiscovery: tracker cancelled, breaking");
-                    break;
-                }
-                r = receiver.recv_async() => {
-                    match r {
-                        Ok(event) => {
-                            match event {
-                                ServiceEvent::ServiceResolved(info) => {
-                                    let port = info.get_port();
-
-                                    let ip_hash = info.get_addresses_v4();
-                                    if ip_hash.is_empty() {
-                                        continue;
-                                    }
-
-                                    let ip = match ip_hash.iter().next() {
-                                        Some(i) => i,
-                                        None => continue,
-                                    };
-
-                                    // Check that the IP is not a "self IP"
-                                    if !is_not_self_ip(ip) {
-                                        continue;
-                                    }
-
-                                    // Decode the "n" text properties
-                                    let n = match info.get_property("n") {
-                                        Some(_n) => _n,
-                                        None => continue,
-                                    };
-
-                                    // Parse the endpoint info
-                                    let (dt, dn) = match parse_mdns_endpoint_info(n.val_str()) {
-                                        Ok(r) => r,
-                                        Err(_) => continue
-                                    };
-
-                                    if TcpStream::connect(format!("{ip}:{port}")).await.is_ok() {
-                                        let ei = EndpointInfo {
-                                            id: info.get_fullname().to_string(),
-                                            name: Some(dn),
-                                            ip: Some(ip.to_string()),
-                                            port: Some(port.to_string()),
-                                            rtype: Some(dt),
-                                            present: Some(true),
-                                        };
-                                        info!("Resolved a new service: {:?}", ei);
-                                        let _ = self.sender.send(ei);
-                                    }
-                                }
-                                ServiceEvent::ServiceRemoved(_, fullname) => {
-                                    info!("Remove a previous service: {}", fullname);
-                                    let _ = self.sender.send(EndpointInfo {
-                                        id: fullname,
-                                        ..Default::default()
-                                    });
-                                }
-                                ServiceEvent::SearchStarted(_) | ServiceEvent::SearchStopped(_) => {}
-                                _ => {}
-                            }
-                        },
-                        Err(err) => error!("MDnsDiscovery: error: {}", err),
-                    }
-                }
-            }
+        if let Some(ctoken) = &self.ctoken {
+            ctoken.cancel();
         }
 
-        Ok(())
+        if let Some(tracker) = &self.tracker {
+            tracker.wait().await;
+        }
+
+        self.ctoken = None;
+        self.tracker = None;
     }
 }

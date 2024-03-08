@@ -52,8 +52,6 @@ Limitations
 
 - **Wi-Fi LAN only**. Your devices needs to be on the same network for this app to work.
 
-- **Visible to everyone** on your network at all times while the app is running.
-
 FAQ
 --------------------------
 

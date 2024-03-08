@@ -19,6 +19,8 @@ pub use blea::*;
 mod inbound;
 pub use inbound::*;
 pub(crate) mod info;
+mod mdns_discovery;
+pub use mdns_discovery::*;
 mod mdns;
 pub use mdns::*;
 mod outbound;
@@ -79,4 +81,5 @@ pub struct InnerState {
     // Used to handle/track ingress transfer
     pub text_payload_id: i64,
     pub payload_buffers: HashMap<i64, Vec<u8>>,
+    pub wifi_ssid: Option<String>,
 }

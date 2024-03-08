@@ -552,12 +552,30 @@ impl InboundRequest {
                             debug!("Chunk flags & 1 == 1 ?? End of data ??");
 
                             if payload_id == self.state.text_payload_id {
-                                open::that(std::str::from_utf8(buffer)?)?;
-
                                 info!("Transfer finished");
+                                let end_index =
+                                    buffer.iter().position(|&b| b == 16).unwrap_or(buffer.len());
+                                let payload = std::str::from_utf8(&buffer[..end_index])?.to_owned();
+                                let wifi_ssid = match &self.state.wifi_ssid {
+                                    Some(s) => Some(s.clone()),
+                                    None => {
+                                        open::that(&payload)?;
+                                        None
+                                    }
+                                };
+
                                 self.update_state(
                                     |e| {
                                         e.state = State::Finished;
+                                        if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                            let p = match wifi_ssid {
+                                                Some(ws) => {
+                                                    format!("{ws} : {}", payload.trim().to_owned())
+                                                }
+                                                None => payload,
+                                            };
+                                            tmd.text_payload = Some(p);
+                                        }
                                     },
                                     true,
                                 );
@@ -800,6 +818,7 @@ impl InboundRequest {
                 files: Some(files_name),
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
+                ..Default::default()
             };
 
             info!("Asking for user consent: {:?}", metadata);
@@ -822,6 +841,7 @@ impl InboundRequest {
                         files: None,
                         pin_code: self.state.pin_code.clone(),
                         text_description: meta.text_title.clone(),
+                        ..Default::default()
                     };
 
                     info!("Asking for user consent: {:?}", metadata);
@@ -850,6 +870,28 @@ impl InboundRequest {
 					.await?;
                 }
             }
+        } else if introduction.wifi_credentials_metadata.len() == 1 {
+            trace!("process_introduction: handling wifi_credentials_metadata");
+            let meta = introduction.wifi_credentials_metadata.first().unwrap();
+
+            let metadata = TransferMetadata {
+                id: self.state.id.clone(),
+                destination: None,
+                source: self.state.remote_device_info.clone(),
+                files: None,
+                pin_code: self.state.pin_code.clone(),
+                text_description: meta.ssid.clone(),
+                ..Default::default()
+            };
+
+            self.update_state(
+                |e| {
+                    e.text_payload_id = meta.payload_id();
+                    e.transfer_metadata = Some(metadata.clone());
+                    e.wifi_ssid = meta.ssid.clone()
+                },
+                true,
+            );
         } else {
             // Reject transfer
             self.reject_transfer(Some(

@@ -34,7 +34,6 @@
     "autoprefixer": "10.4.16",
     "concurrently": "8.2.2",
     "cross-env": "7.0.3",
-    "daisyui": "^4.7.2",
     "eslint": "8.56.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-node": "11.1.0",

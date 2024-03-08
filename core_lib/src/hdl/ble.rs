@@ -42,7 +42,7 @@ impl BleListener {
             })
             .await?;
 
-        let mut last_alert = SystemTime::now();
+        let mut last_alert = SystemTime::UNIX_EPOCH;
 
         loop {
             tokio::select! {
@@ -63,7 +63,6 @@ impl BleListener {
                             }
 
                             debug!("{INNER_NAME}: A device is sharing nearby");
-                            trace!("{INNER_NAME}: {:?}", service_data);
                             self.sender.send(())?;
                             last_alert = now;
                         },

@@ -19,6 +19,11 @@ html,
 body,
 #app {
     font-family: 'Montserrat', sans-serif;
+	outline: 1px solid transparent;
+	-webkit-backface-visibility: hidden;
+	transform: translateZ(0);
+	will-change: transform;
+	-webkit-perspective: 1000;
 }
 
 .status-indicator {
@@ -34,6 +39,20 @@ body,
     left: 18px;
     width: 12px;
     height: 12px;
+    border-radius: 100px
+}
+
+.status-indicator--xl {
+    width: 72px;
+    height: 72px
+}
+
+.status-indicator--xl .circle {
+    position: absolute;
+    top: 27px;
+    left: 27px;
+    width: 18px;
+    height: 18px;
     border-radius: 100px
 }
 
@@ -78,63 +97,15 @@ body,
 }
 
 .status-indicator--success .circle-main {
-	@apply bg-green-400
-    /* background: rgb(52, 211, 153) */
+	@apply bg-black
 }
 
 .status-indicator--success .circle-secondary {
-	@apply bg-green-400 bg-opacity-10
-    /* background: rgba(52, 211, 153, .1) */
+	@apply bg-black bg-opacity-10
 }
 
 .status-indicator--success .circle-tertiary {
-	@apply bg-green-400 bg-opacity-40
-    /* background: rgba(52, 211, 153, .4) */
-}
-
-.status-indicator--sm {
-    width: 40px;
-    height: 40px
-}
-
-.status-indicator--sm .circle {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    width: 10px;
-    height: 10px;
-    animation-iteration-count: 0;
-    will-change: transform
-}
-
-.status-indicator--xs {
-    width: 30px;
-    height: 30px
-}
-
-.status-indicator--xs .circle {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    width: 8.33px;
-    height: 8.33px;
-    animation-iteration-count: 0;
-    will-change: transform
-}
-
-.status-indicator--xl {
-    width: 120px;
-    height: 120px
-}
-
-.status-indicator--xl .circle {
-    position: absolute;
-    top: 45px;
-    left: 45px;
-    width: 30px;
-    height: 30px;
-    animation-iteration-count: 0;
-    will-change: transform
+	@apply bg-black bg-opacity-40
 }
 
 @keyframes pulsate-tertiary {
@@ -142,11 +113,11 @@ body,
         transform: scale(1, 1)
     }
     80% {
-        transform: scale(4, 4);
+        transform: scale(3, 3);
         opacity: 0
     }
     100% {
-        transform: scale(4, 4);
+        transform: scale(3, 3);
         opacity: 0
     }
 }
@@ -156,10 +127,10 @@ body,
         transform: scale(1, 1)
     }
     45% {
-        transform: scale(1.5, 1.5)
+        transform: scale(1.2, 1.2)
     }
     55% {
-        transform: scale(1.5, 1.5)
+        transform: scale(1.2, 1.2)
     }
     80% {
         transform: scale(1, 1)
@@ -174,12 +145,47 @@ body,
         transform: scale(1, 1)
     }
     50% {
-        transform: scale(4, 4)
+        transform: scale(3, 3)
     }
     75% {
-        transform: scale(4, 4)
+        transform: scale(3, 3)
     }
     100% {
         transform: scale(1, 1)
     }
+}
+
+.grid-template-rows-auto {
+	grid-template-rows: auto auto 1fr 1fr;
+}
+
+.btn {
+	@apply h-12 min-h-12 cursor-pointer rounded-xl font-medium px-4 inline-flex justify-center items-center gap-2 hover:bg-gray-500 hover:bg-opacity-10
+}
+
+.checkbox {
+    flex-shrink: 0;
+    --chkbg: var(--fallback-bc, oklch(var(--bc) / 1));
+    --chkfg: var(--fallback-b1, oklch(var(--b1) / 1));
+    height: 1.5rem;
+    width: 1.5rem;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: var(--rounded-btn, 0.5rem);
+    border-width: 1px;
+    border-color: var(--fallback-bc, oklch(var(--bc) / var(--tw-border-opacity)));
+    --tw-border-opacity: .2;
+}
+
+.checkbox:checked, .checkbox[checked=true], .checkbox[aria-checked=true] {
+    background-repeat: no-repeat;
+    animation: checkmark var(--animation-input, .2s) ease-out;
+    background-color: #bbf7d0;
+    background-image: linear-gradient(-45deg, transparent 65%, #bbf7d0 65.99%), linear-gradient(45deg, transparent 75%, #bbf7d0 75.99%), linear-gradient(-45deg, #bbf7d0 40%, transparent 40.99%), linear-gradient(45deg, #bbf7d0 30%, black 30.99%, black 40%, transparent 40.99%), linear-gradient(-45deg, black 50%, #bbf7d0 50.99%);
+}
+
+.checkbox:checked, .checkbox[checked=true], .checkbox[aria-checked=true] {
+	@apply bg-green-200 border-green-200 text-black;
 }

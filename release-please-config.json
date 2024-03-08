@@ -12,8 +12,23 @@
 		},
 		{
 			"type": "toml",
+			"path": "core_lib/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rqs_lib')].version"
+		},
+		{
+			"type": "toml",
 			"path": "frontend/src-tauri/Cargo.toml",
 			"jsonpath": "package.version"
+		},
+		{
+			"type": "toml",
+			"path": "frontend/src-tauri/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rqs_lib')].version"
+		},
+		{
+			"type": "toml",
+			"path": "frontend/src-tauri/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
 		}
 	],
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"

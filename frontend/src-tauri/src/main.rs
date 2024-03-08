@@ -6,14 +6,12 @@
 #[macro_use]
 extern crate log;
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
-use notify_rust::Notification;
-use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
-use rqs_lib::{EndpointInfo, SendInfo, State, RQS};
+use rqs_lib::channel::{ChannelDirection, ChannelMessage};
+use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use tauri::{
-    AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
-    SystemTrayMenuItem,
+    CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
 };
 use tauri_plugin_autostart::MacosLauncher;
 #[cfg(not(target_os = "linux"))]
@@ -21,15 +19,21 @@ use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_store::with_store;
 use tokio::sync::{broadcast, mpsc};
-
 use crate::logger::set_up_logging;
+use crate::notification::{send_request_notification, send_temporarily_notification};
+use crate::store::{get_realclose, get_visibility, init_default, set_visibility};
 
+mod cmds;
 mod logger;
+mod notification;
+mod store;
 
 pub struct AppState {
     pub sender: broadcast::Sender<ChannelMessage>,
     pub dch_sender: broadcast::Sender<EndpointInfo>,
     pub sender_file: mpsc::Sender<SendInfo>,
+    pub ble_receiver: broadcast::Receiver<()>,
+    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     pub rqs: Mutex<RQS>,
 }
 
@@ -46,7 +50,6 @@ async fn main() -> Result<(), anyhow::Error> {
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(show)
         .add_item(quit);
-    let tray = SystemTray::new().with_menu(tray_menu);
 
     // Build and run Tauri app
     tauri::Builder::default()
@@ -59,19 +62,26 @@ async fn main() -> Result<(), anyhow::Error> {
         }))
         .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
-            js2rs,
-            open,
-            send_payload,
-            start_discovery,
-            stop_discovery,
-            get_hostname,
-            sanity_check
+            cmds::change_visibility,
+            cmds::start_discovery,
+            cmds::stop_discovery,
+            cmds::get_hostname,
+            cmds::open_url,
+            cmds::send_payload,
+            cmds::send_to_rs,
+            sanity_check,
         ])
         .setup(|app| {
             set_up_logging(&app.app_handle())?;
             debug!("Starting setup of RQuickShare app");
 
-            let app_handle = app.handle().clone();
+            // Initialize default value for the store
+            init_default(&app.app_handle());
+
+            // Fetch default or previously saved visibility
+            let visibility = get_visibility(&app.app_handle());
+
+            let app_handle = app.app_handle().clone();
             // This is not optimal, but until I find a better way to init log
             // (inside file and stdout) before starting the lib, I'll keep it as
             // is. This allow me to get the whole log :)
@@ -79,28 +89,29 @@ async fn main() -> Result<(), anyhow::Error> {
                 tauri::async_runtime::block_on(async move {
                     trace!("Begining of RQS start");
                     // Start the RQuickShare service
-                    let rqs = RQS::default();
+                    let mut rqs = RQS::new(visibility);
                     // Need to be waited, but blocked on
-                    let sender_file = rqs.run().await.unwrap();
-                    trace!("Ran RQS run");
+                    let (sender_file, ble_receiver) = rqs.run().await.unwrap();
 
                     // Init the channels for use
                     let (dch_sender, _) = broadcast::channel(10);
-                    let sender = rqs.channel.0.clone();
+                    let sender = rqs.message_sender.clone();
+
+                    let visibility_sender = rqs.visibility_sender.clone();
 
                     // Define state for tauri app
                     app_handle.manage(AppState {
-                        sender: sender,
-                        dch_sender: dch_sender,
-                        sender_file: sender_file,
+                        sender,
+                        dch_sender,
+                        sender_file,
+                        ble_receiver,
+                        visibility_sender,
                         rqs: Mutex::new(rqs),
                     });
                 });
             });
 
-            debug!("Done starting RQS lib");
-
-            let app_handle = app.handle().clone();
+            let app_handle = app.app_handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state: tauri::State<'_, AppState> = app_handle.state();
                 let mut receiver = state.sender.subscribe();
@@ -121,7 +132,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                 send_request_notification(name, info.id.clone(), &app_handle);
                             }
 
-                            rs2js(info, &app_handle);
+                            rs2js_channelmessage(info, &app_handle);
                         }
                         Err(e) => {
                             error!("Error getting receiver message: {}", e);
@@ -130,14 +141,14 @@ async fn main() -> Result<(), anyhow::Error> {
                 }
             });
 
-            let app_handle = app.handle().clone();
+            let app_handle = app.app_handle().clone();
             tauri::async_runtime::spawn(async move {
                 let state: tauri::State<'_, AppState> = app_handle.state();
                 let mut dch_receiver = state.dch_sender.subscribe();
 
                 loop {
                     match dch_receiver.recv().await {
-                        Ok(info) => rs2js_discovery(info, &app_handle),
+                        Ok(info) => rs2js_endpointinfo(info, &app_handle),
                         Err(e) => {
                             error!("Error getting dch_receiver message: {}", e);
                         }
@@ -145,9 +156,52 @@ async fn main() -> Result<(), anyhow::Error> {
                 }
             });
 
+            // Sync visibility with the store (mainly used for Temporarily)
+            let app_handle = app.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = app_handle.state();
+                let mut visibility_receiver = state.visibility_sender.lock().unwrap().subscribe();
+
+                loop {
+                    match visibility_receiver.changed().await {
+                        Ok(_) => {
+                            let v = visibility_receiver.borrow_and_update();
+                            let _ = set_visibility(&app_handle, v.clone());
+                        }
+                        Err(e) => {
+                            error!("Error getting visibility_receiver update: {}", e);
+                        }
+                    }
+                }
+            });
+
+            // React to device sharing nearby
+            let app_handle = app.app_handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state: tauri::State<'_, AppState> = app_handle.state();
+                let mut ble_receiver = state.ble_receiver.resubscribe();
+
+                loop {
+                    match ble_receiver.recv().await {
+                        Ok(_) => {
+                            let v = get_visibility(&app_handle);
+                            trace!("Tauri: ble received: {:?}", v);
+
+                            if v == Visibility::Invisible {
+                                // Show notification to pass to temporarily mdns mode
+                                send_temporarily_notification(&app_handle);
+                            }
+                        }
+                        Err(e) => {
+                            error!("Error getting ble_receiver message: {}", e);
+                        }
+                    }
+                }
+            });
+
             Ok(())
         })
-        .system_tray(tray)
+        .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| {
             if let SystemTrayEvent::MenuItemClick { id, .. } = event {
                 match id.as_str() {
@@ -174,21 +228,7 @@ async fn main() -> Result<(), anyhow::Error> {
         })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
-                let app_handle = event.window().app_handle();
-                // This can never be an Err. We check for the realclose key, then convert the json to a bool
-                // and handle default to be "false".
-                let realclose = with_store(
-                    app_handle.clone(),
-                    app_handle.state(),
-                    ".settings.json",
-                    |store| {
-                        return Ok(store
-                            .get("realclose")
-                            .and_then(|json| json.as_bool())
-                            .unwrap_or(false));
-                    },
-                )
-                .unwrap();
+                let realclose = get_realclose(&event.window().app_handle());
 
                 if !realclose {
                     trace!("Prevent close");
@@ -221,133 +261,21 @@ async fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn rs2js<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) {
+fn rs2js_channelmessage<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) {
     if message.direction == ChannelDirection::FrontToLib {
         return;
     }
 
-    info!("rs2js: {:?}", &message);
-    manager.emit_all("rs2js", &message).unwrap();
+    info!("rs2js_channelmessage: {:?}", &message);
+    manager.emit_all("rs2js_channelmessage", &message).unwrap();
 }
 
-fn rs2js_discovery<R: tauri::Runtime>(message: EndpointInfo, manager: &impl Manager<R>) {
-    info!("rs2js_discovery: {:?}", &message);
-    manager.emit_all("rs2js_discovery", &message).unwrap();
-}
-
-#[tauri::command]
-async fn send_payload(message: SendInfo, state: tauri::State<'_, AppState>) -> Result<(), String> {
-    info!("send_payload: {:?}", &message);
-
-    state
-        .sender_file
-        .send(message)
-        .await
-        .map_err(|e| format!("couldn't send payload: {e}"))
-}
-
-#[tauri::command]
-fn open(message: String) -> Result<(), String> {
-    info!("open: {:?}", &message);
-
-    match open::that(message) {
-        Ok(_) => Ok(()),
-        Err(e) => return Err(format!("Coudln't open: {}", e)),
-    }
-}
-
-#[tauri::command]
-fn js2rs(message: ChannelMessage, state: tauri::State<'_, AppState>) -> Result<(), String> {
-    info!("js2rs: {:?}", &message);
-
-    match state.sender.send(message) {
-        Ok(_) => Ok(()),
-        Err(e) => return Err(format!("Coudln't perform: {}", e)),
-    }
-}
-
-#[tauri::command]
-async fn start_discovery(state: tauri::State<'_, AppState>) -> Result<(), String> {
-    info!("start_discovery");
-
-    state
-        .rqs
-        .lock()
-        .unwrap()
-        .discovery(state.dch_sender.clone())
-        .map_err(|e| format!("unable to start discovery: {}", e))
-}
-
-#[tauri::command]
-fn stop_discovery(state: tauri::State<'_, AppState>) {
-    info!("stop_discovery");
-
-    state.rqs.lock().unwrap().stop_discovery();
-}
-
-#[tauri::command]
-fn get_hostname() -> String {
-    return sys_metrics::host::get_hostname().unwrap_or(String::from("Unknown"));
+fn rs2js_endpointinfo<R: tauri::Runtime>(message: EndpointInfo, manager: &impl Manager<R>) {
+    info!("rs2js_endpointinfo: {:?}", &message);
+    manager.emit_all("rs2js_endpointinfo", &message).unwrap();
 }
 
 #[tauri::command]
 fn sanity_check() {
     info!("sanity_check");
-}
-
-fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
-    let body = format!("{name} want to initiate a transfer");
-
-    #[cfg(target_os = "linux")]
-    match Notification::new()
-        .summary("RQuickShare")
-        .body(&body)
-        .action("accept", "Accept")
-        .action("reject", "Reject")
-        .show()
-    {
-        Ok(n) => {
-            let capp_handle = app_handle.clone();
-            // TODO - Meh, untracked, unwaited tasks...
-            tokio::task::spawn(async move {
-                n.wait_for_action(|action| match action {
-                    "accept" => {
-                        let _ = js2rs(
-                            ChannelMessage {
-                                id,
-                                direction: ChannelDirection::FrontToLib,
-                                action: Some(ChannelAction::AcceptTransfer),
-                                ..Default::default()
-                            },
-                            capp_handle.state(),
-                        );
-                    }
-                    "reject" => {
-                        let _ = js2rs(
-                            ChannelMessage {
-                                id,
-                                direction: ChannelDirection::FrontToLib,
-                                action: Some(ChannelAction::RejectTransfer),
-                                ..Default::default()
-                            },
-                            capp_handle.state(),
-                        );
-                    }
-                    _ => (),
-                });
-            });
-        }
-        Err(e) => {
-            error!("Couldn't show notification: {}", e);
-        }
-    }
-
-    #[cfg(not(target_os = "linux"))]
-    #[cfg(not(target_os = "macos"))]
-    let _ = app_handle
-        .notification()
-        .builder()
-        .title("RQuickShare")
-        .body(&body)
-        .show();
 }
