@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full">
+	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full overflow-hidden">
 		<div v-if="settingsOpen" class="absolute z-10 w-full h-full flex justify-center items-center bg-black bg-opacity-25">
 			<div class="bg-white rounded-xl shadow-xl p-4 w-[24rem]">
 				<div class="flex flex-row justify-between items-center">
@@ -122,7 +122,7 @@
 				</p>
 			</div>
 			<div
-				class="flex-1 grid grid-cols-1 bg-white w-full max-w-full min-w-0 h-full rounded-tl-[3rem] p-12"
+				class="flex-1 grid grid-cols-1 bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll"
 				:class="{'grid-template-rows-auto': !displayedIsEmpty}">
 				<h3 class="mb-4 font-medium text-xl">
 					<span v-if="displayedIsEmpty">Ready to receive{{ outboundPayload != undefined ? ' / send' : '' }}</span>
@@ -425,21 +425,21 @@ export default {
 				permissionGranted = permission === 'granted';
 			}
 
-			this.cleanupInterval = setInterval(() => {
-				this.toDelete.forEach((itemToDelete) => {
-					const now = new Date();
-					const timeDifference = now.getTime() - itemToDelete.triggered;
+			// this.cleanupInterval = setInterval(() => {
+			// 	this.toDelete.forEach((itemToDelete) => {
+			// 		const now = new Date();
+			// 		const timeDifference = now.getTime() - itemToDelete.triggered;
 
-					// Check if at least 30 seconds have passed (30000 milliseconds)
-					if (timeDifference >= 30000) this.removeRequest(itemToDelete.id);
-				});
+			// 		// Check if at least 30 seconds have passed (30000 milliseconds)
+			// 		if (timeDifference >= 30000) this.removeRequest(itemToDelete.id);
+			// 	});
 
-				// Clear only elements that have been processed (more than 30s old)
-				this.toDelete = this.toDelete.filter((item) => {
-					const now = new Date();
-					return now.getTime() - item.triggered < 30000;
-				});
-			}, 30000);
+			// 	// Clear only elements that have been processed (more than 30s old)
+			// 	this.toDelete = this.toDelete.filter((item) => {
+			// 		const now = new Date();
+			// 		return now.getTime() - item.triggered < 30000;
+			// 	});
+			// }, 30000);
 
 			this.unlisten.push(
 				await listen('rs2js_channelmessage', async (event) => {
