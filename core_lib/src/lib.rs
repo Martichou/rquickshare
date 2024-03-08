@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use anyhow::anyhow;
 use channel::ChannelMessage;
-#[cfg(feature = "experimental")]
+#[cfg(all(feature = "experimental", not(target_os = "macos")))]
 use hdl::BleAdvertiser;
 use hdl::MDnsDiscovery;
 use once_cell::sync::Lazy;
@@ -16,7 +16,9 @@ use tokio::sync::{broadcast, mpsc, watch};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 
-use crate::hdl::{BleListener, MDnsServer};
+#[cfg(not(target_os = "macos"))]
+use crate::hdl::{BleListener};
+use crate::hdl::{MDnsServer};
 use crate::manager::TcpServer;
 
 pub mod channel;
@@ -132,6 +134,7 @@ impl RQS {
         tracker.spawn(async move { server.run(ctk).await });
 
         // Don't threat BleListener error as fatal, it's a nice to have.
+        #[cfg(not(target_os = "macos"))]
         if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
             let ctk = ctoken.clone();
             tracker.spawn(async move { ble.run(ctk).await });
@@ -165,7 +168,7 @@ impl RQS {
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
 
-        #[cfg(feature = "experimental")]
+        #[cfg(all(feature = "experimental", not(target_os = "macos")))]
         {
             let ctk_blea = ctk.clone();
             tracker.spawn(async move {

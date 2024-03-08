@@ -18,6 +18,7 @@ use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::logger::set_up_logging;
+#[cfg(not(target_os = "macos"))]
 use crate::notification::{send_request_notification, send_temporarily_notification};
 use crate::store::{
     get_download_path, get_port, get_realclose, get_visibility, init_default, set_visibility,

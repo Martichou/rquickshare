@@ -8,11 +8,13 @@ use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
 use crate::utils::RemoteDeviceInfo;
 
+#[cfg(not(target_os = "macos"))]
 mod ble;
+#[cfg(not(target_os = "macos"))]
 pub use ble::*;
-#[cfg(feature = "experimental")]
+#[cfg(all(feature = "experimental", not(target_os = "macos")))]
 mod blea;
-#[cfg(feature = "experimental")]
+#[cfg(all(feature = "experimental", not(target_os = "macos")))]
 pub use blea::*;
 mod inbound;
 pub use inbound::*;
