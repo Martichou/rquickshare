@@ -2,7 +2,6 @@
 extern crate log;
 
 use channel::ChannelMessage;
-// #[cfg(feature = "experimental")]
 #[cfg(all(feature = "experimental", not(target_os = "macos")))]  
 use hdl::BleAdvertiser;
 use mdns_sd::{ServiceDaemon, ServiceEvent};
@@ -102,7 +101,6 @@ impl RQS {
         self.tracker.spawn(async move { server.run(ctk).await });
 
         // Start BleListener in own "task"
-        // #[cfg(not(target_os = "macos"))]
         let ble_channel = broadcast::channel(10);
         // Don't threat BleListener error as fatal, it's a nice to have.
         #[cfg(not(target_os = "macos"))]
@@ -133,15 +131,12 @@ impl RQS {
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
 
-        // #[cfg(not(target_os = "macos"))]
         let blea_ctk = CancellationToken::new();
-        // #[cfg(not(target_os = "macos"))]
         self.blea_ctk = Some(blea_ctk.clone());
 
         let discovery = MDnsDiscovery::new(sender)?;
         self.tracker.spawn(async move { discovery.run(ctk).await });
 
-        // #[cfg(feature = "experimental")]
         #[cfg(all(feature = "experimental", not(target_os = "macos")))]  
         self.tracker.spawn(async move {
             let blea = match BleAdvertiser::new().await {
@@ -165,7 +160,6 @@ impl RQS {
             discovert_ctk.cancel();
             self.discovery_ctk = None;
         }
-        // #[cfg(not(target_os = "macos"))]
         if let Some(blea_ctk) = &self.blea_ctk {
             blea_ctk.cancel();
             self.blea_ctk = None;
