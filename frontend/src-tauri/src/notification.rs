@@ -5,6 +5,7 @@ use rqs_lib::{
 };
 use tauri::{AppHandle, Manager};
 #[cfg(not(target_os = "linux"))]
+#[cfg(not(target_os = "macos"))]
 use tauri_plugin_notification::NotificationExt;
 
 use crate::cmds;
@@ -57,6 +58,7 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
     }
 
     #[cfg(not(target_os = "linux"))]
+    #[cfg(not(target_os = "macos"))]
     let _ = app_handle
         .notification()
         .builder()
@@ -65,6 +67,7 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
         .show();
 }
 
+#[cfg(not(target_os = "macos"))] 
 pub fn send_temporarily_notification(app_handle: &AppHandle) {
     match Notification::new()
         .summary("RQuickShare")
