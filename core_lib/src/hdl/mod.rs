@@ -77,7 +77,26 @@ pub struct InnerState {
     pub send_hmac_key: Option<Vec<u8>>,
 
     // Used to handle/track ingress transfer
-    pub text_payload_id: i64,
+    pub text_payload: Option<TextPayloadInfo>,
+    // pub text_payload_id: i64,
+    // pub text_is_url: bool,
+    // pub wifi_ssid: Option<String>,
     pub payload_buffers: HashMap<i64, Vec<u8>>,
-    pub wifi_ssid: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum TextPayloadInfo {
+    Url(i64),
+    Text(i64),
+    Wifi((i64, String)),
+}
+
+impl TextPayloadInfo {
+    fn get_i64_value(&self) -> i64 {
+        match self {
+            TextPayloadInfo::Url(value)
+            | TextPayloadInfo::Text(value)
+            | TextPayloadInfo::Wifi((value, _)) => value.to_owned(),
+        }
+    }
 }

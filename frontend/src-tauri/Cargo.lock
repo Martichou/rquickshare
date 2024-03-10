@@ -88,9 +88,9 @@ checksum = "080e9890a082662b09c1ad45f567faeeb47f22b5fb23895fbe1e651e718e25ca"
 
 [[package]]
 name = "arboard"
-version = "3.3.1"
+version = "3.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1faa3c733d9a3dd6fbaf85da5d162a2e03b2e0033a90dceb0e2a90fdd1e5380a"
+checksum = "a2041f1943049c7978768d84e6d0fd95de98b76d6c4727b09e78ec253d29fa58"
 dependencies = [
  "clipboard-win",
  "core-graphics 0.23.1",
@@ -3935,6 +3935,7 @@ name = "rqs_lib"
 version = "0.4.0"
 dependencies = [
  "anyhow",
+ "arboard",
  "base64 0.21.7",
  "bluer",
  "btleplug",

@@ -89,7 +89,6 @@ impl OutboundRequest {
                 client_seq: 0,
                 state: State::Initial,
                 encryption_done: true,
-                text_payload_id: -1,
                 transfer_metadata: Some(TransferMetadata {
                     id: String::from(""),
                     source: Some(rdi),
@@ -500,24 +499,10 @@ impl OutboundRequest {
                         }
 
                         if (chunk.flags() & 1) == 1 {
-                            // Clear payload_buffer for payload_id
                             debug!("Chunk flags & 1 == 1 ?? End of data ??");
 
-                            if payload_id == self.state.text_payload_id {
-                                info!("Transfer finished");
-                                self.update_state(
-                                    |e| {
-                                        e.state = State::Finished;
-                                    },
-                                    true,
-                                );
-                                self.disconnection().await?;
-                                return Err(anyhow!(crate::errors::AppError::NotAnError));
-                            } else {
-                                let innner_frame =
-                                    sharing_nearby::Frame::decode(buffer.as_slice())?;
-                                self.process_transfer_setup(&innner_frame).await?;
-                            }
+                            let innner_frame = sharing_nearby::Frame::decode(buffer.as_slice())?;
+                            self.process_transfer_setup(&innner_frame).await?;
                         }
                     }
                     payload_header::PayloadType::File => {

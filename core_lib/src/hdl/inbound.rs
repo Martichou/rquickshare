@@ -2,6 +2,7 @@ use std::fs::File;
 use std::os::unix::fs::FileExt;
 
 use anyhow::anyhow;
+use arboard::Clipboard;
 use bytes::Bytes;
 use hmac::{Hmac, Mac};
 use libaes::{Cipher, AES_256_KEY_LEN};
@@ -18,6 +19,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use super::{InnerState, State};
 use crate::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use crate::hdl::info::{InternalFileInfo, TransferMetadata};
+use crate::hdl::TextPayloadInfo;
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
 };
@@ -62,7 +64,6 @@ impl InboundRequest {
                 client_seq: 0,
                 state: State::Initial,
                 encryption_done: true,
-                text_payload_id: -1,
                 ..Default::default()
             },
             sender,
@@ -548,34 +549,70 @@ impl InboundRequest {
                         }
 
                         if (chunk.flags() & 1) == 1 {
-                            // Clear payload_buffer for payload_id
                             debug!("Chunk flags & 1 == 1 ?? End of data ??");
 
-                            if payload_id == self.state.text_payload_id {
+                            if self.state.text_payload.is_some()
+                                && self.state.text_payload.as_ref().unwrap().get_i64_value()
+                                    == payload_id
+                            {
                                 info!("Transfer finished");
                                 let end_index =
                                     buffer.iter().position(|&b| b == 16).unwrap_or(buffer.len());
                                 let payload = std::str::from_utf8(&buffer[..end_index])?.to_owned();
-                                let wifi_ssid = match &self.state.wifi_ssid {
-                                    Some(s) => Some(s.clone()),
-                                    None => {
-                                        open::that(&payload)?;
-                                        None
+
+                                match self.state.text_payload.clone().unwrap() {
+                                    TextPayloadInfo::Url(_) => {
+                                        if let Err(e) = open::that(&payload) {
+                                            error!("Cannot open URL: {e}");
+                                        }
+
+                                        self.update_state(
+                                            |e| {
+                                                if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                                    tmd.text_payload = Some(payload);
+                                                }
+                                            },
+                                            false,
+                                        );
                                     }
-                                };
+                                    TextPayloadInfo::Text(_) => {
+                                        let mut ctx = Clipboard::new().unwrap();
+
+                                        let tp = match ctx.set_text(payload.clone()) {
+                                            Ok(_) => String::from("Copied to clipboard"),
+                                            Err(e) => {
+                                                error!("Cannot copy to cliboard: {e}");
+                                                payload
+                                            }
+                                        };
+
+                                        self.update_state(
+                                            |e| {
+                                                if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                                    tmd.text_payload = Some(tp);
+                                                }
+                                            },
+                                            false,
+                                        );
+                                    }
+                                    TextPayloadInfo::Wifi((_, ssid)) => {
+                                        self.update_state(
+                                            |e| {
+                                                if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                                    tmd.text_payload = Some(format!(
+                                                        "{ssid} : {}",
+                                                        payload.trim().to_owned()
+                                                    ));
+                                                }
+                                            },
+                                            false,
+                                        );
+                                    }
+                                }
 
                                 self.update_state(
                                     |e| {
                                         e.state = State::Finished;
-                                        if let Some(tmd) = e.transfer_metadata.as_mut() {
-                                            let p = match wifi_ssid {
-                                                Some(ws) => {
-                                                    format!("{ws} : {}", payload.trim().to_owned())
-                                                }
-                                                None => payload,
-                                            };
-                                            tmd.text_payload = Some(p);
-                                        }
                                     },
                                     true,
                                 );
@@ -847,7 +884,7 @@ impl InboundRequest {
                     info!("Asking for user consent: {:?}", metadata);
                     self.update_state(
                         |e| {
-                            e.text_payload_id = meta.payload_id();
+                            e.text_payload = Some(TextPayloadInfo::Url(meta.payload_id()));
                             e.transfer_metadata = Some(metadata.clone());
                         },
                         true,
@@ -856,11 +893,24 @@ impl InboundRequest {
                 text_metadata::Type::PhoneNumber
                 | text_metadata::Type::Address
                 | text_metadata::Type::Text => {
-                    // Reject transfer
-                    self.reject_transfer(Some(
-						sharing_nearby::connection_response_frame::Status::UnsupportedAttachmentType,
-					))
-					.await?;
+                    let metadata = TransferMetadata {
+                        id: self.state.id.clone(),
+                        destination: None,
+                        source: self.state.remote_device_info.clone(),
+                        files: None,
+                        pin_code: self.state.pin_code.clone(),
+                        text_description: meta.text_title.clone(),
+                        ..Default::default()
+                    };
+
+                    info!("Asking for user consent: {:?}", metadata);
+                    self.update_state(
+                        |e| {
+                            e.text_payload = Some(TextPayloadInfo::Text(meta.payload_id()));
+                            e.transfer_metadata = Some(metadata.clone());
+                        },
+                        true,
+                    );
                 }
                 text_metadata::Type::Unknown => {
                     // Reject transfer
@@ -886,9 +936,11 @@ impl InboundRequest {
 
             self.update_state(
                 |e| {
-                    e.text_payload_id = meta.payload_id();
+                    e.text_payload = Some(TextPayloadInfo::Wifi((
+                        meta.payload_id(),
+                        meta.ssid().to_owned(),
+                    )));
                     e.transfer_metadata = Some(metadata.clone());
-                    e.wifi_ssid = meta.ssid.clone()
                 },
                 true,
             );
