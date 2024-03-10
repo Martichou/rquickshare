@@ -10,8 +10,7 @@ use hdl::BleAdvertiser;
 use hdl::MDnsDiscovery;
 use rand::{distributions, Rng};
 use tokio::net::TcpListener;
-use tokio::sync::broadcast;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{broadcast, mpsc, watch};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 

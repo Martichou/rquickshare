@@ -1,7 +1,6 @@
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Manager};
-use tauri_plugin_store::with_store;
-use tauri_plugin_store::JsonValue;
+use tauri_plugin_store::{with_store, JsonValue};
 
 pub fn init_default(app_handle: &AppHandle) {
     let _ = with_store(
@@ -23,7 +22,7 @@ pub fn init_default(app_handle: &AppHandle) {
                     JsonValue::Number((Visibility::Visible as u8).into()),
                 );
             }
-            return Ok(());
+            Ok(())
         },
     );
 }
@@ -39,10 +38,10 @@ pub fn get_realclose(app_handle: &AppHandle) -> bool {
     );
 
     match realclose {
-        Ok(r) => return r.unwrap_or(false),
+        Ok(r) => r.unwrap_or(false),
         Err(e) => {
             error!("get_realclose: error: {}", e);
-            return false;
+            false
         }
     }
 }
@@ -58,10 +57,10 @@ pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
     );
 
     match visibility {
-        Ok(v) => return Visibility::from_raw_value(v.unwrap_or(0) as u8),
+        Ok(v) => Visibility::from_raw_value(v.unwrap_or(0) as u8),
         Err(e) => {
             error!("get_visibility: error: {}", e);
-            return Visibility::Visible;
+            Visibility::Visible
         }
     }
 }

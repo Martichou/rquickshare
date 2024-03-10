@@ -1,8 +1,6 @@
 use notify_rust::Notification;
-use rqs_lib::{
-    channel::{ChannelAction, ChannelDirection, ChannelMessage},
-    Visibility,
-};
+use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
+use rqs_lib::Visibility;
 use tauri::{AppHandle, Manager};
 #[cfg(not(target_os = "linux"))]
 use tauri_plugin_notification::NotificationExt;

@@ -163,7 +163,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     match visibility_receiver.changed().await {
                         Ok(_) => {
                             let v = visibility_receiver.borrow_and_update();
-                            let _ = set_visibility(&app_handle, v.clone());
+                            let _ = set_visibility(&app_handle, *v);
                         }
                         Err(e) => {
                             error!("Error getting visibility_receiver update: {}", e);

@@ -1,14 +1,11 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use mdns_sd::{AddrType, ServiceDaemon, ServiceInfo};
 use serde::{Deserialize, Serialize};
-use tokio::{
-    sync::{broadcast::Receiver, watch},
-    time::{interval_at, Instant},
-};
+use tokio::sync::broadcast::Receiver;
+use tokio::sync::watch;
+use tokio::time::{interval_at, Instant};
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
