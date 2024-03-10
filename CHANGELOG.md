@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.1](https://github.com/Martichou/rquickshare/compare/v0.4.0...v0.4.1) (2024-03-10)
+
+
+### Features
+
+* support text payload (to clipboard) ([f8a7732](https://github.com/Martichou/rquickshare/commit/f8a7732fdc96e3a8cdc3e5f5becc1a1f932c68f4))
+
+
+### Bug Fixes
+
+* release-please update .lock files ([23b681c](https://github.com/Martichou/rquickshare/commit/23b681c0b0a817b7ac0eea43013e81d3fc3941f9))
+* scroll when multiple requests/results ([97a1dea](https://github.com/Martichou/rquickshare/commit/97a1dea229bfb2c227a70cdcb842a7d1e8f65321))
+* support sharing WiFi (act as text) ([69840b8](https://github.com/Martichou/rquickshare/commit/69840b8299ab9113e55a60f1114918ef31e8cef7))
+
+
+### Miscellaneous Chores
+
+* release 0.4.1 ([d592b8e](https://github.com/Martichou/rquickshare/commit/d592b8e56718276fbcaf398409f04bfde6c8a168))
+
 ## [0.4.0](https://github.com/Martichou/rquickshare/compare/v0.3.0...v0.4.0) (2024-03-07)
 
 
