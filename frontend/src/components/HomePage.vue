@@ -122,8 +122,7 @@
 				</p>
 			</div>
 			<div
-				class="flex-1 grid grid-cols-1 bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll"
-				:class="{'grid-template-rows-auto': !displayedIsEmpty}">
+				class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
 				<h3 class="mb-4 font-medium text-xl">
 					<span v-if="displayedIsEmpty">Ready to receive{{ outboundPayload != undefined ? ' / send' : '' }}</span>
 					<span v-else>Nearby devices</span>
