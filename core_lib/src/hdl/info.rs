@@ -25,4 +25,6 @@ pub struct TransferMetadata {
     pub pin_code: Option<String>,
     pub text_description: Option<String>,
     pub text_payload: Option<String>,
+    pub total_bytes: i64,
+    pub ack_bytes: i64,
 }
