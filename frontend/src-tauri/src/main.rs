@@ -17,6 +17,7 @@ use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::logger::set_up_logging;
+#[cfg(not(target_os = "macos"))] 
 use crate::notification::{send_request_notification, send_temporarily_notification};
 use crate::store::{get_realclose, get_visibility, init_default, set_visibility};
 
@@ -125,7 +126,7 @@ async fn main() -> Result<(), anyhow::Error> {
                                     .and_then(|meta| meta.source.as_ref())
                                     .map(|source| source.name.clone())
                                     .unwrap_or_else(|| "Unknown".to_string());
-
+                                #[cfg(not(target_os = "macos"))] // A bunch of issues with notifications for macos
                                 send_request_notification(name, info.id.clone(), &app_handle);
                             }
 
@@ -186,6 +187,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                             if v == Visibility::Invisible {
                                 // Show notification to pass to temporarily mdns mode
+                                #[cfg(not(target_os = "macos"))] // A bunch of issues with notifications for macos
                                 send_temporarily_notification(&app_handle);
                             }
                         }
