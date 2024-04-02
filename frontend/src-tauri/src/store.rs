@@ -46,6 +46,25 @@ pub fn get_realclose(app_handle: &AppHandle) -> bool {
     }
 }
 
+pub fn get_port(app_handle: &AppHandle) -> Option<u32> {
+    let visibility = with_store(
+        app_handle.clone(),
+        app_handle.state(),
+        ".settings.json",
+        |store| {
+            return Ok(store.get("port").and_then(|json| json.as_u64()));
+        },
+    );
+
+    match visibility {
+        Ok(v) => match v {
+            Some(vv) => Some(vv as u32),
+            None => None,
+        },
+        Err(_) => None,
+    }
+}
+
 pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
     let visibility = with_store(
         app_handle.clone(),

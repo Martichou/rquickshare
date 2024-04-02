@@ -58,17 +58,19 @@ pub struct RQS {
     // Only used to send the info "a nearby device is sharing"
     ble_sender: broadcast::Sender<()>,
 
+    port_number: Option<u32>,
+
     pub message_sender: broadcast::Sender<ChannelMessage>,
 }
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new(Visibility::Visible)
+        Self::new(Visibility::Visible, None)
     }
 }
 
 impl RQS {
-    pub fn new(visibility: Visibility) -> Self {
+    pub fn new(visibility: Visibility, port_number: Option<u32>) -> Self {
         let (message_sender, _) = broadcast::channel(50);
         let (ble_sender, _) = broadcast::channel(5);
 
@@ -83,6 +85,7 @@ impl RQS {
             visibility_sender: Arc::new(Mutex::new(visibility_sender)),
             visibility_receiver,
             ble_sender,
+            port_number,
             message_sender,
         }
     }
@@ -100,7 +103,8 @@ impl RQS {
             .take(4)
             .map(u8::from)
             .collect();
-        let tcp_listener = TcpListener::bind("0.0.0.0:0").await?;
+        let tcp_listener =
+            TcpListener::bind(format!("0.0.0.0:{}", self.port_number.unwrap_or(0))).await?;
         let binded_addr = tcp_listener.local_addr()?;
         info!("TcpListener on: {}", binded_addr);
 

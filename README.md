@@ -86,6 +86,21 @@ If you see that the process is still running, it's because the app is not closed
 
 If you want to **really** close the app when clicking on the close button, you can change that inside the app by clicking on the three dots and then "Stop app on close".
 
+### My firewall is blocking the connection
+
+In this case, you may want to configure a static port to allow it in your firewall. You can do so by modifying the config file as follow:
+
+```
+rtin :: ~ » vim ./.local/share/dev.mandre.rquickshare/.settings.json
+
+{
+	...existing_config...,
+	"port": 12345
+}
+```
+
+By default the port is random (the OS will decide).
+
 WIP Notes
 --------------------------
 

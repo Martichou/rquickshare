@@ -18,7 +18,7 @@ use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::logger::set_up_logging;
 use crate::notification::{send_request_notification, send_temporarily_notification};
-use crate::store::{get_realclose, get_visibility, init_default, set_visibility};
+use crate::store::{get_port, get_realclose, get_visibility, init_default, set_visibility};
 
 mod cmds;
 mod logger;
@@ -77,6 +77,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
             // Fetch default or previously saved visibility
             let visibility = get_visibility(&app.app_handle());
+            let port_number = get_port(&app.app_handle());
 
             let app_handle = app.app_handle().clone();
             // This is not optimal, but until I find a better way to init log
@@ -86,7 +87,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 tauri::async_runtime::block_on(async move {
                     trace!("Begining of RQS start");
                     // Start the RQuickShare service
-                    let mut rqs = RQS::new(visibility);
+                    let mut rqs = RQS::new(visibility, port_number);
                     // Need to be waited, but blocked on
                     let (sender_file, ble_receiver) = rqs.run().await.unwrap();
 
