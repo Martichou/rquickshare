@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/Martichou/rquickshare/compare/v0.4.1...v0.5.0) (2024-04-02)
+
+
+### Features
+
+* allow to select a specific port number ([8188bfb](https://github.com/Martichou/rquickshare/commit/8188bfb0569707e8964ecf2490186b0da908e126))
+
+
+### Bug Fixes
+
+* go back to flex-col for itms ([3597da8](https://github.com/Martichou/rquickshare/commit/3597da86e16dd58e2f608112dc44ccd71aef061d))
+
 ## [0.4.1](https://github.com/Martichou/rquickshare/compare/v0.4.0...v0.4.1) (2024-03-10)
 
 
