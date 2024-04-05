@@ -39,7 +39,6 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    debug!("main shit");
     // Define tauri async runtime to be tokio
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
