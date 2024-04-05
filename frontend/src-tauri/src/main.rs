@@ -12,13 +12,16 @@ use rqs_lib::channel::{ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use tauri::{
     CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
+    Window,
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::logger::set_up_logging;
 use crate::notification::{send_request_notification, send_temporarily_notification};
-use crate::store::{get_port, get_realclose, get_visibility, init_default, set_visibility};
+use crate::store::{
+    get_minimizeonstartup, get_port, get_realclose, get_visibility, init_default, set_visibility,
+};
 
 mod cmds;
 mod logger;
@@ -36,6 +39,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    debug!("main shit");
     // Define tauri async runtime to be tokio
     tauri::async_runtime::set(tokio::runtime::Handle::current());
 
@@ -67,10 +71,15 @@ async fn main() -> Result<(), anyhow::Error> {
             cmds::send_payload,
             cmds::send_to_rs,
             sanity_check,
+            minimize_window_on_startup
         ])
         .setup(|app| {
             set_up_logging(&app.app_handle())?;
             debug!("Starting setup of RQuickShare app");
+            let window = app.get_window("main").unwrap();
+            if get_minimizeonstartup(&app.app_handle()) {
+                minimize_window_on_startup(window);
+            }
 
             // Initialize default value for the store
             init_default(&app.app_handle());
@@ -276,4 +285,9 @@ fn rs2js_endpointinfo<R: tauri::Runtime>(message: EndpointInfo, manager: &impl M
 #[tauri::command]
 fn sanity_check() {
     info!("sanity_check");
+}
+
+#[tauri::command]
+fn minimize_window_on_startup(window: Window) {
+    window.hide().unwrap();
 }

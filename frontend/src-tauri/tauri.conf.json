@@ -5,7 +5,7 @@
   "build": {
     "distDir": "../dist",
     "devPath": "http://localhost:1420",
-	"beforeDevCommand": "pnpm vite:dev",
+    "beforeDevCommand": "pnpm vite:dev",
     "beforeBuildCommand": "pnpm vite:build"
   },
   "tauri": {
@@ -50,7 +50,10 @@
       "active": false
     },
     "allowlist": {
-      "all": true
+      "all": true,
+      "window": {
+        "hide": true
+      }
     },
     "windows": [
       {

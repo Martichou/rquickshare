@@ -23,6 +23,12 @@
 							<input type="checkbox" :checked="!realclose" class="checkbox focus:outline-none">
 						</label>
 					</div>
+					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setMinimizeOnStartup(!minimizeonstartup)">
+							<span class="label-text">Minimize on startup</span>
+							<input type="checkbox" :checked="minimizeonstartup" class="checkbox focus:outline-none">
+						</label>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -364,6 +370,7 @@ const numberToVisibility: { [key: number]: Visibility } = {
 const autostartKey = "autostart";
 const realcloseKey = "realclose";
 const visibilityKey = "visibility";
+const minimizeonstartupKey = "minimizeonstartup";
 const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
 	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
@@ -393,6 +400,7 @@ export default {
 			version: opt<string>(),
 
 			autostart: ref<boolean>(true),
+			minimizeonstartup: ref<boolean>(true),
 			realclose: ref<boolean>(false),
 			visibility: ref<Visibility>('Visible'),
 
@@ -409,11 +417,12 @@ export default {
 
 			await this.getVisibility();
 
-			if (!await this.store.has(autostartKey)) {
-				await this.setAutostart(true);
-			} else {
-				await this.applyAutostart();
-			}
+			if (!await this.store.has(autostartKey)) await this.setAutostart(true); 
+			else await this.applyAutostart();
+
+			if (!await this.store.has(minimizeonstartupKey)) await this.setMinimizeOnStartup(true);
+			else await this.applyMinimizeOnStartup();
+	
 
 			this.getRealclose();
 
@@ -585,11 +594,23 @@ export default {
 		applyAutostart: async function() {
 			this.autostart = await this.store.get(autostartKey) ?? false;
 
-			if (this.autostart) {
-				await enable();
-			} else {
-				await disable();
-			}
+			if (this.autostart) await enable();
+			else await disable();
+			
+		},
+		setMinimizeOnStartup: async function(minimizeonstartup: boolean) {
+			if (minimizeonstartup) await enable();
+			else await disable();
+			
+			await this.store.set(minimizeonstartupKey, minimizeonstartup);
+			await this.store.save();
+			this.minimizeonstartup = minimizeonstartup;
+		},
+		applyMinimizeOnStartup: async function(){
+			this.minimizeonstartup = await this.store.get(minimizeonstartupKey) ?? false;
+			if (this.minimizeonstartup) await enable();
+			else await disable();
+			
 		},
 		setRealclose: async function(realclose: boolean) {
 			await this.store.set(realcloseKey, realclose);

@@ -45,6 +45,26 @@ pub fn get_realclose(app_handle: &AppHandle) -> bool {
         }
     }
 }
+pub fn get_minimizeonstartup(app_handle: &AppHandle) -> bool {
+    let minimizeonstartup = with_store(
+        app_handle.clone(),
+        app_handle.state(),
+        ".settings.json",
+        |store| {
+            return Ok(store
+                .get("minimizeonstartup")
+                .and_then(|json| json.as_bool()));
+        },
+    );
+
+    match minimizeonstartup {
+        Ok(r) => r.unwrap_or(false),
+        Err(e) => {
+            error!("get_minimizeonstartup: error: {}", e);
+            false
+        }
+    }
+}
 
 pub fn get_port(app_handle: &AppHandle) -> Option<u32> {
     let visibility = with_store(
