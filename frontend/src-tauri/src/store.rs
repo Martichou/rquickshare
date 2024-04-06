@@ -11,7 +11,9 @@ pub fn init_default(app_handle: &AppHandle) {
             if !store.has("autostart") {
                 let _ = store.insert("autostart".to_owned(), JsonValue::Bool(true));
             }
-
+            if !store.has("minimizeonstartup") {
+                let _ = store.insert("minimizeonstartup".to_owned(), JsonValue::Bool(true));
+            }
             if !store.has("realclose") {
                 let _ = store.insert("realclose".to_owned(), JsonValue::Bool(false));
             }
