@@ -11,7 +11,9 @@ pub fn init_default(app_handle: &AppHandle) {
             if !store.has("autostart") {
                 let _ = store.insert("autostart".to_owned(), JsonValue::Bool(true));
             }
-
+            if !store.has("minimizeonstartup") {
+                let _ = store.insert("minimizeonstartup".to_owned(), JsonValue::Bool(true));
+            }
             if !store.has("realclose") {
                 let _ = store.insert("realclose".to_owned(), JsonValue::Bool(false));
             }
@@ -41,6 +43,26 @@ pub fn get_realclose(app_handle: &AppHandle) -> bool {
         Ok(r) => r.unwrap_or(false),
         Err(e) => {
             error!("get_realclose: error: {}", e);
+            false
+        }
+    }
+}
+pub fn get_minimizeonstartup(app_handle: &AppHandle) -> bool {
+    let minimizeonstartup = with_store(
+        app_handle.clone(),
+        app_handle.state(),
+        ".settings.json",
+        |store| {
+            return Ok(store
+                .get("minimizeonstartup")
+                .and_then(|json| json.as_bool()));
+        },
+    );
+
+    match minimizeonstartup {
+        Ok(r) => r.unwrap_or(false),
+        Err(e) => {
+            error!("get_minimizeonstartup: error: {}", e);
             false
         }
     }
