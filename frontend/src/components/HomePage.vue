@@ -23,6 +23,14 @@
 							<input type="checkbox" :checked="!realclose" class="checkbox focus:outline-none">
 						</label>
 					</div>
+					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+						<label class="cursor-pointer flex flex-col items-start" @click="openDownloadPicker()">
+							<span class="">Change download folder</span>
+							<span class="overflow-hidden whitespace-nowrap text-ellipsis text-xs max-w-80">
+								> {{ downloadPath ?? 'OS User\'s download folder' }}
+							</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -364,6 +372,7 @@ const numberToVisibility: { [key: number]: Visibility } = {
 const autostartKey = "autostart";
 const realcloseKey = "realclose";
 const visibilityKey = "visibility";
+const downloadPathKey = "download_path";
 const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
 	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
@@ -395,6 +404,7 @@ export default {
 			autostart: ref<boolean>(true),
 			realclose: ref<boolean>(false),
 			visibility: ref<Visibility>('Visible'),
+			downloadPath: ref<string | undefined>(),
 
 			hostname: ref<string>(),
 
@@ -415,7 +425,8 @@ export default {
 				await this.applyAutostart();
 			}
 
-			this.getRealclose();
+			await this.getRealclose();
+			await this.getDownloadPath();
 
 			// Check permission for notification
 			let permissionGranted = await isPermissionGranted();
@@ -690,7 +701,29 @@ export default {
 				if (!this.discoveryRunning) await invoke('start_discovery');
 				this.discoveryRunning = true;
 			})
-		}
+		},
+		openDownloadPicker: function() {
+			dialog.open({
+				title: "Select the destination for files",
+				directory: true,
+				multiple: false,
+			}).then(async (el) => {
+				if (el === null) {
+					return;
+				}
+
+				await this.setDownloadPath(el as string);
+			})
+		},
+		setDownloadPath: async function(dest: string) {
+			await invoke('change_download_path', { message: dest });
+			await this.store.set(downloadPathKey, dest);
+			await this.store.save();
+			this.downloadPath = dest;
+		},
+		getDownloadPath: async function() {
+			this.downloadPath = await this.store.get(downloadPathKey) ?? undefined;
+		},
 	},
 }
 </script>

@@ -1,3 +1,5 @@
+mod change_download_path;
+pub use change_download_path::*;
 mod change_visibility;
 pub use change_visibility::*;
 mod discovery;

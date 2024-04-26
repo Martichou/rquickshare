@@ -1,13 +1,15 @@
 #[macro_use]
 extern crate log;
 
-use std::sync::{Arc, Mutex};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex, RwLock};
 
 use anyhow::anyhow;
 use channel::ChannelMessage;
 #[cfg(feature = "experimental")]
 use hdl::BleAdvertiser;
 use hdl::MDnsDiscovery;
+use once_cell::sync::Lazy;
 use rand::{distributions, Rng};
 use tokio::net::TcpListener;
 use tokio::sync::{broadcast, mpsc, watch};
@@ -43,6 +45,8 @@ pub mod location_nearby_connections {
     include!(concat!(env!("OUT_DIR"), "/location.nearby.connections.rs"));
 }
 
+static CUSTOM_DOWNLOAD: Lazy<RwLock<Option<PathBuf>>> = Lazy::new(|| RwLock::new(None));
+
 #[derive(Debug)]
 pub struct RQS {
     tracker: Option<TaskTracker>,
@@ -65,12 +69,19 @@ pub struct RQS {
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new(Visibility::Visible, None)
+        Self::new(Visibility::Visible, None, None)
     }
 }
 
 impl RQS {
-    pub fn new(visibility: Visibility, port_number: Option<u32>) -> Self {
+    pub fn new(
+        visibility: Visibility,
+        port_number: Option<u32>,
+        download_path: Option<PathBuf>,
+    ) -> Self {
+        let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
+        *guard = download_path;
+
         let (message_sender, _) = broadcast::channel(50);
         let (ble_sender, _) = broadcast::channel(5);
 
@@ -205,5 +216,12 @@ impl RQS {
 
         self.ctoken = None;
         self.tracker = None;
+    }
+
+    // Setting None here will resume the default settings
+    pub fn set_download_path(&self, p: Option<PathBuf>) {
+        debug!("Setting the download path to {:?}", p);
+        let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
+        *guard = p;
     }
 }
