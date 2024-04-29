@@ -645,9 +645,11 @@ impl InboundRequest {
                                 current_offset
                             ));
                         }
-                        if current_offset + chunk.body().len() as i64 > file_internal.total_size {
+
+                        let chunk_size = chunk.body().len();
+                        if current_offset + chunk_size as i64 > file_internal.total_size {
                             return Err(anyhow!(
-                                "Transferred file size exceeds previously specified value: {} vs {}", current_offset + chunk.body().len() as i64, file_internal.total_size
+                                "Transferred file size exceeds previously specified value: {} vs {}", current_offset + chunk_size as i64, file_internal.total_size
                             ));
                         }
 
@@ -657,7 +659,16 @@ impl InboundRequest {
                                 .as_ref()
                                 .unwrap()
                                 .write_all_at(chunk.body(), current_offset as u64)?;
-                            file_internal.bytes_transferred += chunk.body().len() as i64;
+                            file_internal.bytes_transferred += chunk_size as i64;
+
+                            self.update_state(
+                                |e| {
+                                    if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                        tmd.ack_bytes += chunk_size as i64;
+                                    }
+                                },
+                                true,
+                            );
                         } else if (chunk.flags() & 1) == 1 {
                             self.state.transferred_files.remove(&payload_id);
                             if self.state.transferred_files.is_empty() {
@@ -808,6 +819,7 @@ impl InboundRequest {
         if !introduction.file_metadata.is_empty() && introduction.text_metadata.is_empty() {
             trace!("process_introduction: handling file_metadata");
             let mut files_name = Vec::with_capacity(introduction.file_metadata.len());
+            let mut total_bytes = 0;
 
             for file in &introduction.file_metadata {
                 info!("File name: {}", file.name());
@@ -839,6 +851,7 @@ impl InboundRequest {
                     total_size: file.size(),
                     file: None,
                 };
+                total_bytes += info.total_size;
                 self.state.transferred_files.insert(file.payload_id(), info);
                 files_name.push(file.name().to_owned());
             }
@@ -855,13 +868,14 @@ impl InboundRequest {
                 files: Some(files_name),
                 pin_code: self.state.pin_code.clone(),
                 text_description: None,
+                total_bytes,
                 ..Default::default()
             };
 
             info!("Asking for user consent: {:?}", metadata);
             self.update_state(
                 |e| {
-                    e.transfer_metadata = Some(metadata.clone());
+                    e.transfer_metadata = Some(metadata);
                 },
                 true,
             );
@@ -885,7 +899,7 @@ impl InboundRequest {
                     self.update_state(
                         |e| {
                             e.text_payload = Some(TextPayloadInfo::Url(meta.payload_id()));
-                            e.transfer_metadata = Some(metadata.clone());
+                            e.transfer_metadata = Some(metadata);
                         },
                         true,
                     );
@@ -907,7 +921,7 @@ impl InboundRequest {
                     self.update_state(
                         |e| {
                             e.text_payload = Some(TextPayloadInfo::Text(meta.payload_id()));
-                            e.transfer_metadata = Some(metadata.clone());
+                            e.transfer_metadata = Some(metadata);
                         },
                         true,
                     );
@@ -940,7 +954,7 @@ impl InboundRequest {
                         meta.payload_id(),
                         meta.ssid().to_owned(),
                     )));
-                    e.transfer_metadata = Some(metadata.clone());
+                    e.transfer_metadata = Some(metadata);
                 },
                 true,
             );
@@ -1305,6 +1319,7 @@ impl InboundRequest {
             return;
         }
 
+        trace!("Sending msg into the channel");
         let _ = self.sender.send(ChannelMessage {
             id: self.state.id.clone(),
             direction: ChannelDirection::LibToFront,
