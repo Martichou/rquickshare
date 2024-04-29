@@ -48,8 +48,20 @@ jobs:
             mv "$file" "$new_name"
             echo "Renamed $file to $new_name"
           done
+      - name: Install Snapcraft
+        uses: snapcore/action-build@v1
       - uses: softprops/action-gh-release@v1
+        if: github.event_name != 'workflow_dispatch'
         with:
-          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
+          files: |
+            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
+            ${{ github.workspace }}/frontend/src-tauri/rquickshare*.snap
           fail_on_unmatched_files: true
-
+      - name: Upload artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-debug-rquickshare
+          path: |
+            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
+            ${{ github.workspace }}/frontend/src-tauri/rquickshare*.snap

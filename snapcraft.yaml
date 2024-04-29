@@ -1,0 +1,35 @@
+name: rquickshare
+base: core20
+version: 0.5.0
+
+summary: QuickShare implementation for Linux
+description: |
+  Rust implementation of NearbyShare/QuickShare from Android for Linux.
+
+grade: devel
+confinement: strict
+
+apps:
+  r-quick-share:
+    command: r-quick-share
+    extensions:
+      - gnome-3-38
+    desktop: RQuickShare.desktop
+
+parts:
+  dump-binary:
+    plugin: dump
+    source: ./frontend/src-tauri/target/release
+    source-type: local
+    stage:
+      - lib
+      - icons
+      - r-quick-share
+      - RQuickShare.desktop
+    prime:
+      - lib
+      - icons
+      - r-quick-share
+      - RQuickShare.desktop
+    stage-packages:
+      - libc6
