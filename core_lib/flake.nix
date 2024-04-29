@@ -13,14 +13,22 @@
     in {
       packages = forAllSystems (system: let pkgs = pkgs-s.${system}; in {
         default = with pkgs; rustPlatform.buildRustPackage {
+          nativeBuildInputs = with pkgs; [ pkg-config ];
+          buildInputs = with pkgs; [ dbus protobuf ];
+          PROTOC = "${protobuf}/bin/protoc";
           pname = "rqs_lib";
           version = "0.5.0";
           src = ./.;
-          cargoHash = lib.fakeHash;
-          meta = {
-          description = "Core Lib for rquickshare";
+          cargoLock = {
+            lockFile = ./Cargo.lock;
+            outputHashes = {
+              "mdns-sd-0.10.4" = "sha256-y8pHtG7JCJvmWCDlWuJWJDbCGOheD4PN+WmOxnakbE4=";
+            };
+          };
+          meta = with lib; {
+            description = "Core Lib for rquickshare";
             homepage = "https://github.com/Martichou/rquickshare/tree/master/core_lib";
-            license = licenses.gplv3;
+            license = licenses.gpl3;
             maintainers = with maintainers; [ hannesgith ];
           };
         };

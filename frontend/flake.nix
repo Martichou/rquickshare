@@ -17,10 +17,11 @@
           version = "0.0.0";
           src = ./.;
           cargoHash = lib.fakeHash;
-          meta = {
-          description = "frontend for rquickshare";
+          meta = with lib; {
+            description = "frontend for rquickshare";
             homepage = "https://github.com/Martichou/rquickshare/tree/master/frontend";
-            license = licenses.gplv3;
+            license = licenses.gpl3;
+            platforms = lib.platforms.linux; #FIXME darwin #22
             maintainers = with maintainers; [ hannesgith ];
           };
         };
