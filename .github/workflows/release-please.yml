@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: google-github-actions/release-please-action@v4
         with:
-          token: ${{ secrets.GH_PAT_RELEASE_ACCESS }}
+          token: ${{ secrets.GH_PAT_RELEASE_ACCESS }}
           skip-github-pull-request: true
 
   release-please-pr:

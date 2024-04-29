@@ -31,19 +31,28 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-dev libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
       - name: Build Vite + Tauri
         run: |
           cd ./frontend
           pnpm build
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo ${GLIBC_VER} > min_glibc_v${GLIBC_VER}
-      - uses: softprops/action-gh-release@v1
+
+      - uses: snapcore/action-build@v1
+        id: build-snap
+      - run: sudo snap install --dangerous ${{ steps.build-snap.outputs.snap }}
+
+      - name: Add files to release
         if: github.event_name != 'workflow_dispatch'
+        uses: softprops/action-gh-release@v1
         with:
           files: |
             ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
             ${{ github.workspace }}/frontend/min_glibc_v*
+            ${{ steps.build-snap.outputs.snap }}
           fail_on_unmatched_files: true
+
       - name: Upload artifacts
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
@@ -52,3 +61,4 @@ jobs:
           path: |
             ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
             ${{ github.workspace }}/frontend/min_glibc_v*
+            ${{ steps.build-snap.outputs.snap }}
