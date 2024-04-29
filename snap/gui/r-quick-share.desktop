@@ -1,0 +1,7 @@
+[Desktop Entry]
+Categories=Development;
+Exec=r-quick-share
+Icon=${SNAP}/meta/gui/r-quick-share.png
+Name=RQuickShare
+Terminal=false
+Type=Application

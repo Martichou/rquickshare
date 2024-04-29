@@ -1,10 +1,11 @@
-name: Lint
+name: Code quality - linting
 
 on:
   push:
     branches: [ "master" ]
   pull_request:
 
+# cancel ongoing jobs:
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -32,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: arduino/setup-protoc@v3
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v3
         with:
           version: 8
           run_install: true

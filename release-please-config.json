@@ -29,6 +29,11 @@
 			"type": "toml",
 			"path": "frontend/src-tauri/Cargo.lock",
 			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
+		},
+		{
+			"type": "yaml",
+			"path": "frontend/snapcraft.yaml",
+			"jsonpath": "$.version"
 		}
 	],
     "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"

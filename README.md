@@ -46,6 +46,14 @@ You can then either double click on it, or run it from the cmd line:
 ./r-quick-share_${VERSION}_amd64.AppImage
 ```
 
+#### Snap
+
+The snap is not yet on the store, but you can install it with the following (you may need sudo).
+
+```
+snap install --dangerous r-quick-share_${VERSION}_amd64.snap
+```
+
 Limitations
 --------------------------
 
