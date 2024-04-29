@@ -16,6 +16,8 @@ use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
 use ts_rs::TS;
 
+use crate::CUSTOM_DOWNLOAD;
+
 #[derive(Debug, Clone, Deserialize, PartialEq, Serialize, TS)]
 #[ts(export)]
 #[allow(dead_code)]
@@ -180,6 +182,18 @@ pub fn gen_random(size: usize) -> Vec<u8> {
 }
 
 pub fn get_download_dir() -> PathBuf {
+    let cdown = CUSTOM_DOWNLOAD.read();
+    match cdown {
+        Ok(mg) => {
+            if mg.is_some() {
+                return mg.as_ref().unwrap().to_path_buf();
+            }
+        }
+        Err(_) => {
+            // TODO
+        }
+    }
+
     if let Some(user_dirs) = directories::UserDirs::new() {
         if let Some(dd) = user_dirs.download_dir() {
             return dd.to_path_buf();

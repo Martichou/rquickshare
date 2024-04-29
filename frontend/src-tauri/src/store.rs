@@ -1,3 +1,5 @@
+use std::{path::PathBuf, str::FromStr};
+
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_store::{with_store, JsonValue};
@@ -57,10 +59,7 @@ pub fn get_port(app_handle: &AppHandle) -> Option<u32> {
     );
 
     match visibility {
-        Ok(v) => match v {
-            Some(vv) => Some(vv as u32),
-            None => None,
-        },
+        Ok(v) => v.map(|vv| vv as u32),
         Err(_) => None,
     }
 }
@@ -94,4 +93,23 @@ pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyho
 
     app_handle.emit_all("visibility_updated", ())?;
     Ok(())
+}
+
+pub fn get_download_path(app_handle: &AppHandle) -> Option<PathBuf> {
+    let download_path = with_store(
+        app_handle.clone(),
+        app_handle.state(),
+        ".settings.json",
+        |store| {
+            return Ok(store.get("download_path").cloned());
+        },
+    );
+
+    match download_path {
+        Ok(v) => match v {
+            Some(vv) => vv.as_str().map(|e| PathBuf::from_str(e).unwrap()),
+            None => None,
+        },
+        Err(_) => None,
+    }
 }
