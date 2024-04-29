@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/Martichou/rquickshare/compare/v0.5.0...v0.6.0) (2024-04-29)
+
+
+### Features
+
+* add incoming transfer progress ([#47](https://github.com/Martichou/rquickshare/issues/47)) ([f154e90](https://github.com/Martichou/rquickshare/commit/f154e9099ad720101b9d100e52bf9dd3ca87af1a))
+* add option to change destination folder ([#60](https://github.com/Martichou/rquickshare/issues/60)) ([7091df0](https://github.com/Martichou/rquickshare/commit/7091df078c3dfe4424dc9217dbdfb15d10a29a6b))
+
 ## [0.5.0](https://github.com/Martichou/rquickshare/compare/v0.4.1...v0.5.0) (2024-04-02)
 
 
