@@ -22,6 +22,9 @@ dependencies:
     version: 3.3.11(typescript@5.3.3)
 
 devDependencies:
+  '@rollup/rollup-linux-x64-gnu':
+    specifier: ^4.17.1
+    version: 4.17.1
   '@stylistic/eslint-plugin':
     specifier: ^1.6.2
     version: 1.6.2(eslint@8.56.0)(typescript@5.3.3)
@@ -29,6 +32,9 @@ devDependencies:
     specifier: ^0.5.10
     version: 0.5.10(tailwindcss@3.4.0)
   '@tauri-apps/cli':
+    specifier: 1.5.7
+    version: 1.5.7
+  '@tauri-apps/cli-linux-x64-gnu':
     specifier: 1.5.7
     version: 1.5.7
   '@types/node':
@@ -558,6 +564,12 @@ packages:
     dev: true
     optional: true
 
+  /@rollup/rollup-linux-x64-gnu@4.17.1:
+    resolution: {integrity: sha512-AsdnINQoDWfKpBzCPqQWxSPdAWzSgnYbrJYtn6W0H2E9It5bZss99PiLA8CgmDRfvKygt20UpZ3xkhFlIfX9zQ==}
+    cpu: [x64]
+    os: [linux]
+    dev: true
+
   /@rollup/rollup-linux-x64-gnu@4.7.0:
     resolution: {integrity: sha512-cCkoGlGWfBobdDtiiypxf79q6k3/iRVGu1HVLbD92gWV5WZbmuWJCgRM4x2N6i7ljGn1cGytPn9ZAfS8UwF6vg==}
     cpu: [x64]
@@ -764,7 +776,6 @@ packages:
     os: [linux]
     requiresBuild: true
     dev: true
-    optional: true
 
   /@tauri-apps/cli-linux-x64-musl@1.5.7:
     resolution: {integrity: sha512-LL9aMK601BmQjAUDcKWtt5KvAM0xXi0iJpOjoUD3LPfr5dLvBMTflVHQDAEtuZexLQyqpU09+60781PrI/FCTw==}

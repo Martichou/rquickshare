@@ -24,9 +24,11 @@
     "vue": "3.3.11"
   },
   "devDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.17.1",
     "@stylistic/eslint-plugin": "^1.6.2",
     "@tailwindcss/typography": "^0.5.10",
     "@tauri-apps/cli": "1.5.7",
+    "@tauri-apps/cli-linux-x64-gnu": "1.5.7",
     "@types/node": "20.10.4",
     "@vitejs/plugin-vue": "4.5.2",
     "@vue/devtools": "6.5.1",

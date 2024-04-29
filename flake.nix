@@ -16,10 +16,8 @@
     in rec {
       packages = forAllSystems (system: let pkgs = pkgs-s.${system}; in rec {
         core = inputs.core.packages.${system}.default;
-        web = inputs.frontend.packages.${system}.default;
-        default = pkgs.stdenv.mkDerivation {
-          
-        };
+        frontend = inputs.frontend.packages.${system}.default;
+        default = frontend;
       });
     };
 }

@@ -17,7 +17,7 @@
 Installation
 --------------------------
 
-You simply have to download the latest release.
+If you use nix simply run `nix run github:Martichou/rquickshare`, otherwise you  can also simply download the latest release.
 At the moment, only **Deb**, **Rpm** and **AppImage** are generated and supported.
 
 #### Debian
