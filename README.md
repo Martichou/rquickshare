@@ -30,7 +30,6 @@ sudo dpkg -i r-quick-share_${VERSION}_amd64.deb
 
 ```
 sudo rpm -i r-quick-share-${VERSION}-1.x86_64.rpm
-
 ```
 
 #### AppImage (no root required)
