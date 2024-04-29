@@ -1319,6 +1319,7 @@ impl InboundRequest {
             return;
         }
 
+        trace!("Sending msg into the channel");
         let _ = self.sender.send(ChannelMessage {
             id: self.state.id.clone(),
             direction: ChannelDirection::LibToFront,
