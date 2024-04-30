@@ -36,20 +36,11 @@ jobs:
           cd ./frontend
           pnpm build
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
-          for file in ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*; do
-            extension="${file##*.}"
-
-            if [[ ! -f "$file" ]] || [[ "$extension" == AppDir ]]; then
-              echo "Skipping $file"
-              continue
-            fi
-
-            new_name="${file%.*}_GLIBC-${GLIBC_VER}.$extension"
-            mv "$file" "$new_name"
-            echo "Renamed $file to $new_name"
-          done
+          echo ${GLIBC_VER} > min_glibc_v${GLIBC_VER}
       - uses: softprops/action-gh-release@v1
         with:
-          files: ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
+          files: |
+            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share*
+            ${{ github.workspace }}/frontend/min_glibc_v*
           fail_on_unmatched_files: true
 
