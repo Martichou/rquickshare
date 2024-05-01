@@ -32,7 +32,7 @@
 		},
 		{
 			"type": "yaml",
-			"path": "frontend/snapcraft.yaml",
+			"path": "snap/snapcraft.yaml",
 			"jsonpath": "$.version"
 		}
 	],
