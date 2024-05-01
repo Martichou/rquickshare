@@ -664,7 +664,7 @@ impl InboundRequest {
                             self.update_state(
                                 |e| {
                                     if let Some(tmd) = e.transfer_metadata.as_mut() {
-                                        tmd.ack_bytes += chunk_size as i64;
+                                        tmd.ack_bytes += chunk_size as u64;
                                     }
                                 },
                                 true,
@@ -819,7 +819,7 @@ impl InboundRequest {
         if !introduction.file_metadata.is_empty() && introduction.text_metadata.is_empty() {
             trace!("process_introduction: handling file_metadata");
             let mut files_name = Vec::with_capacity(introduction.file_metadata.len());
-            let mut total_bytes = 0;
+            let mut total_bytes: u64 = 0;
 
             for file in &introduction.file_metadata {
                 info!("File name: {}", file.name());
@@ -851,7 +851,7 @@ impl InboundRequest {
                     total_size: file.size(),
                     file: None,
                 };
-                total_bytes += info.total_size;
+                total_bytes += info.total_size as u64;
                 self.state.transferred_files.insert(file.payload_id(), info);
                 files_name.push(file.name().to_owned());
             }

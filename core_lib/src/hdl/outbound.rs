@@ -695,7 +695,9 @@ impl OutboundRequest {
 
         self.update_state(
             |e| {
-                e.bytes_to_send = total_to_send;
+                if let Some(tmd) = e.transfer_metadata.as_mut() {
+                    tmd.total_bytes = total_to_send;
+                }
                 e.transferred_files = transferred_files;
             },
             false,
@@ -844,8 +846,12 @@ impl OutboundRequest {
                                 if let Some(mu) = e.transferred_files.get_mut(&current) {
                                     mu.bytes_transferred += bytes_read as i64;
                                 }
+
+                                if let Some(tmd) = e.transfer_metadata.as_mut() {
+                                    tmd.ack_bytes += bytes_read as u64;
+                                }
                             },
-                            false,
+                            true,
                         );
 
                         // If we just sent the last bytes of the file, mark it as finished

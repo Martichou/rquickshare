@@ -62,7 +62,6 @@ pub struct InnerState {
     pub pin_code: Option<String>,
     pub transfer_metadata: Option<TransferMetadata>,
     pub transferred_files: HashMap<i64, InternalFileInfo>,
-    pub bytes_to_send: u64,
 
     // Everything needed for encryption/decryption/verif
     pub cipher_commitment: Option<CipherCommitment>,
