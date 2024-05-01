@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/Martichou/rquickshare/compare/v0.7.0...v0.7.1) (2024-05-01)
+
+
+### Bug Fixes
+
+* auto snap version ([8bab368](https://github.com/Martichou/rquickshare/commit/8bab368660acba9e39c5ddfba7120db15ee4024b))
+
 ## [0.7.0](https://github.com/Martichou/rquickshare/compare/v0.6.0...v0.7.0) (2024-05-01)
 
 
