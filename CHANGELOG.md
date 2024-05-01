@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/Martichou/rquickshare/compare/v0.6.0...v0.7.0) (2024-05-01)
+
+
+### Features
+
+* add outbound progress ([#69](https://github.com/Martichou/rquickshare/issues/69)) ([4db4383](https://github.com/Martichou/rquickshare/commit/4db43835c5557077bcb60b91d3a9f2da2245b5db))
+
 ## [0.6.0](https://github.com/Martichou/rquickshare/compare/v0.5.0...v0.6.0) (2024-04-29)
 
 
