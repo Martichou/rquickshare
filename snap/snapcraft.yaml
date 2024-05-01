@@ -1,25 +1,22 @@
 name: r-quick-share
 base: core20
-version: 0.5.0
-
+version: 0.7.1
 summary: QuickShare implementation for Linux
 description: |
   Rust implementation of NearbyShare/QuickShare from Android for Linux.
-
 grade: devel
 confinement: strict
-
 apps:
   r-quick-share:
     command: r-quick-share
-    extensions: [gnome-3-38]
+    extensions:
+      - gnome-3-38
     plugs:
       - bluez
       - dbus
       - home
       - network
       - network-bind
-
 parts:
   dump-binary:
     plugin: dump
