@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::time::SystemTime;
 
 use fern::colors::{Color, ColoredLevelConfig};
@@ -7,11 +8,18 @@ use tauri::AppHandle;
 use time::OffsetDateTime;
 
 pub fn set_up_logging(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
-    // Define default log level
-    let default_level = if cfg!(debug_assertions) {
-        log::LevelFilter::Trace
-    } else {
-        log::LevelFilter::Info
+    // Use log from ENV if defined, otherwise use Info/Trace depending on the build
+    let default_level = match std::env::var("RQS_LOG") {
+        Ok(r) => log::Level::from_str(&r)
+            .unwrap_or(log::Level::Debug)
+            .to_level_filter(),
+        Err(_) => {
+            if cfg!(debug_assertions) {
+                log::LevelFilter::Trace
+            } else {
+                log::LevelFilter::Info
+            }
+        }
     };
 
     let colors = ColoredLevelConfig::new()

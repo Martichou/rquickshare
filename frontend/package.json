@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "cross-env RUST_BACKTRACE=1 concurrently -k \"tauri dev\" \"pnpm devtools\"",
     "tauri": "tauri",
-    "deb:build": "tauri build -b appimage",
+    "deb:build": "tauri build -d -b appimage",
     "build": "tauri build",
     "vite:dev": "vite dev",
     "vite:build": "vite build",
