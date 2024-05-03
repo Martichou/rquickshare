@@ -62,7 +62,7 @@ impl BleListener {
                                 continue;
                             }
 
-                            debug!("{INNER_NAME}: A device is sharing nearby");
+                            debug!("{INNER_NAME}: A device ({id}) is sharing ({service_data:?}) nearby");
                             self.sender.send(())?;
                             last_alert = now;
                         },
