@@ -65,5 +65,5 @@ jobs:
         with:
           name: artifact-debug-rquickshare
           path: |
-            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/deb/r-quick-share*.deb
-            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/appimage/r-quick-share*.AppImage
+            ${{ github.workspace }}/frontend/src-tauri/target/debug/bundle/deb/r-quick-share*.deb
+            ${{ github.workspace }}/frontend/src-tauri/target/debug/bundle/appimage/r-quick-share*.AppImage
