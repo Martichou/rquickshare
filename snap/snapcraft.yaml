@@ -13,10 +13,10 @@ apps:
       - gnome-3-38
     plugs:
       - bluez
-      - dbus
       - home
       - network
       - network-bind
+      - desktop
 parts:
   dump-binary:
     plugin: dump
