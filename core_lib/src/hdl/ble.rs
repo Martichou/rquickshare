@@ -53,12 +53,16 @@ impl BleListener {
                 Some(e) = events.next() => {
                     match e {
                         CentralEvent::ServiceDataAdvertisement { id, service_data } => {
-                            let _ = id;
-                            let _ = service_data;
-                            let now = SystemTime::now();
+                            // Sanity check as per: https://github.com/Martichou/rquickshare/issues/74
+                            // Seems like the filtering is not enough, so we'll add a check before
+                            // proceeding with the service_data.
+                            if !service_data.contains_key(&SERVICE_UUID_SHARING) {
+                                continue;
+                            }
 
-                            // Don't spam, max once per 15s
-                            if now.duration_since(last_alert)? <= Duration::from_secs(15) {
+                            let now = SystemTime::now();
+                            // Don't spam, max once per 30s
+                            if now.duration_since(last_alert)? <= Duration::from_secs(30) {
                                 continue;
                             }
 
