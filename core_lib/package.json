@@ -6,25 +6,25 @@
 	"module": "esm/index.js",
 	"types": "dist/index.d.ts",
 	"files": [
-	  "dist",
-	  "bindings",
-	  "esm"
+		"dist",
+		"bindings",
+		"esm"
 	],
 	"scripts": {
-	  "build:cjs": "tsc --module commonjs --outDir dist",
-	  "build:esm": "tsc --target es2018 --outDir esm",
-	  "build": "npm run build:esm && npm run build:cjs"
+		"build:cjs": "tsc --module commonjs --outDir dist",
+		"build:esm": "tsc --target es2018 --outDir esm",
+		"build": "npm run build:esm && npm run build:cjs"
 	},
 	"repository": {
-	  "type": "git",
-	  "url": "git+https://github.com/Martichou/rquickshare.git"
+		"type": "git",
+		"url": "git+https://github.com/Martichou/rquickshare.git"
 	},
 	"author": "Martin ANDRE",
 	"bugs": {
-	  "url": "https://github.com/Martichou/rquickshare/issues"
+		"url": "https://github.com/Martichou/rquickshare/issues"
 	},
 	"homepage": "https://github.com/Martichou/rquickshare#readme",
 	"devDependencies": {
-	  "typescript": "^5.0.4"
+		"typescript": "5.0.4"
 	}
-  }
+}
