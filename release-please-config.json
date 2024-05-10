@@ -17,17 +17,17 @@
 		},
 		{
 			"type": "toml",
-			"path": "frontend/src-tauri/Cargo.toml",
+			"path": "app/gui/src-tauri/Cargo.toml",
 			"jsonpath": "package.version"
 		},
 		{
 			"type": "toml",
-			"path": "frontend/src-tauri/Cargo.lock",
+			"path": "app/gui/src-tauri/Cargo.lock",
 			"jsonpath": "$.package[?(@.name.value == 'rqs_lib')].version"
 		},
 		{
 			"type": "toml",
-			"path": "frontend/src-tauri/Cargo.lock",
+			"path": "app/gui/src-tauri/Cargo.lock",
 			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
 		},
 		{
