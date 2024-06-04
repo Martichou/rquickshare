@@ -6,7 +6,9 @@ use std::time::SystemTime;
 use fern::colors::{Color, ColoredLevelConfig};
 use time::OffsetDateTime;
 
-pub fn set_up_logging() -> Result<(), anyhow::Error> {
+use crate::PROGRAM_NAME;
+
+pub fn set_up_logging(data_dir: &Path) -> Result<(), anyhow::Error> {
     // Use log from ENV if defined, otherwise use Info/Trace depending on the build
     let default_level = match std::env::var("RQS_LOG") {
         Ok(r) => log::Level::from_str(&r)
@@ -48,21 +50,17 @@ pub fn set_up_logging() -> Result<(), anyhow::Error> {
         .level_for("polling", log::LevelFilter::Error)
         .chain(std::io::stdout());
 
-    if let Some(base_dirs) = directories::BaseDirs::new() {
-        let mut path = base_dirs.config_dir().to_path_buf();
-        path.push("dev.mandre.rquickshare.ng");
-        path.push("logs");
-        if !path.exists() {
-            std::fs::create_dir_all(&path)?;
-        }
-
-        let app_name = &get_program_name();
-        let file_logger = fern::log_file(get_log_file_path(&path, app_name, 40000)?)?;
-
-        dispatch.chain(file_logger).apply()?;
-    } else {
-        dispatch.apply()?;
+    if !data_dir.exists() {
+        std::fs::create_dir_all(data_dir)?;
     }
+
+    dispatch
+        .chain(fern::log_file(get_log_file_path(
+            &data_dir,
+            PROGRAM_NAME,
+            40000,
+        )?)?)
+        .apply()?;
 
     debug!("Finished setting up logging! yay!");
     Ok(())
@@ -105,9 +103,4 @@ fn get_log_file_path(
     }
 
     Ok(path)
-}
-
-// Currently hardcoded
-fn get_program_name() -> String {
-    String::from("RQuickShare")
 }

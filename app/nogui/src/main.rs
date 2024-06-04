@@ -1,23 +1,174 @@
 #[macro_use]
 extern crate log;
 
+use std::hash::{DefaultHasher, Hash, Hasher};
+
+use directories::ProjectDirs;
 use logger::set_up_logging;
-use rqs_lib::RQS;
+use notify_rust::{Notification, NotificationHandle};
+use rqs_lib::{
+    channel::{ChannelAction, ChannelDirection, ChannelMessage},
+    State, Visibility, RQS,
+};
 
 mod logger;
 
+static PROGRAM_NAME: &str = "RQuickShare";
+
+fn hash_to_u32(s: &str) -> u32 {
+    let mut hasher = DefaultHasher::new();
+    s.hash(&mut hasher);
+
+    hasher.finish() as u32
+}
+
+fn to_capitalize(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}
+
+fn send_notification(
+    id: u32,
+    body: &str,
+    actions: &[&str],
+) -> Result<NotificationHandle, notify_rust::error::Error> {
+    let mut notification = Notification::new();
+    notification.id(id);
+    notification.summary(PROGRAM_NAME);
+    notification.body(body);
+
+    for action in actions {
+        notification.action(action, &to_capitalize(action));
+    }
+
+    notification.show()
+}
+
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
-    set_up_logging()?;
+    let proj_dirs =
+        ProjectDirs::from("dev", "mandre", "rquickshare.ng").expect("Failed to load project dirs");
+
+    set_up_logging(proj_dirs.data_dir())?;
+
+    // Get the config from the config file
+    let visibility = Visibility::Visible;
+    let port_number = None;
+    let download_path = None;
 
     // Start the RQuickShare service
-    let mut rqs = RQS::default();
-    rqs.run().await?;
+    let mut rqs = RQS::new(visibility, port_number, download_path);
+    // TODO - Add back the ability to send a file
+    let (_sender_file, mut ble_receiver) = rqs.run().await?;
 
-    // Still need to add everything here
-    todo!();
+    // Setting up the listener for notification, thus user approval
+    let message_sender = rqs.message_sender.clone();
+    let mut message_receiver = message_sender.subscribe();
+    let notification_receiver =
+        tokio::spawn(async move {
+            loop {
+                match message_receiver.recv().await {
+                    Ok(info) => {
+                        if info.state.as_ref().unwrap_or(&State::Initial)
+                            == &State::WaitingForUserConsent
+                        {
+                            trace!("notification: waiting for user approval");
 
+                            let name = info
+                                .meta
+                                .as_ref()
+                                .and_then(|meta| meta.source.as_ref())
+                                .map(|source| source.name.clone())
+                                .unwrap_or_else(|| "Unknown".to_string());
+
+                            let id = info.id.clone();
+
+                            // Send notification
+                            match send_notification(
+                                hash_to_u32(&id),
+                                &format!("{name} want to initiate a transfer"),
+                                &["accept", "reject"],
+                            ) {
+                                Ok(n) => {
+                                    let local_ms = message_sender.clone();
+                                    // TODO - Meh, untracked, unwaited tasks...
+                                    tokio::spawn(async move {
+                                        n.wait_for_action(|action| match action {
+										"accept" => {
+											if let Err(e) = local_ms.send(ChannelMessage {
+												id,
+												direction: ChannelDirection::FrontToLib,
+												action: Some(ChannelAction::AcceptTransfer),
+												..Default::default()
+											}) {
+												error!("notification: couldn't perform accept: {e}");
+											}
+										}
+										"reject" => {
+											if let Err(e) = local_ms.send(ChannelMessage {
+												id,
+												direction: ChannelDirection::FrontToLib,
+												action: Some(ChannelAction::RejectTransfer),
+												..Default::default()
+											}) {
+												error!("notification: couldn't perform reject: {e}");
+											}
+										},
+										_ => ()
+									})
+                                    });
+                                }
+                                Err(e) => error!("notification: couldn't show notification: {}", e),
+                            }
+                        }
+                        // TODO: add tracking progress using a new notification
+                    }
+                    Err(e) => error!("notification: error getting receiver message: {e}"),
+                }
+            }
+        });
+
+    // React to device sharing nearby
+    let nearby_listener = tokio::spawn(async move {
+        loop {
+            match ble_receiver.recv().await {
+                Ok(_) => {
+                    trace!("ble: a device nearby is sharing");
+
+                    // Send notification telling a device nearby is sharing
+                    // if the current visibility is Invisible
+                    match send_notification(
+                        1919,
+                        "A device is sharing nearby",
+                        &["visible", "ignore"],
+                    ) {
+                        Ok(n) => {
+                            // TODO - Meh, untracked, unwaited tasks...
+                            tokio::spawn(async move {
+                                n.wait_for_action(|action| match action {
+                                    "accept" => {
+                                        // TODO: change visibility
+                                    }
+                                    "ignore" => {}
+                                    _ => (),
+                                })
+                            });
+                        }
+                        Err(e) => error!("notification: couldn't show notification: {}", e),
+                    }
+                }
+                Err(e) => error!("ble: error getting ble_receiver message: {}", e),
+            }
+        }
+    });
+
+    let _ = tokio::signal::ctrl_c().await;
     info!("Stopping service.");
+    notification_receiver.abort();
+    nearby_listener.abort();
     rqs.stop().await;
 
     Ok(())
