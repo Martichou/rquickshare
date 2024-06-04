@@ -20,6 +20,7 @@ jobs:
       matrix:
         include:
           - directory: ./core_lib
+          - directory: ./app/nogui
           - directory: ./app/gui/src-tauri
     steps:
       - uses: actions/checkout@v3
@@ -51,6 +52,8 @@ jobs:
         include:
           - directory: core_lib
             clippy_args: "--all-features --all"
+          - directory: app/nogui
+            clippy_args: "--no-default-features"
           - directory: app/gui/src-tauri
             clippy_args: "--no-default-features"
     steps:

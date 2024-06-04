@@ -32,6 +32,24 @@ jobs:
           cargo test
           cargo build
 
+  build-nogui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-directories: "${{ github.workspace }}/app/nogui/src/target"
+      - uses: arduino/setup-protoc@v3
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev
+      - run: |
+          cd ./app/nogui
+          cargo test
+          cargo build
+
   build-tauri:
     runs-on: ubuntu-20.04
     needs: build-core
