@@ -14,9 +14,10 @@ use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
 const INNER_NAME: &str = "MDnsServer";
 const TICK_INTERVAL: Duration = Duration::from_secs(60);
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS, Default)]
 #[ts(export)]
 pub enum Visibility {
+    #[default]
     Visible = 0,
     Invisible = 1,
     Temporarily = 2,

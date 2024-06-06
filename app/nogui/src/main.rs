@@ -8,9 +8,10 @@ use logger::set_up_logging;
 use notify_rust::{Notification, NotificationHandle};
 use rqs_lib::{
     channel::{ChannelAction, ChannelDirection, ChannelMessage},
-    State, Visibility, RQS,
+    State, RQS,
 };
 
+mod config;
 mod logger;
 
 static PROGRAM_NAME: &str = "RQuickShare";
@@ -52,15 +53,15 @@ async fn main() -> Result<(), anyhow::Error> {
     let proj_dirs =
         ProjectDirs::from("dev", "mandre", "rquickshare.ng").expect("Failed to load project dirs");
 
+    // Configure the logging with log file rotation in the data_dir.
     set_up_logging(proj_dirs.data_dir())?;
 
-    // Get the config from the config file
-    let visibility = Visibility::Visible;
-    let port_number = None;
-    let download_path = None;
+    // Construct the config
+    let config = config::Config::new(proj_dirs.config_dir())?;
 
     // Start the RQuickShare service
-    let mut rqs = RQS::new(visibility, port_number, download_path);
+    let mut rqs = RQS::new(config.visibility, config.port_number, config.download_path);
+
     // TODO - Add back the ability to send a file
     let (_sender_file, mut ble_receiver) = rqs.run().await?;
 

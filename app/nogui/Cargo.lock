@@ -2409,6 +2409,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-util",
+ "toml",
 ]
 
 [[package]]
