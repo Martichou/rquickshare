@@ -54,6 +54,12 @@ The snap is not yet on the store, but you can install it with the following (you
 snap install --dangerous r-quick-share_${VERSION}_amd64.snap
 ```
 
+#### AUR
+For Arch Linux, you can install it from the AUR by using an AUR helper like yay
+```
+yay -S r-quick-share
+```
+
 Limitations
 --------------------------
 
