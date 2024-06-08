@@ -6,10 +6,8 @@ use std::hash::{DefaultHasher, Hash, Hasher};
 use directories::ProjectDirs;
 use logger::set_up_logging;
 use notify_rust::{Notification, NotificationHandle};
-use rqs_lib::{
-    channel::{ChannelAction, ChannelDirection, ChannelMessage},
-    State, RQS,
-};
+use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
+use rqs_lib::{State, RQS};
 
 mod config;
 mod logger;
@@ -68,24 +66,21 @@ async fn main() -> Result<(), anyhow::Error> {
     // Setting up the listener for notification, thus user approval
     let message_sender = rqs.message_sender.clone();
     let mut message_receiver = message_sender.subscribe();
-    let notification_receiver =
-        tokio::spawn(async move {
-            loop {
-                match message_receiver.recv().await {
-                    Ok(info) => {
-                        if info.state.as_ref().unwrap_or(&State::Initial)
-                            == &State::WaitingForUserConsent
-                        {
+    let notification_receiver = tokio::spawn(async move {
+        loop {
+            match message_receiver.recv().await {
+                Ok(info) => {
+                    match info.state.as_ref().unwrap_or(&State::Initial) {
+                        State::WaitingForUserConsent => {
                             trace!("notification: waiting for user approval");
 
+                            let id = info.id;
                             let name = info
                                 .meta
                                 .as_ref()
                                 .and_then(|meta| meta.source.as_ref())
                                 .map(|source| source.name.clone())
                                 .unwrap_or_else(|| "Unknown".to_string());
-
-                            let id = info.id.clone();
 
                             // Send notification
                             match send_notification(
@@ -98,39 +93,46 @@ async fn main() -> Result<(), anyhow::Error> {
                                     // TODO - Meh, untracked, unwaited tasks...
                                     tokio::spawn(async move {
                                         n.wait_for_action(|action| match action {
-										"accept" => {
-											if let Err(e) = local_ms.send(ChannelMessage {
-												id,
-												direction: ChannelDirection::FrontToLib,
-												action: Some(ChannelAction::AcceptTransfer),
-												..Default::default()
-											}) {
-												error!("notification: couldn't perform accept: {e}");
+											"accept" => {
+												if let Err(e) = local_ms.send(ChannelMessage {
+													id,
+													direction: ChannelDirection::FrontToLib,
+													action: Some(ChannelAction::AcceptTransfer),
+													..Default::default()
+												}) {
+													error!("notification: couldn't perform accept: {e}");
+												}
 											}
-										}
-										"reject" => {
-											if let Err(e) = local_ms.send(ChannelMessage {
-												id,
-												direction: ChannelDirection::FrontToLib,
-												action: Some(ChannelAction::RejectTransfer),
-												..Default::default()
-											}) {
-												error!("notification: couldn't perform reject: {e}");
-											}
-										},
-										_ => ()
-									})
+											"reject" => {
+												if let Err(e) = local_ms.send(ChannelMessage {
+													id,
+													direction: ChannelDirection::FrontToLib,
+													action: Some(ChannelAction::RejectTransfer),
+													..Default::default()
+												}) {
+													error!("notification: couldn't perform reject: {e}");
+												}
+											},
+											_ => ()
+										})
                                     });
                                 }
-                                Err(e) => error!("notification: couldn't show notification: {}", e),
+                                Err(e) => error!("notification: couldn't show WaitingForUserConsent notification: {}", e),
                             }
                         }
-                        // TODO: add tracking progress using a new notification
+                        State::Disconnected | State::Rejected | State::Cancelled => {
+                            // TODO - Transfer aborted, show error message
+                        }
+                        State::Finished => {
+                            // TODO - Transfer finished, show to open file if we received
+                        }
+                        _ => {}
                     }
-                    Err(e) => error!("notification: error getting receiver message: {e}"),
                 }
+                Err(e) => error!("notification: error getting receiver message: {e}"),
             }
-        });
+        }
+    });
 
     // React to device sharing nearby
     let nearby_listener = tokio::spawn(async move {
