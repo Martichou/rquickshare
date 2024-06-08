@@ -20,7 +20,7 @@ apps:
 parts:
   dump-binary:
     plugin: dump
-    source: ./frontend/src-tauri/target/release
+    source: ./app/gui/src-tauri/target/release
     source-type: local
     stage:
       - lib

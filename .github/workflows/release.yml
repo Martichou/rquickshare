@@ -18,7 +18,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          cache-directories: "${{ github.workspace }}/frontend/src-tauri/target"
+          cache-directories: "${{ github.workspace }}/app/gui/src-tauri/target"
       - uses: arduino/setup-protoc@v3
       - uses: pnpm/action-setup@v3
         with:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Build Vite + Tauri
         run: |
-          cd ./frontend
+          cd ./app/gui
           pnpm build
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo ${GLIBC_VER} > min_glibc_v${GLIBC_VER}
@@ -48,8 +48,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_${{ github.ref_name }}*
-            ${{ github.workspace }}/frontend/min_glibc_v*
+            ${{ github.workspace }}/app/gui/src-tauri/target/release/bundle/*/r-quick-share_${{ github.ref_name }}*
+            ${{ github.workspace }}/app/gui/min_glibc_v*
             ${{ steps.build-snap.outputs.snap }}
           fail_on_unmatched_files: true
 
@@ -59,6 +59,6 @@ jobs:
         with:
           name: artifact-debug-rquickshare
           path: |
-            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_*
-            ${{ github.workspace }}/frontend/min_glibc_v*
+            ${{ github.workspace }}/app/gui/src-tauri/target/release/bundle/*/r-quick-share_*
+            ${{ github.workspace }}/app/gui/min_glibc_v*
             ${{ steps.build-snap.outputs.snap }}
