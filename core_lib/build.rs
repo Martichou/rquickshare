@@ -18,7 +18,7 @@ fn main() {
     )
     .unwrap();
 
-    let exports: Vec<_> = fs::read_dir("./bindings")
+    let mut exports: Vec<_> = fs::read_dir("./bindings")
         .unwrap()
         .filter_map(Result::ok)
         .filter_map(|p| {
@@ -30,6 +30,8 @@ fn main() {
         .filter(|f| f != "index")
         .map(|f| format!("export * from \"./{}\"", f))
         .collect();
+    // Sort it to avoid having the index.ts being different for no reason
+    exports.sort();
 
     let mut file = File::create("./bindings/index.ts").unwrap();
     file.write_all(exports.join("\n").as_bytes()).unwrap();
