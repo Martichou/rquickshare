@@ -27,9 +27,9 @@
     "@stylistic/eslint-plugin": "^2.1.0",
     "@tailwindcss/typography": "^0.5.13",
     "@tauri-apps/cli": "1.5.14",
-    "@types/node": "20.12.12",
-    "@vitejs/plugin-vue": "5.0.4",
-    "@vue/devtools": "6.6.1",
+    "@types/node": "^20.14.2",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vue/devtools": "^6.6.3",
     "@vue/eslint-config-typescript": "13.0.0",
     "autoprefixer": "10.4.19",
     "concurrently": "8.2.2",
@@ -42,11 +42,11 @@
     "postcss": "8.4.38",
     "postcss-import": "16.1.0",
     "postcss-nesting": "12.1.5",
-    "tailwindcss": "3.4.3",
+    "tailwindcss": "^3.4.4",
     "typescript": "5.4.5",
     "unplugin-auto-import": "0.17.6",
-    "vite": "^5.2.11",
+    "vite": "^5.2.13",
     "vitest": "1.6.0",
-    "vue-tsc": "2.0.19"
+    "vue-tsc": "^2.0.20"
   }
 }
