@@ -1,0 +1,17 @@
+{
+  "name": "monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm run --dir frontend dev",
+    "tauri": "pnpm run --dir frontend tauri",
+    "deb:build": "pnpm run --dir frontend deb:build",
+    "build": "pnpm run --dir frontend build",
+    "test": "pnpm run --dir frontend test",
+    "devtools": "pnpm vue-devtools",
+    "ts-check": "vue-tsc --noEmit",
+    "preview": "vite preview",
+    "check": "cd frontend/src-tauri && cargo check",
+    "lint": "pnpm run --dir frontend lint"
+  }
+}

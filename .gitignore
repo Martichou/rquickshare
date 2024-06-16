@@ -1,3 +1,5 @@
-target/
+**/target/
 Cargo.lock
 *.snap
+
+**/node_modules
