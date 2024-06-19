@@ -29,7 +29,7 @@ mod notification;
 mod store;
 
 pub struct AppState {
-    pub sender: broadcast::Sender<ChannelMessage>,
+    pub message_sender: broadcast::Sender<ChannelMessage>,
     pub dch_sender: broadcast::Sender<EndpointInfo>,
     pub sender_file: mpsc::Sender<SendInfo>,
     pub ble_receiver: broadcast::Receiver<()>,
@@ -96,13 +96,13 @@ async fn main() -> Result<(), anyhow::Error> {
 
                     // Init the channels for use
                     let (dch_sender, _) = broadcast::channel(10);
-                    let sender = rqs.message_sender.clone();
+                    let message_sender = rqs.message_sender.clone();
 
                     let visibility_sender = rqs.visibility_sender.clone();
 
                     // Define state for tauri app
                     app_handle.manage(AppState {
-                        sender,
+                        message_sender,
                         dch_sender,
                         sender_file,
                         ble_receiver,
@@ -134,19 +134,30 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
     let capp_handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
         let state: tauri::State<'_, AppState> = capp_handle.state();
-        let mut receiver = state.sender.subscribe();
+        let mut receiver = state.message_sender.subscribe();
 
-        while let Ok(info) = receiver.recv().await {
-            if info.state.as_ref().unwrap_or(&State::Initial) == &State::WaitingForUserConsent {
-                let name = info
-                    .meta
-                    .as_ref()
-                    .and_then(|meta| meta.source.as_ref())
-                    .map(|source| source.name.clone())
-                    .unwrap_or_else(|| "Unknown".to_string());
-                send_request_notification(name, info.id.clone(), &capp_handle);
+        loop {
+            let rinfo = receiver.recv().await;
+
+            match rinfo {
+                Ok(info) => {
+                    if info.state.as_ref().unwrap_or(&State::Initial)
+                        == &State::WaitingForUserConsent
+                    {
+                        let name = info
+                            .meta
+                            .as_ref()
+                            .and_then(|meta| meta.source.as_ref())
+                            .map(|source| source.name.clone())
+                            .unwrap_or_else(|| "Unknown".to_string());
+                        send_request_notification(name, info.id.clone(), &capp_handle);
+                    }
+                    rs2js_channelmessage(info, &capp_handle);
+                }
+                Err(e) => {
+                    error!("RecvError: message_sender: {e}");
+                }
             }
-            rs2js_channelmessage(info, &capp_handle);
         }
     });
 
@@ -155,8 +166,15 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
         let state: tauri::State<'_, AppState> = capp_handle.state();
         let mut dch_receiver = state.dch_sender.subscribe();
 
-        while let Ok(info) = dch_receiver.recv().await {
-            rs2js_endpointinfo(info, &capp_handle);
+        loop {
+            let rinfo = dch_receiver.recv().await;
+
+            match rinfo {
+                Ok(info) => rs2js_endpointinfo(info, &capp_handle),
+                Err(e) => {
+                    error!("RecvError: dch_sender: {e}");
+                }
+            }
         }
     });
 
@@ -165,9 +183,18 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
         let state: tauri::State<'_, AppState> = capp_handle.state();
         let mut visibility_receiver = state.visibility_sender.lock().unwrap().subscribe();
 
-        while visibility_receiver.changed().await.is_ok() {
-            let v = visibility_receiver.borrow_and_update();
-            let _ = set_visibility(&capp_handle, *v);
+        loop {
+            let rinfo = visibility_receiver.changed().await;
+
+            match rinfo {
+                Ok(_) => {
+                    let v = visibility_receiver.borrow_and_update();
+                    let _ = set_visibility(&capp_handle, *v);
+                }
+                Err(e) => {
+                    error!("RecvError: visibility_receiver: {e}");
+                }
+            }
         }
     });
 
@@ -176,12 +203,21 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
         let state: tauri::State<'_, AppState> = capp_handle.state();
         let mut ble_receiver = state.ble_receiver.resubscribe();
 
-        while ble_receiver.recv().await.is_ok() {
-            let v = get_visibility(&capp_handle);
-            trace!("Tauri: ble received: {:?}", v);
+        loop {
+            let rinfo = ble_receiver.recv().await;
 
-            if v == Visibility::Invisible {
-                send_temporarily_notification(&capp_handle);
+            match rinfo {
+                Ok(_) => {
+                    let v = get_visibility(&capp_handle);
+                    trace!("Tauri: ble received: {:?}", v);
+
+                    if v == Visibility::Invisible {
+                        send_temporarily_notification(&capp_handle);
+                    }
+                }
+                Err(e) => {
+                    error!("RecvError: ble_receiver: {e}");
+                }
             }
         }
     });
