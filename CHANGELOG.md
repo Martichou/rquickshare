@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/Martichou/rquickshare/compare/v0.8.1...v0.8.2) (2024-06-19)
+
+
+### Bug Fixes
+
+* prevent task from exiting if recv fails ([8b9d182](https://github.com/Martichou/rquickshare/commit/8b9d1824bfa7b70bef124218a56d024b9105903e))
+
 ## [0.8.1](https://github.com/Martichou/rquickshare/compare/v0.8.0...v0.8.1) (2024-06-19)
 
 
