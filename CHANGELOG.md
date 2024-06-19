@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/Martichou/rquickshare/compare/v0.8.0...v0.8.1) (2024-06-19)
+
+
+### Bug Fixes
+
+* release artifacts ([18b37b7](https://github.com/Martichou/rquickshare/commit/18b37b7b48389ef24272813230c8b1c111d6c09e))
+
 ## [0.8.0](https://github.com/Martichou/rquickshare/compare/v0.7.1...v0.8.0) (2024-06-19)
 
 
