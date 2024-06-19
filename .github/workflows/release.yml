@@ -14,6 +14,15 @@ jobs:
   build-release:
     runs-on: ubuntu-20.04
     steps:
+      - name: Extract version number
+        run: |
+          TAG=${{ github.ref_name }}
+          echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+
+      - name: Print version number
+        run: |
+          echo "Version number: ${{ env.VERSION }}"
+
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
@@ -48,7 +57,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_${{ github.ref_name }}*
+            ${{ github.workspace }}/frontend/src-tauri/target/release/bundle/*/r-quick-share_${{ env.VERSION }}*
             ${{ github.workspace }}/frontend/min_glibc_v*
             ${{ steps.build-snap.outputs.snap }}
           fail_on_unmatched_files: true
