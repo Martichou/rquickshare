@@ -57,9 +57,20 @@ snap install --dangerous r-quick-share_${VERSION}_amd64.snap
 ### Unofficial Installation
 
 #### AUR (Arch)
+
 For Arch Linux, you can install it from the AUR by using an AUR helper like yay.
 ```
 yay -S r-quick-share
+```
+
+### Nix
+
+Available on unstable channel [NixOS](https://search.nixos.org/packages?channel=unstable&show=rquickshare&from=0&size=50&sort=relevance&type=packages&query=rquickshare):
+
+A nix-shell will temporarily modify your $PATH environment variable. This can be used to try a piece of software before deciding to permanently install it.
+
+```
+$ nix-shell -p rquickshare
 ```
 
 Limitations
