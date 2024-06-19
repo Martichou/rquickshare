@@ -1,4 +1,4 @@
-use std::{path::PathBuf, str::FromStr};
+use std::path::PathBuf;
 
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Manager};
@@ -11,18 +11,24 @@ pub fn init_default(app_handle: &AppHandle) {
         ".settings.json",
         |store| {
             if !store.has("autostart") {
-                let _ = store.insert("autostart".to_owned(), JsonValue::Bool(true));
+                store
+                    .insert("autostart".to_owned(), JsonValue::Bool(true))
+                    .ok();
             }
 
             if !store.has("realclose") {
-                let _ = store.insert("realclose".to_owned(), JsonValue::Bool(false));
+                store
+                    .insert("realclose".to_owned(), JsonValue::Bool(false))
+                    .ok();
             }
 
             if !store.has("visibility") {
-                let _ = store.insert(
-                    "visibility".to_owned(),
-                    JsonValue::Number((Visibility::Visible as u8).into()),
-                );
+                store
+                    .insert(
+                        "visibility".to_owned(),
+                        JsonValue::Number((Visibility::Visible as u8).into()),
+                    )
+                    .ok();
             }
             Ok(())
         },
@@ -30,57 +36,43 @@ pub fn init_default(app_handle: &AppHandle) {
 }
 
 pub fn get_realclose(app_handle: &AppHandle) -> bool {
-    let realclose = with_store(
+    with_store(
         app_handle.clone(),
         app_handle.state(),
         ".settings.json",
-        |store| {
-            return Ok(store.get("realclose").and_then(|json| json.as_bool()));
-        },
-    );
-
-    match realclose {
-        Ok(r) => r.unwrap_or(false),
-        Err(e) => {
-            error!("get_realclose: error: {}", e);
-            false
-        }
-    }
+        |store| Ok(store.get("realclose").and_then(|json| json.as_bool())),
+    )
+    .unwrap_or_else(|e| {
+        error!("get_realclose: error: {}", e);
+        None
+    })
+    .unwrap_or(false)
 }
 
 pub fn get_port(app_handle: &AppHandle) -> Option<u32> {
-    let visibility = with_store(
+    with_store(
         app_handle.clone(),
         app_handle.state(),
         ".settings.json",
-        |store| {
-            return Ok(store.get("port").and_then(|json| json.as_u64()));
-        },
-    );
-
-    match visibility {
-        Ok(v) => v.map(|vv| vv as u32),
-        Err(_) => None,
-    }
+        |store| Ok(store.get("port").and_then(|json| json.as_u64())),
+    )
+    .ok()
+    .flatten()
+    .map(|v| v as u32)
 }
 
 pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
-    let visibility = with_store(
+    with_store(
         app_handle.clone(),
         app_handle.state(),
         ".settings.json",
-        |store| {
-            return Ok(store.get("visibility").and_then(|json| json.as_u64()));
-        },
-    );
-
-    match visibility {
-        Ok(v) => Visibility::from_raw_value(v.unwrap_or(0) as u8),
-        Err(e) => {
-            error!("get_visibility: error: {}", e);
-            Visibility::Visible
-        }
-    }
+        |store| Ok(store.get("visibility").and_then(|json| json.as_u64())),
+    )
+    .unwrap_or_else(|e| {
+        error!("get_visibility: error: {}", e);
+        None
+    })
+    .map_or(Visibility::Visible, |v| Visibility::from_raw_value(v as u8))
 }
 
 pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyhow::Error> {
