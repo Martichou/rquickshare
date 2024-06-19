@@ -96,20 +96,28 @@ pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyho
 }
 
 pub fn get_download_path(app_handle: &AppHandle) -> Option<PathBuf> {
-    let download_path = with_store(
+    with_store(
+        app_handle.clone(),
+        app_handle.state(),
+        ".settings.json",
+        |store| Ok(store.get("download_path").cloned()),
+    )
+    .ok()
+    .flatten()
+    .and_then(|v| v.as_str().map(PathBuf::from))
+}
+
+pub fn get_logging_level(app_handle: &AppHandle) -> Option<String> {
+    with_store(
         app_handle.clone(),
         app_handle.state(),
         ".settings.json",
         |store| {
-            return Ok(store.get("download_path").cloned());
+            Ok(store
+                .get("debug_level")
+                .and_then(|json| json.as_str().map(String::from)))
         },
-    );
-
-    match download_path {
-        Ok(v) => match v {
-            Some(vv) => vv.as_str().map(|e| PathBuf::from_str(e).unwrap()),
-            None => None,
-        },
-        Err(_) => None,
-    }
+    )
+    .ok()
+    .flatten()
 }
