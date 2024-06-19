@@ -1,6 +1,6 @@
 [package]
 name = "rquickshare"
-version = "0.8.1"
+version = "0.8.2"
 default-run = "rquickshare"
 edition = "2021"
 authors = ["martichou"]
