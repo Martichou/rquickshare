@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.0](https://github.com/Martichou/rquickshare/compare/v0.7.1...v0.8.0) (2024-06-19)
+
+
+### Features
+
+* configure logging level with config file ([#104](https://github.com/Martichou/rquickshare/issues/104)) ([5712b3b](https://github.com/Martichou/rquickshare/commit/5712b3b7acc12030c105d93e56b51da4cbf00dbd))
+
+
+### Bug Fixes
+
+* add desktop plugs to snapcraft ([#80](https://github.com/Martichou/rquickshare/issues/80)) ([7f3dbac](https://github.com/Martichou/rquickshare/commit/7f3dbaca8d3a7a5d8625a06cdab26650c323a0c2))
+* ensure correct service_data before notifying ([4027cbe](https://github.com/Martichou/rquickshare/commit/4027cbec12341ba6c4aa3ba54439266a48db069f))
+* improve logging and allow to configure (env) ([1084079](https://github.com/Martichou/rquickshare/commit/10840791ec3dc4224112795771633b48202da470))
+* index.ts is sorted now ([42c84d2](https://github.com/Martichou/rquickshare/commit/42c84d2675c158a3537a67d05928df1b7dc27a8b))
+* make the app feel like 'real' ([3ae1396](https://github.com/Martichou/rquickshare/commit/3ae1396f05cd9e97e3775adc46b9c2b204ff2104))
+
 ## [0.7.1](https://github.com/Martichou/rquickshare/compare/v0.7.0...v0.7.1) (2024-05-01)
 
 
