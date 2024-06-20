@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
+use std::time::Duration;
 
 use anyhow::anyhow;
 use bytes::Bytes;
@@ -51,6 +52,7 @@ use crate::{location_nearby_connections, sharing_nearby};
 type HmacSha256 = Hmac<Sha256>;
 
 const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
+const SANITY_DURATION: Duration = Duration::from_micros(10);
 
 #[derive(Debug, Deserialize, Serialize, TS)]
 #[ts(export)]
@@ -127,7 +129,7 @@ impl OutboundRequest {
                                         e.state = State::Cancelled;
                                     },
                                     true,
-                                );
+                                ).await;
                                 self.disconnection().await?;
                                 return Err(anyhow!(crate::errors::AppError::NotAnError));
                             },
@@ -175,7 +177,8 @@ impl OutboundRequest {
                         e.server_init_data = Some(frame_data);
                     },
                     false,
-                );
+                )
+                .await;
                 self.process_ukey2_server_init(&msg).await?;
 
                 // Advance current state
@@ -185,7 +188,8 @@ impl OutboundRequest {
                         e.encryption_done = true;
                     },
                     false,
-                );
+                )
+                .await;
             }
             State::SentUkeyClientFinish => {
                 debug!("Handling State::SentUkeyClientFinish frame");
@@ -200,7 +204,8 @@ impl OutboundRequest {
                         e.encryption_done = true;
                     },
                     false,
-                );
+                )
+                .await;
             }
             _ => {
                 debug!("Handling SecureMessage frame");
@@ -295,7 +300,8 @@ impl OutboundRequest {
                 e.ukey_client_finish_msg_data = Some(finish_frame.encode_to_vec());
             },
             false,
-        );
+        )
+        .await;
 
         Ok(())
     }
@@ -338,7 +344,7 @@ impl OutboundRequest {
             }
         };
 
-        self.finalize_key_exchange(server_public_key)?;
+        self.finalize_key_exchange(server_public_key).await?;
         self.send_frame(self.state.ukey_client_finish_msg_data.clone().unwrap())
             .await?;
 
@@ -433,7 +439,7 @@ impl OutboundRequest {
 
         let d2d_msg = DeviceToDeviceMessage::decode(&*decrypted)?;
 
-        let seq = self.get_client_seq_inc();
+        let seq = self.get_client_seq_inc().await;
         if d2d_msg.sequence_number() != seq {
             return Err(anyhow!(
                 "Error d2d_msg.sequence_number invalid ({} vs {})",
@@ -547,7 +553,8 @@ impl OutboundRequest {
                     e.state = State::Disconnected;
                 },
                 true,
-            );
+            )
+            .await;
             self.disconnection().await?;
             return Err(anyhow!(crate::errors::AppError::NotAnError));
         }
@@ -561,7 +568,8 @@ impl OutboundRequest {
                         e.state = State::SentPairedKeyResult;
                     },
                     false,
-                );
+                )
+                .await;
             }
             State::SentPairedKeyResult => {
                 debug!("Processing State::SentPairedKeyResult");
@@ -571,7 +579,8 @@ impl OutboundRequest {
                         e.state = State::SentIntroduction;
                     },
                     true,
-                );
+                )
+                .await;
             }
             State::SentIntroduction => {
                 debug!("Processing State::SentIntroduction");
@@ -701,7 +710,8 @@ impl OutboundRequest {
                 e.transferred_files = transferred_files;
             },
             false,
-        );
+        )
+        .await;
 
         let introduction = sharing_nearby::Frame {
             version: Some(sharing_nearby::frame::Version::V1.into()),
@@ -738,7 +748,8 @@ impl OutboundRequest {
                         e.state = State::SendingFiles;
                     },
                     true,
-                );
+                )
+                .await;
 
                 // TODO - Handle sending Text
                 let ids: Vec<i64> = self.state.transferred_files.keys().cloned().collect();
@@ -755,7 +766,8 @@ impl OutboundRequest {
                                     e.state = State::Finished;
                                 },
                                 true,
-                            );
+                            )
+                            .await;
                             self.disconnection().await?;
                             // Breaking instead of NotAnError to allow peacefull termination
                             break;
@@ -779,7 +791,8 @@ impl OutboundRequest {
                                         e.transferred_files.remove(&current);
                                     },
                                     false,
-                                );
+                                )
+                                .await;
                                 break;
                             }
 
@@ -852,7 +865,8 @@ impl OutboundRequest {
                                 }
                             },
                             true,
-                        );
+                        )
+                        .await;
 
                         // If we just sent the last bytes of the file, mark it as finished
                         if curr_state.bytes_transferred + bytes_read as i64 == curr_state.total_size
@@ -902,7 +916,8 @@ impl OutboundRequest {
                         e.state = State::Disconnected;
                     },
                     true,
-                );
+                )
+                .await;
                 self.disconnection().await?;
                 return Err(anyhow!(crate::errors::AppError::NotAnError));
             }
@@ -913,7 +928,8 @@ impl OutboundRequest {
                         e.state = State::Disconnected;
                     },
                     true,
-                );
+                )
+                .await;
                 self.disconnection().await?;
                 return Err(anyhow!(crate::errors::AppError::NotAnError));
             }
@@ -943,7 +959,7 @@ impl OutboundRequest {
         }
     }
 
-    fn finalize_key_exchange(
+    async fn finalize_key_exchange(
         &mut self,
         raw_peer_key: GenericPublicKey,
     ) -> Result<(), anyhow::Error> {
@@ -1011,7 +1027,8 @@ impl OutboundRequest {
                 }
             },
             true,
-        );
+        )
+        .await;
 
         info!("Pin code: {:?}", self.state.pin_code);
 
@@ -1103,7 +1120,7 @@ impl OutboundRequest {
 
     async fn encrypt_and_send(&mut self, frame: &OfflineFrame) -> Result<(), anyhow::Error> {
         let d2d_msg = DeviceToDeviceMessage {
-            sequence_number: Some(self.get_server_seq_inc()),
+            sequence_number: Some(self.get_server_seq_inc().await),
             message: Some(frame.encode_to_vec()),
         };
 
@@ -1184,29 +1201,31 @@ impl OutboundRequest {
         Ok(())
     }
 
-    fn get_server_seq_inc(&mut self) -> i32 {
+    async fn get_server_seq_inc(&mut self) -> i32 {
         self.update_state(
             |e| {
                 e.server_seq += 1;
             },
             false,
-        );
+        )
+        .await;
 
         self.state.server_seq
     }
 
-    fn get_client_seq_inc(&mut self) -> i32 {
+    async fn get_client_seq_inc(&mut self) -> i32 {
         self.update_state(
             |e| {
                 e.client_seq += 1;
             },
             false,
-        );
+        )
+        .await;
 
         self.state.client_seq
     }
 
-    fn update_state<F>(&mut self, f: F, inform: bool)
+    async fn update_state<F>(&mut self, f: F, inform: bool)
     where
         F: FnOnce(&mut InnerState),
     {
@@ -1224,5 +1243,9 @@ impl OutboundRequest {
             meta: self.state.transfer_metadata.clone(),
             ..Default::default()
         });
+        // Add a small sleep timer to allow the Tokio runtime to have
+        // some spare time to process channel's message. Otherwise it
+        // get spammed by new requests. Currently set to 10 micro secs.
+        tokio::time::sleep(SANITY_DURATION).await;
     }
 }

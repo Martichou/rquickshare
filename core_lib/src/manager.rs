@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
@@ -48,7 +46,6 @@ impl TcpServer {
 
     pub async fn run(&mut self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
         info!("{INNER_NAME}: service starting");
-        let sanity_wait_time = Duration::from_micros(10);
 
         loop {
             let cctk = ctk.clone();
@@ -97,10 +94,6 @@ impl TcpServer {
                                             }
                                         },
                                     }
-                                    // Add a small sleep timer to allow the Tokio runtime to have
-                                    // some spare time to process channel's message. Otherwise it
-                                    // get spammed by new requests. Currently set to 10 micro secs.
-                                    tokio::time::sleep(sanity_wait_time).await;
                                 }
                             });
                         },
