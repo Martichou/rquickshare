@@ -157,10 +157,10 @@ impl RQS {
         &mut self,
         sender: broadcast::Sender<EndpointInfo>,
     ) -> Result<(), anyhow::Error> {
-        let tracker = match &self.tracker {
-            Some(t) => t,
-            None => return Err(anyhow!("The service wasn't first started")),
-        };
+        let tracker = self
+            .tracker
+            .as_ref()
+            .ok_or_else(|| anyhow!("The service wasn't first started"))?;
 
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());

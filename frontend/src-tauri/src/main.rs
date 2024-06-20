@@ -31,9 +31,9 @@ mod store;
 pub struct AppState {
     pub message_sender: broadcast::Sender<ChannelMessage>,
     pub dch_sender: broadcast::Sender<EndpointInfo>,
+    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     pub sender_file: mpsc::Sender<SendInfo>,
     pub ble_receiver: broadcast::Receiver<()>,
-    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     pub rqs: Mutex<RQS>,
 }
 
@@ -91,22 +91,15 @@ async fn main() -> Result<(), anyhow::Error> {
                     trace!("Beginning of RQS start");
                     // Start the RQuickShare service
                     let mut rqs = RQS::new(visibility, port_number, download_path);
-                    // Need to be waited, but blocked on
                     let (sender_file, ble_receiver) = rqs.run().await.unwrap();
-
-                    // Init the channels for use
-                    let (dch_sender, _) = broadcast::channel(10);
-                    let message_sender = rqs.message_sender.clone();
-
-                    let visibility_sender = rqs.visibility_sender.clone();
 
                     // Define state for tauri app
                     app_handle.manage(AppState {
-                        message_sender,
-                        dch_sender,
+                        message_sender: rqs.message_sender.clone(),
+                        dch_sender: broadcast::channel(10).0,
+                        visibility_sender: rqs.visibility_sender.clone(),
                         sender_file,
                         ble_receiver,
-                        visibility_sender,
                         rqs: Mutex::new(rqs),
                     });
                 });
