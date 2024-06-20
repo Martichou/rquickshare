@@ -264,7 +264,10 @@
 							<p class="mt-2">
 								Received <span v-if="!item.files && item.destination">link</span>
 							</p>
-							<p v-if="item.destination" :class="{'overflow-hidden whitespace-nowrap text-ellipsis': !item.files}">
+							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
+								{{ f }}
+							</p>
+							<p v-if="item.destination" :class="{'overflow-hidden whitespace-nowrap text-ellipsis': !item.files, 'mt-2': item.files}">
 								<span v-if="item.files">Saved to </span>{{ item.destination }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
