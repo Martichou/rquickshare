@@ -101,6 +101,7 @@ A second workaround, you can download a Shortcut maker (see [here](https://xdafo
 	- Mime type: `*/*`
 
 _Note: there's a current WIP to add a BLE advertisment in RQuickShare to overcome this._
+_Note2: Samsung did something shady with Quick Share, so the above workaround may not work. Unfortunately, there's no alternative at the moment. Sorry._
 
 ### Once I close the app, it won't reopen
 
