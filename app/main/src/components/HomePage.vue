@@ -153,7 +153,7 @@
 						<path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
 					</svg>
 					<h4 class="mt-2 font-medium">
-						Add files to send
+						Drop files to send
 					</h4>
 					<div class="btn mt-2 active:scale-95 transition duration-150 ease-in-out" @click="openFilePicker()">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
@@ -334,6 +334,7 @@ import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
+import { getCurrent } from '@tauri-apps/api/window';
 import { Store } from "@tauri-apps/plugin-store";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
@@ -521,24 +522,23 @@ export default {
 				})
 			);
 
-			// TODO - Not working
-			// this.unlisten.push(
-			// 	await getCurrent().onFileDropEvent(async (event) => {
-			// 		if (event.payload.type === 'hover') {
-			// 			this.isDragHovering = true;
-			// 		} else if (event.payload.type === 'drop') {
-			// 			console.log("Dropped");
-			// 			this.isDragHovering = false;
-			// 			this.outboundPayload = {
-			// 				Files: event.payload.paths
-			// 			} as OutboundPayload;
-			// 			if (!this.discoveryRunning) await invoke('start_discovery');
-			// 			this.discoveryRunning = true;
-			// 		} else {
-			// 			this.isDragHovering = false;
-			// 		}
-			// 	})
-			// );
+			this.unlisten.push(
+				await getCurrent().onDragDropEvent(async (event) => {
+					if (event.payload.type === 'dragOver') {
+						this.isDragHovering = true;
+					} else if (event.payload.type === 'dropped') {
+						console.log("Dropped");
+						this.isDragHovering = false;
+						this.outboundPayload = {
+							Files: event.payload.paths
+						} as OutboundPayload;
+						if (!this.discoveryRunning) await invoke('start_discovery');
+						this.discoveryRunning = true;
+					} else {
+						this.isDragHovering = false;
+					}
+				})
+			);
 		});
 	},
 
