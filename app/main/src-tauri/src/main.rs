@@ -55,6 +55,7 @@ async fn main() -> Result<(), anyhow::Error> {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
         }))
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             cmds::change_download_path,
             cmds::change_visibility,

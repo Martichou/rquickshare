@@ -2,6 +2,7 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import AutoImport from 'unplugin-auto-import/vite'
 import { defineConfig } from 'vitest/config'
+import path from 'path';
 
 // See https://vitejs.dev/config/
 export default defineConfig({
@@ -22,6 +23,14 @@ export default defineConfig({
 	server: {
 		port: 1420,
 		strictPort: true,
+		fs: {
+			allow: [
+				// Resolve the path dynamically
+				path.resolve(__dirname, '../common/vue_lib/assets'),
+				// Optionally, include other directories
+				path.resolve(__dirname)
+			]
+		}
 	},
 	build: {
 		outDir: './dist',

@@ -296,6 +296,82 @@
           ]
         },
         {
+          "type": "string",
+          "enum": [
+            "dialog:default"
+          ]
+        },
+        {
+          "description": "dialog:allow-ask -> Enables the ask command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:allow-ask"
+          ]
+        },
+        {
+          "description": "dialog:allow-confirm -> Enables the confirm command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:allow-confirm"
+          ]
+        },
+        {
+          "description": "dialog:allow-message -> Enables the message command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:allow-message"
+          ]
+        },
+        {
+          "description": "dialog:allow-open -> Enables the open command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:allow-open"
+          ]
+        },
+        {
+          "description": "dialog:allow-save -> Enables the save command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:allow-save"
+          ]
+        },
+        {
+          "description": "dialog:deny-ask -> Denies the ask command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:deny-ask"
+          ]
+        },
+        {
+          "description": "dialog:deny-confirm -> Denies the confirm command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:deny-confirm"
+          ]
+        },
+        {
+          "description": "dialog:deny-message -> Denies the message command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:deny-message"
+          ]
+        },
+        {
+          "description": "dialog:deny-open -> Denies the open command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:deny-open"
+          ]
+        },
+        {
+          "description": "dialog:deny-save -> Denies the save command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "dialog:deny-save"
+          ]
+        },
+        {
           "description": "event:default -> Default permissions for the plugin.",
           "type": "string",
           "enum": [

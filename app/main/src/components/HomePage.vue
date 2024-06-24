@@ -153,7 +153,7 @@
 						<path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
 					</svg>
 					<h4 class="mt-2 font-medium">
-						Drop files to send
+						Add files to send
 					</h4>
 					<div class="btn mt-2 active:scale-95 transition duration-150 ease-in-out" @click="openFilePicker()">
 						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
@@ -332,14 +332,15 @@
 <script lang="ts">
 import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
-import { Store } from 'tauri-plugin-store-api';
-import { invoke } from '@tauri-apps/api/tauri'
+import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
-import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification';
-import { getCurrent } from '@tauri-apps/api/window';
-import { disable, enable } from 'tauri-plugin-autostart-api';
+import { Store } from "@tauri-apps/plugin-store";
+import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
+import { disable, enable } from '@tauri-apps/plugin-autostart';
+import { open } from '@tauri-apps/plugin-dialog';
 
 import { opt } from '../utils';
+
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib/bindings/ChannelAction';
 import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
@@ -348,7 +349,6 @@ import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { State } from '@martichou/core_lib/bindings/State';
 import { DeviceType } from '@martichou/core_lib/bindings/DeviceType';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
-import { dialog } from '@tauri-apps/api';
 
 interface ToDelete {
 	id: string,
@@ -521,23 +521,24 @@ export default {
 				})
 			);
 
-			this.unlisten.push(
-				await getCurrent().onFileDropEvent(async (event) => {
-					if (event.payload.type === 'hover') {
-						this.isDragHovering = true;
-					} else if (event.payload.type === 'drop') {
-						console.log("Dropped");
-						this.isDragHovering = false;
-						this.outboundPayload = {
-							Files: event.payload.paths
-						} as OutboundPayload;
-						if (!this.discoveryRunning) await invoke('start_discovery');
-						this.discoveryRunning = true;
-					} else {
-						this.isDragHovering = false;
-					}
-				})
-			);
+			// TODO - Not working
+			// this.unlisten.push(
+			// 	await getCurrent().onFileDropEvent(async (event) => {
+			// 		if (event.payload.type === 'hover') {
+			// 			this.isDragHovering = true;
+			// 		} else if (event.payload.type === 'drop') {
+			// 			console.log("Dropped");
+			// 			this.isDragHovering = false;
+			// 			this.outboundPayload = {
+			// 				Files: event.payload.paths
+			// 			} as OutboundPayload;
+			// 			if (!this.discoveryRunning) await invoke('start_discovery');
+			// 			this.discoveryRunning = true;
+			// 		} else {
+			// 			this.isDragHovering = false;
+			// 		}
+			// 	})
+			// );
 		});
 	},
 
@@ -690,28 +691,17 @@ export default {
 			(document.activeElement as any).blur();
 		},
 		openFilePicker: function() {
-			dialog.open({
+			open({
 				title: "Select a file to send",
 				directory: false,
 				multiple: true,
 			}).then(async (el) => {
-				let elem;
 				if (el === null) {
 					return;
 				}
 
-				console.log("Selected", el);
-				if (el instanceof Array) {
-					console.log("Is an array");
-					elem = el;
-				} else {
-					console.log("Is not an array");
-					elem = [el];
-				}
-
-
 				this.outboundPayload = {
-					Files: elem
+					Files: el.map((e) => e.path)
 				} as OutboundPayload;
 				if (!this.discoveryRunning) await invoke('start_discovery');
 				this.discoveryRunning = true;
@@ -722,7 +712,7 @@ export default {
 			return `--progress: ${value}`;
 		},
 		openDownloadPicker: function() {
-			dialog.open({
+			open({
 				title: "Select the destination for files",
 				directory: true,
 				multiple: false,
