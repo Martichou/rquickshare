@@ -1,17 +1,22 @@
 use notify_rust::Notification;
-use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
-use rqs_lib::Visibility;
-use tauri::{AppHandle, Manager};
+#[cfg(not(target_os = "macos"))]
+use rqs_lib::{
+    channel::{ChannelAction, ChannelDirection, ChannelMessage},
+    Visibility,
+};
+use tauri::AppHandle;
+#[cfg(not(target_os = "macos"))]
+use tauri::Manager;
+
 #[cfg(not(target_os = "linux"))]
 #[cfg(not(target_os = "macos"))]
 use tauri_plugin_notification::NotificationExt;
 
+#[cfg(not(target_os = "macos"))]
 use crate::cmds;
 
 pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
     let body = format!("{name} want to initiate a transfer");
-
-    #[cfg(target_os = "linux")]
     match Notification::new()
         .summary("RQuickShare")
         .body(&body)
@@ -20,8 +25,10 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
         .show()
     {
         Ok(n) => {
-            let capp_handle = app_handle.clone();
+            #[cfg(not(target_os = "macos"))]
+            let capp_handle: AppHandle = app_handle.clone();
             // TODO - Meh, untracked, unwaited tasks...
+            #[cfg(not(target_os = "macos"))]
             tokio::task::spawn(async move {
                 n.wait_for_action(|action| match action {
                     "accept" => {
@@ -49,6 +56,8 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
                     _ => (),
                 });
             });
+            #[cfg(target_os = "macos")]
+            debug!("Notification shown on macOS, but no action handle {:?} and app_handle {:?}, id {}.", n, app_handle, id);
         }
         Err(e) => {
             error!("Couldn't show notification: {}", e);
@@ -65,7 +74,6 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
         .show();
 }
 
-#[cfg(not(target_os = "macos"))]
 pub fn send_temporarily_notification(app_handle: &AppHandle) {
     match Notification::new()
         .summary("RQuickShare")
@@ -76,8 +84,10 @@ pub fn send_temporarily_notification(app_handle: &AppHandle) {
         .show()
     {
         Ok(n) => {
+            #[cfg(not(target_os = "macos"))]
             let capp_handle = app_handle.clone();
             // TODO - Meh, untracked, unwaited tasks...
+            #[cfg(not(target_os = "macos"))]
             tokio::task::spawn(async move {
                 n.wait_for_action(|action| match action {
                     "visible" => {
@@ -87,6 +97,8 @@ pub fn send_temporarily_notification(app_handle: &AppHandle) {
                     _ => (),
                 });
             });
+            #[cfg(target_os = "macos")]
+            debug!("Notification shown on macOS, but no action handle {:?} and app_handle {:?}.", n, app_handle);
         }
         Err(e) => {
             error!("Couldn't show notification: {}", e);
