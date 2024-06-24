@@ -340,14 +340,14 @@ import { getCurrent } from '@tauri-apps/api/window';
 import { disable, enable } from 'tauri-plugin-autostart-api';
 
 import { opt } from '../utils';
-import { ChannelMessage } from '../../../core_lib/bindings/ChannelMessage';
-import { ChannelAction } from '../../../core_lib/bindings/ChannelAction';
-import { EndpointInfo } from '../../../core_lib/dist/EndpointInfo';
-import { OutboundPayload } from '../../../core_lib/bindings/OutboundPayload';
-import { SendInfo } from '../../../core_lib/bindings/SendInfo';
-import { State } from '../../../core_lib/bindings/State';
-import { DeviceType } from '../../../core_lib/bindings/DeviceType';
-import { Visibility } from '../../../core_lib/bindings/Visibility';
+import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
+import { ChannelAction } from '@martichou/core_lib/bindings/ChannelAction';
+import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
+import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
+import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
+import { State } from '@martichou/core_lib/bindings/State';
+import { DeviceType } from '@martichou/core_lib/bindings/DeviceType';
+import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { dialog } from '@tauri-apps/api';
 
 interface ToDelete {

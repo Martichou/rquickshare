@@ -40,7 +40,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
-          cache-directories: "${{ github.workspace }}/frontend/src-tauri/target"
+          cache-directories: "${{ github.workspace }}/app/legacy/src-tauri/target"
       - uses: arduino/setup-protoc@v3
       - uses: pnpm/action-setup@v3
         with:
@@ -58,12 +58,12 @@ jobs:
           ldd --version
       - name: Build Vite + Tauri
         run: |
-          cd ./frontend
+          cd ./app/legacy
           pnpm deb:build
       - name: Upload deb bundle
         uses: actions/upload-artifact@v4
         with:
           name: artifact-debug-rquickshare
           path: |
-            ${{ github.workspace }}/frontend/src-tauri/target/debug/bundle/deb/r-quick-share*.deb
-            ${{ github.workspace }}/frontend/src-tauri/target/debug/bundle/appimage/r-quick-share*.AppImage
+            ${{ github.workspace }}/app/legacy/src-tauri/target/debug/bundle/deb/r-quick-share*.deb
+            ${{ github.workspace }}/app/legacy/src-tauri/target/debug/bundle/appimage/r-quick-share*.AppImage

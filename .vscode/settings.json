@@ -1,6 +1,6 @@
 {
 	"rust-analyzer.linkedProjects": [
 		"./core_lib/Cargo.toml",
-		"./frontend/src-tauri/Cargo.toml",
+		"./app/legacy/src-tauri/Cargo.toml",
 	],
 }
