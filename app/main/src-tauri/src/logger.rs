@@ -5,6 +5,7 @@ use std::time::SystemTime;
 
 use fern::colors::{Color, ColoredLevelConfig};
 use tauri::AppHandle;
+use tauri::Manager;
 use time::OffsetDateTime;
 
 use crate::store::get_logging_level;
@@ -58,7 +59,7 @@ pub fn set_up_logging(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
         .level_for("polling", log::LevelFilter::Error)
         .chain(std::io::stdout());
 
-    if let Some(path) = app_handle.path_resolver().app_log_dir() {
+    if let Ok(path) = app_handle.path().app_log_dir() {
         if !path.exists() {
             std::fs::create_dir_all(&path)?;
         }

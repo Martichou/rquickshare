@@ -751,6 +751,55 @@
           ]
         },
         {
+          "description": "notification:default -> Allows requesting permission, checking permission state and sending notifications",
+          "type": "string",
+          "enum": [
+            "notification:default"
+          ]
+        },
+        {
+          "description": "notification:allow-is-permission-granted -> Enables the is_permission_granted command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "notification:allow-is-permission-granted"
+          ]
+        },
+        {
+          "description": "notification:allow-notify -> Enables the notify command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "notification:allow-notify"
+          ]
+        },
+        {
+          "description": "notification:allow-request-permission -> Enables the request_permission command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "notification:allow-request-permission"
+          ]
+        },
+        {
+          "description": "notification:deny-is-permission-granted -> Denies the is_permission_granted command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "notification:deny-is-permission-granted"
+          ]
+        },
+        {
+          "description": "notification:deny-notify -> Denies the notify command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "notification:deny-notify"
+          ]
+        },
+        {
+          "description": "notification:deny-request-permission -> Denies the request_permission command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "notification:deny-request-permission"
+          ]
+        },
+        {
           "description": "path:default -> Default permissions for the plugin.",
           "type": "string",
           "enum": [

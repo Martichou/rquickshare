@@ -83,7 +83,7 @@ pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyho
         |store| store.insert("visibility".to_owned(), JsonValue::Number((v as u8).into())),
     )?;
 
-    app_handle.emit_all("visibility_updated", ())?;
+    app_handle.emit("visibility_updated", ())?;
     Ok(())
 }
 
