@@ -11,7 +11,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release-please-tag:
+  release_please_tag:
     runs-on: ubuntu-latest
     steps:
       - uses: google-github-actions/release-please-action@v4
@@ -19,9 +19,9 @@ jobs:
           token: ${{ secrets.GH_PAT_RELEASE_ACCESS }}
           skip-github-pull-request: true
 
-  release-please-pr:
+  release_please_pr:
     runs-on: ubuntu-latest
-    needs: release-please-tag
+    needs: release_please_tag
     permissions:
       contents: write
       pull-requests: write

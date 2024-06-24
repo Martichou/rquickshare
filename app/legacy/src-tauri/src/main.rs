@@ -227,6 +227,7 @@ fn handle_system_tray_event(app: &tauri::AppHandle, event: SystemTrayEvent) {
             }
             "quit" => {
                 tokio::task::block_in_place(|| {
+                    #[allow(clippy::await_holding_lock)]
                     tauri::async_runtime::block_on(async move {
                         let state: tauri::State<'_, AppState> = app.state();
                         let _ = state.rqs.lock().unwrap().stop().await;
@@ -249,6 +250,7 @@ fn handle_window_event(event: GlobalWindowEvent) {
         } else {
             trace!("Real close");
             tokio::task::block_in_place(|| {
+                #[allow(clippy::await_holding_lock)]
                 tauri::async_runtime::block_on(async move {
                     let app_handle = event.window().app_handle();
                     let state: tauri::State<'_, AppState> = app_handle.state();

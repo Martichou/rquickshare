@@ -68,7 +68,7 @@ async fn main() -> Result<(), anyhow::Error> {
             sanity_check,
         ])
         .setup(|app| {
-            set_up_logging(&app.app_handle())?;
+            set_up_logging(app.app_handle())?;
             debug!("Starting setup of RQuickShare app");
 
             // Initialize system Tray
@@ -87,6 +87,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     }
                     "quit" => {
                         tokio::task::block_in_place(|| {
+                            #[allow(clippy::await_holding_lock)]
                             tauri::async_runtime::block_on(async move {
                                 let state: tauri::State<'_, AppState> = app.state();
                                 let _ = state.rqs.lock().unwrap().stop().await;
@@ -101,12 +102,12 @@ async fn main() -> Result<(), anyhow::Error> {
                 .build(app)?;
 
             // Initialize default values for the store
-            init_default(&app.app_handle());
+            init_default(app.app_handle());
 
             // Fetch initial configuration values
-            let visibility = get_visibility(&app.app_handle());
-            let port_number = get_port(&app.app_handle());
-            let download_path = get_download_path(&app.app_handle());
+            let visibility = get_visibility(app.app_handle());
+            let port_number = get_port(app.app_handle());
+            let download_path = get_download_path(app.app_handle());
 
             let app_handle = app.app_handle().clone();
             // This is not optimal, but until I find a better way to init log
@@ -131,7 +132,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 });
             });
 
-            spawn_receiver_tasks(&app.app_handle());
+            spawn_receiver_tasks(app.app_handle());
             Ok(())
         })
         .on_window_event(handle_window_event)
@@ -249,6 +250,7 @@ fn handle_window_event(w: &Window, event: &WindowEvent) {
         } else {
             trace!("Real close");
             tokio::task::block_in_place(|| {
+                #[allow(clippy::await_holding_lock)]
                 tauri::async_runtime::block_on(async move {
                     let app_handle = w.app_handle();
                     let state: tauri::State<'_, AppState> = app_handle.state();

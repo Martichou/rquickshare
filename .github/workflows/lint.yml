@@ -14,13 +14,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  stylerust:
+  style_rust:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - directory: ./core_lib
           - directory: ./app/legacy/src-tauri
+          - directory: ./app/main/src-tauri
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
@@ -30,6 +31,11 @@ jobs:
 
   style_tauri:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - directory: ./app/legacy
+          - directory: ./app/main
     steps:
       - uses: actions/checkout@v4
       - uses: arduino/setup-protoc@v3
@@ -41,18 +47,23 @@ jobs:
         with:
           node-version: 20
       - run: |
-          cd ./app/legacy
+          cd ${{ matrix.directory }}
           pnpm lint
 
   clippy_check:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - directory: core_lib
             clippy_args: "--all-features --all"
+            os: ubuntu-latest
           - directory: app/legacy/src-tauri
             clippy_args: "--no-default-features"
+            os: ubuntu-20.04
+          - directory: app/main/src-tauri
+            clippy_args: "--no-default-features"
+            os: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
@@ -61,15 +72,23 @@ jobs:
           cache-directories: "${{ github.workspace }}/${{ matrix.directory }}/target"
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
-      - name: Install dependencies
+
+      - name: Install Linux dependencies for U
         run: |
           sudo apt-get update
-          sudo apt-get install -y libdbus-1-dev
-      - name: Install Linux dependencies
-        if: matrix.directory == 'app/legacy/src-tauri'
+          sudo apt-get install -y libdbus-1-dev libgtk-3-dev
+
+      - name: Install Linux dependencies for U20.04
+        if: matrix.os == 'ubuntu-20.04'
         run: |
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install -y libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.0-dev
+
+      - name: Install Linux dependencies for U24.04
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
+
       - name: Clippy Check
         run: |
           cd ${{ matrix.directory }}
-          cargo clippy ${{ matrix.clippy_args }}
+          cargo clippy ${{ matrix.clippy_args }} -- -D "warnings"
