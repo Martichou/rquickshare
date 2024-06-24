@@ -13,6 +13,8 @@ if git diff --name-only HEAD | grep '^app/legacy/src/' >/dev/null; then
 
     # Run your commands
     pnpm lint --fix
+
+    cd ../../..
 else
     echo "No changes detected in /app/legacy/src."
 fi
@@ -26,6 +28,8 @@ if git diff --name-only HEAD | grep '^app/main/src/' >/dev/null; then
 
     # Run your commands
     pnpm lint --fix
+
+    cd ../../..
 else
     echo "No changes detected in /app/main/src."
 fi
