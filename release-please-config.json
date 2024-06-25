@@ -31,6 +31,21 @@
 			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
 		},
 		{
+			"type": "toml",
+			"path": "app/main/src-tauri/Cargo.toml",
+			"jsonpath": "package.version"
+		},
+		{
+			"type": "toml",
+			"path": "app/main/src-tauri/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rqs_lib')].version"
+		},
+		{
+			"type": "toml",
+			"path": "app/main/src-tauri/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
+		},
+		{
 			"type": "yaml",
 			"path": "snap/snapcraft.yaml",
 			"jsonpath": "$.version"
