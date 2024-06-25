@@ -338,56 +338,16 @@ import { getVersion } from '@tauri-apps/api/app';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification';
 import { getCurrent } from '@tauri-apps/api/window';
 import { disable, enable } from 'tauri-plugin-autostart-api';
+import { dialog } from '@tauri-apps/api';
 
-import { opt } from '../utils';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib/bindings/ChannelAction';
 import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
-import { State } from '@martichou/core_lib/bindings/State';
-import { DeviceType } from '@martichou/core_lib/bindings/DeviceType';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
-import { dialog } from '@tauri-apps/api';
 
-interface ToDelete {
-	id: string,
-	triggered: number
-}
-
-interface DisplayedItem {
-	id: string,
-	name: string,
-	deviceType: DeviceType,
-	endpoint: boolean,
-
-	state?: State,
-	pin_code?: string,
-	files?: string[],
-	text_description?: string,
-	destination?: string,
-	total_bytes?: number,
-	ack_bytes?: number,
-}
-
-const visibilityToNumber: { [key in Visibility]: number } = {
-	'Visible': 0,
-	'Invisible': 1,
-	'Temporarily': 2,
-};
-
-const numberToVisibility: { [key: number]: Visibility } = {
-	0: "Visible",
-	1: "Invisible",
-	2: "Temporarily",
-};
-
-const autostartKey = "autostart";
-const realcloseKey = "realclose";
-const visibilityKey = "visibility";
-const downloadPathKey = "download_path";
-const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
-	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
+import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, realcloseKey, visibilityToNumber, visibilityKey, numberToVisibility, downloadPathKey } from 'vue_lib';
 
 export default {
 	name: "HomePage",
@@ -447,22 +407,6 @@ export default {
 				const permission = await requestPermission();
 				permissionGranted = permission === 'granted';
 			}
-
-			// this.cleanupInterval = setInterval(() => {
-			// 	this.toDelete.forEach((itemToDelete) => {
-			// 		const now = new Date();
-			// 		const timeDifference = now.getTime() - itemToDelete.triggered;
-
-			// 		// Check if at least 30 seconds have passed (30000 milliseconds)
-			// 		if (timeDifference >= 30000) this.removeRequest(itemToDelete.id);
-			// 	});
-
-			// 	// Clear only elements that have been processed (more than 30s old)
-			// 	this.toDelete = this.toDelete.filter((item) => {
-			// 		const now = new Date();
-			// 		return now.getTime() - item.triggered < 30000;
-			// 	});
-			// }, 30000);
 
 			this.unlisten.push(
 				await listen('rs2js_channelmessage', async (event) => {
