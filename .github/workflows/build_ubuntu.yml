@@ -69,7 +69,9 @@ jobs:
       - name: Install Linux dependencies
         run: ${{ matrix.dependencies }}
       - name: GLIBC version
-        run: ldd --version
+        run: |
+          GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
+          echo "GLIBC version: ${GLIBC_VER}"
       - name: Build Vite + Tauri
         run: |
           cd ./${{ matrix.target_path }}
