@@ -1,0 +1,30 @@
+{
+  "name": "vue_lib",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore"
+  },
+  "dependencies": {
+    "@martichou/core_lib": "link:../../../core_lib",
+    "@tauri-apps/api": "^1.5.6",
+    "@tauri-apps/plugin-store": "2.0.0-beta.5"
+  },
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "^2.1.0",
+    "@vue/eslint-config-typescript": "13.0.0",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-security": "3.0.0",
+    "eslint-plugin-vue": "9.26.0"
+  },
+  "files": [
+    "assets"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

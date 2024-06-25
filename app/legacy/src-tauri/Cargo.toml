@@ -1,0 +1,41 @@
+[package]
+name = "rquickshare"
+version = "0.8.2"
+default-run = "rquickshare"
+edition = "2021"
+authors = ["martichou"]
+repository = "https://github.com/Martichou/rquickshare"
+license = "AGPL-3.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+anyhow = "1.0"
+fern = { version = "0.6", features = ["colored"] }
+humantime = "2.1"
+log = "0.4"
+notify-rust = "4.10"
+open = "5.0"
+rqs_lib = { path = "../../../core_lib", features = ["experimental"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sys_metrics = "0.2"
+tauri = { version = "1.5", features = ["api-all", "reqwest-native-tls-vendored", "system-tray", "devtools"] }
+tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+time = { version = "0.3", features = ["formatting"] }
+tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1

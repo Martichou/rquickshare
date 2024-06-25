@@ -17,17 +17,32 @@
 		},
 		{
 			"type": "toml",
-			"path": "frontend/src-tauri/Cargo.toml",
+			"path": "app/legacy/src-tauri/Cargo.toml",
 			"jsonpath": "package.version"
 		},
 		{
 			"type": "toml",
-			"path": "frontend/src-tauri/Cargo.lock",
+			"path": "app/legacy/src-tauri/Cargo.lock",
 			"jsonpath": "$.package[?(@.name.value == 'rqs_lib')].version"
 		},
 		{
 			"type": "toml",
-			"path": "frontend/src-tauri/Cargo.lock",
+			"path": "app/legacy/src-tauri/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
+		},
+		{
+			"type": "toml",
+			"path": "app/main/src-tauri/Cargo.toml",
+			"jsonpath": "package.version"
+		},
+		{
+			"type": "toml",
+			"path": "app/main/src-tauri/Cargo.lock",
+			"jsonpath": "$.package[?(@.name.value == 'rqs_lib')].version"
+		},
+		{
+			"type": "toml",
+			"path": "app/main/src-tauri/Cargo.lock",
 			"jsonpath": "$.package[?(@.name.value == 'rquickshare')].version"
 		},
 		{

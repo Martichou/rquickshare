@@ -1,0 +1,47 @@
+[package]
+name = "rquickshare"
+version = "0.8.2"
+default-run = "rquickshare"
+edition = "2021"
+authors = ["martichou"]
+repository = "https://github.com/Martichou/rquickshare"
+license = "AGPL-3.0"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-beta", features = [] }
+
+[dependencies]
+anyhow = "1.0"
+fern = { version = "0.6", features = ["colored"] }
+humantime = "2.1"
+log = "0.4"
+notify-rust = "4.10"
+open = "5.0"
+rqs_lib = { path = "../../../core_lib", features = ["experimental"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sys_metrics = "0.2"
+tauri = { version = "2.0.0-beta", features = [ "devtools", "tray-icon", "native-tls-vendored", "image-png"] }
+tauri-plugin-autostart = "2.0.0-beta"
+tauri-plugin-process = "2.0.0-beta"
+tauri-plugin-notification = "2.0.0-beta"
+tauri-plugin-single-instance = "2.0.0-beta"
+tauri-plugin-store = "2.0.0-beta"
+tauri-plugin-dialog = "2.0.0-beta"
+time = { version = "0.3", features = ["formatting"] }
+tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+
+[features]
+# by default Tauri runs in production mode
+# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
+default = ["custom-protocol"]
+# this feature is used used for production builds where `devPath` points to the filesystem
+# DO NOT remove this
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
