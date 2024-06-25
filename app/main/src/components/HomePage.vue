@@ -12,13 +12,13 @@
 				</div>
 				<div class="py-4 flex flex-col">
 					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setAutostart(!autostart)">
+						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setAutoStart(vm, !autostart)">
 							<span class="label-text">Start on boot</span>
 							<input type="checkbox" :checked="autostart" class="checkbox focus:outline-none">
 						</label>
 					</div>
 					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setRealclose(!realclose)">
+						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setRealClose(vm, !realclose)">
 							<span class="label-text">Keep running on close</span>
 							<input type="checkbox" :checked="!realclose" class="checkbox focus:outline-none">
 						</label>
@@ -71,7 +71,7 @@
 				</p>
 				<h4
 					tabindex="0" role="button" class="btn font-medium flex flex-row !justify-between w-full
-					items-center rounded-xl active:scale-95 transition duration-150 ease-in-out p-3" @click="invertVisibility()">
+					items-center rounded-xl active:scale-95 transition duration-150 ease-in-out p-3" @click="invertVisibility(vm)">
 					<span v-if="visibility === 'Visible'">Always visible</span>
 					<span v-else-if="visibility === 'Invisible'">Hidden from everyone</span>
 					<span v-else>Temporarily visible</span>
@@ -124,7 +124,7 @@
 				</div>
 
 				<p
-					@click="clearSending()"
+					@click="clearSending(vm)"
 					class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out w-fit">
 					Cancel
 				</p>
@@ -165,7 +165,7 @@
 
 				<div
 					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
-					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(item.id)">
+					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(vm, item.id)">
 					<div>
 						<div class="relative w-[62px] h-[62px]">
 							<svg
@@ -229,12 +229,12 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="sendCmd(item.id, 'AcceptTransfer')" class="btn px-3
+									@click="sendCmd(vm, item.id, 'AcceptTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Accept
 								</p>
 								<p
-									@click="sendCmd(item.id, 'RejectTransfer')" class="btn px-3
+									@click="sendCmd(vm, item.id, 'RejectTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Decline
 								</p>
@@ -253,7 +253,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="sendCmd(item.id, 'CancelTransfer')" class="btn px-3
+									@click="sendCmd(vm, item.id, 'CancelTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Cancel
 								</p>
@@ -277,7 +277,7 @@
 									Open
 								</p>
 								<p
-									@click="removeRequest(item.id)" class="btn px-3
+									@click="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -290,7 +290,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(item.id)" class="btn px-3
+									@click="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -303,7 +303,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(item.id)" class="btn px-3
+									@click="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -316,7 +316,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(item.id)" class="btn px-3
+									@click="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -341,13 +341,13 @@ import { disable, enable } from '@tauri-apps/plugin-autostart';
 import { open } from '@tauri-apps/plugin-dialog';
 
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
-import { ChannelAction } from '@martichou/core_lib/bindings/ChannelAction';
 import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
-import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
-import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, realcloseKey, visibilityToNumber, visibilityKey, numberToVisibility, downloadPathKey } from 'vue_lib';
+import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, _displayedItems, setAutoStart,
+	applyAutoStart, setRealClose, getRealclose, setVisibility, getVisibility, invertVisibility, clearSending,
+	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath } from 'vue_lib';
 
 export default {
 	name: "HomePage",
@@ -355,7 +355,30 @@ export default {
 	setup() {
 		const store = new Store(".settings.json");
 
-		return {stateToDisplay, invoke, getVersion, store};
+		return {
+			stateToDisplay,
+			store,
+			invoke,
+			getVersion,
+			enable,
+			disable,
+			// Coming from vue_lib, aka common
+			setAutoStart,
+			applyAutoStart,
+			setRealClose,
+			getRealclose,
+			setVisibility,
+			getVisibility,
+			invertVisibility,
+			clearSending,
+			removeRequest,
+			sendInfo,
+			sendCmd,
+			blured,
+			getProgress,
+			setDownloadPath,
+			getDownloadPath
+		};
 	},
 
 	data() {
@@ -390,16 +413,16 @@ export default {
 			this.hostname = await invoke('get_hostname');
 			this.version = await getVersion();
 
-			await this.getVisibility();
+			await this.getVisibility(this);
 
 			if (!await this.store.has(autostartKey)) {
-				await this.setAutostart(true);
+				await this.setAutoStart(this, true);
 			} else {
-				await this.applyAutostart();
+				await this.applyAutoStart(this);
 			}
 
-			await this.getRealclose();
-			await this.getDownloadPath();
+			await this.getRealclose(this);
+			await this.getDownloadPath(this);
 
 			// Check permission for notification
 			let permissionGranted = await isPermissionGranted();
@@ -407,22 +430,6 @@ export default {
 				const permission = await requestPermission();
 				permissionGranted = permission === 'granted';
 			}
-
-			// this.cleanupInterval = setInterval(() => {
-			// 	this.toDelete.forEach((itemToDelete) => {
-			// 		const now = new Date();
-			// 		const timeDifference = now.getTime() - itemToDelete.triggered;
-
-			// 		// Check if at least 30 seconds have passed (30000 milliseconds)
-			// 		if (timeDifference >= 30000) this.removeRequest(itemToDelete.id);
-			// 	});
-
-			// 	// Clear only elements that have been processed (more than 30s old)
-			// 	this.toDelete = this.toDelete.filter((item) => {
-			// 		const now = new Date();
-			// 		return now.getTime() - item.triggered < 30000;
-			// 	});
-			// }, 30000);
 
 			this.unlisten.push(
 				await listen('rs2js_channelmessage', async (event) => {
@@ -477,7 +484,7 @@ export default {
 			this.unlisten.push(
 				await listen('visibility_updated', async () => {
 					console.log("Visibility changed");
-					await this.getVisibility();
+					await this.getVisibility(this);
 				})
 			);
 
@@ -510,145 +517,18 @@ export default {
 	},
 
 	computed: {
+		vm() {
+			return this;
+		},
 		displayedIsEmpty(): boolean {
 			return this.displayedItems.length == 0
 		},
 		displayedItems(): Array<DisplayedItem> {
-			const ndisplayed = new Array<DisplayedItem>();
-
-			this.endpointsInfo.forEach((el) => {
-				const idx = ndisplayed.findIndex((nel) => el.id == nel.id);
-				if (idx !== -1) return;
-
-				ndisplayed.push({
-					id: el.id,
-					name: el.name ?? 'Unknown',
-					deviceType: el.rtype ?? 'Unknown',
-					endpoint: true,
-				})
-			});
-
-			this.requests.filter((el) => stateToDisplay.includes(el.state ?? 'Initial')).forEach((el) => {
-				const idx = ndisplayed.findIndex((nel) => el.id == nel.id);
-				const elem: DisplayedItem = {
-					id: el.id,
-					name: el.meta?.source?.name ?? 'Unknown',
-					deviceType: el.meta?.source?.device_type ?? 'Unknown',
-					endpoint: false,
-
-					state: el.state ?? undefined,
-					pin_code: el.meta?.pin_code ?? undefined,
-					destination: el.meta?.destination ?? el.meta?.text_payload ?? undefined,
-					files: el.meta?.files ?? undefined,
-					text_description: el.meta?.text_description ?? undefined,
-					ack_bytes: (el.meta?.ack_bytes as number | undefined) ?? undefined,
-					total_bytes: (el.meta?.total_bytes as number | undefined) ?? undefined,
-				};
-
-				if (idx !== -1) {
-					ndisplayed.splice(idx, 1, elem);
-				} else {
-					ndisplayed.push(elem)
-				}
-			});
-
-			return ndisplayed;
+			return _displayedItems(this);
 		}
 	},
 
 	methods: {
-		setAutostart: async function(autostart: boolean) {
-			if (autostart) {
-				await enable();
-			} else {
-				await disable();
-			}
-
-			await this.store.set(autostartKey, autostart);
-			await this.store.save();
-			this.autostart = autostart;
-		},
-		applyAutostart: async function() {
-			this.autostart = await this.store.get(autostartKey) ?? false;
-
-			if (this.autostart) {
-				await enable();
-			} else {
-				await disable();
-			}
-		},
-		setRealclose: async function(realclose: boolean) {
-			await this.store.set(realcloseKey, realclose);
-			await this.store.save();
-			this.realclose = realclose;
-		},
-		getRealclose: async function() {
-			this.realclose = await this.store.get(realcloseKey) ?? false;
-		},
-		setVisibility: async function(visibility: Visibility) {
-			await invoke('change_visibility', { message: visibility });
-			await this.store.set(visibilityKey, visibilityToNumber[visibility]);
-			await this.store.save();
-			this.visibility = visibility;
-		},
-		getVisibility: async function() {
-			this.visibility = numberToVisibility[(await this.store.get(visibilityKey) ?? 0) as number];
-		},
-		invertVisibility: async function() {
-			if (this.visibility === 'Temporarily') {
-				return;
-			}
-
-			if (this.visibility === 'Visible') {
-				return this.setVisibility('Invisible');
-			}
-
-			return this.setVisibility('Visible');
-		},
-		clearSending: async function() {
-			await invoke('stop_discovery');
-			this.outboundPayload = undefined;
-			this.discoveryRunning = false;
-			this.endpointsInfo = [];
-		},
-		removeRequest: function(id: string) {
-			const idx = this.requests.findIndex((el) => el.id === id);
-
-			if (idx !== -1) {
-				this.requests.splice(idx, 1);
-			}
-		},
-		sendInfo: async function(eid: string) {
-			if (this.outboundPayload === undefined) return;
-
-			const ei = this.endpointsInfo.find((el) => el.id === eid);
-			if (!ei) return;
-
-			const msg: SendInfo = {
-				id: ei.id,
-				name: ei.name ?? 'Unknown',
-				addr: ei.ip + ":" + ei.port,
-				ob: this.outboundPayload,
-			};
-
-			await invoke('send_payload', { message: msg });
-		},
-		sendCmd: async function(id: string, action: ChannelAction) {
-			const cm: ChannelMessage = {
-				id: id,
-				direction: 'FrontToLib',
-				action: action,
-				meta: null,
-				state: null,
-				rtype: null,
-			};
-			console.log("js2rs:", cm);
-
-			await invoke('send_to_rs', { message: cm });
-		},
-		blured: function() {
-			(document.activeElement as any).blur();
-		},
 		openFilePicker: function() {
 			open({
 				title: "Select a file to send",
@@ -666,10 +546,6 @@ export default {
 				this.discoveryRunning = true;
 			})
 		},
-		getProgress: function(item: DisplayedItem): string {
-			const value = item.ack_bytes! / item.total_bytes! * 100;
-			return `--progress: ${value}`;
-		},
 		openDownloadPicker: function() {
 			open({
 				title: "Select the destination for files",
@@ -680,17 +556,8 @@ export default {
 					return;
 				}
 
-				await this.setDownloadPath(el as string);
+				await this.setDownloadPath(this, el as string);
 			})
-		},
-		setDownloadPath: async function(dest: string) {
-			await invoke('change_download_path', { message: dest });
-			await this.store.set(downloadPathKey, dest);
-			await this.store.save();
-			this.downloadPath = dest;
-		},
-		getDownloadPath: async function() {
-			this.downloadPath = await this.store.get(downloadPathKey) ?? undefined;
 		},
 	},
 }

@@ -7,7 +7,9 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --ignore-path .gitignore"
   },
   "dependencies": {
-    "@martichou/core_lib": "link:../../../core_lib"
+    "@martichou/core_lib": "link:../../../core_lib",
+    "@tauri-apps/api": "^1.5.6",
+    "@tauri-apps/plugin-store": "2.0.0-beta.5"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.1.0",
