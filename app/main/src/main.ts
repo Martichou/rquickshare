@@ -1,4 +1,4 @@
-import devtools from '@vue/devtools'
+import { devtools } from '@vue/devtools'
 import { createApp } from 'vue'
 import App from './App.vue'
 

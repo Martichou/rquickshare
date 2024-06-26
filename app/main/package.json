@@ -32,7 +32,7 @@
     "@tauri-apps/cli": "2.0.0-beta.20",
     "@types/node": "^20.14.2",
     "@vitejs/plugin-vue": "^5.0.5",
-    "@vue/devtools": "^6.6.3",
+    "@vue/devtools": "^7.3.4",
     "@vue/eslint-config-typescript": "13.0.0",
     "autoprefixer": "10.4.19",
     "concurrently": "8.2.2",
