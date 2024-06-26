@@ -20,16 +20,23 @@ Installation
 You simply have to download the latest release.
 At the moment, only **Deb**, **Rpm** and **AppImage** are generated and supported.
 
+**Important notes:**
+- The minimum GLIBC version supported is included in the pkg name.
+  - You can check yours with `ldd --version`.
+- RQuickShare is distributed with two version (main & legacy):
+  - Legacy is for compatibility with older Ubuntu versions.
+  - Main is for future support of newer versions of Ubuntu.
+
 #### Debian
 
 ```
-sudo dpkg -i r-quick-share_${VERSION}_amd64.deb
+sudo dpkg -i r-quick-share_${VERSION}.deb
 ```
 
 #### RPM
 
 ```
-sudo rpm -i r-quick-share-${VERSION}-1.x86_64.rpm
+sudo rpm -i r-quick-share-${VERSION}.rpm
 ```
 
 #### AppImage (no root required)
@@ -37,13 +44,13 @@ sudo rpm -i r-quick-share-${VERSION}-1.x86_64.rpm
 AppImage is a little different. There's no installation needed, you simply have to give it the executable permission (+x on a chmod) to run it.
 
 ```
-chmod +x r-quick-share_${VERSION}_amd64.AppImage
+chmod +x r-quick-share_${VERSION}.AppImage
 ```
 
 You can then either double click on it, or run it from the cmd line:
 
 ```
-./r-quick-share_${VERSION}_amd64.AppImage
+./r-quick-share_${VERSION}.AppImage
 ```
 
 #### Snap
@@ -51,7 +58,7 @@ You can then either double click on it, or run it from the cmd line:
 The snap is not yet on the store, but you can install it with the following (you may need sudo).
 
 ```
-snap install --dangerous r-quick-share_${VERSION}_amd64.snap
+snap install --dangerous r-quick-share_${VERSION}.snap
 ```
 
 ### Unofficial Installation
