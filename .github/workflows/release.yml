@@ -33,7 +33,6 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: 8
-          run_install: true
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -53,6 +52,7 @@ jobs:
       - name: Build Vite + Tauri
         run: |
           cd ./${{ matrix.target_path }}
+          pnpm install
           pnpm build
           cd ${{ github.workspace }}
           ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/ ${{ matrix.name }}

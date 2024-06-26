@@ -53,7 +53,6 @@ jobs:
       - uses: pnpm/action-setup@v3
         with:
           version: 8
-          run_install: true
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -75,6 +74,7 @@ jobs:
       - name: Build Vite + Tauri
         run: |
           cd ./${{ matrix.target_path }}
+          pnpm install
           pnpm deb:build
       - name: Upload result
         uses: actions/upload-artifact@v4
