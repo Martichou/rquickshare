@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0](https://github.com/Martichou/rquickshare/compare/v0.8.2...v0.9.0) (2024-06-26)
+
+
+### Features
+
+* add Tauri V2 codebase ([ba4f16f](https://github.com/Martichou/rquickshare/commit/ba4f16f2284f22b3ac8e5d72e85b38c77c05d7d0))
+* drag&drop working now ([3c97e6d](https://github.com/Martichou/rquickshare/commit/3c97e6dc25811dabddbae53623a285d8919a62d1))
+* migrate V1 codebase for V2 ([a3226fc](https://github.com/Martichou/rquickshare/commit/a3226fc43bdfba05e09993feffcb98f61d394a8e))
+* TS migrated to Tauri V2 ([a286591](https://github.com/Martichou/rquickshare/commit/a286591d3b3250d989c8deae1be1d2ffb4f78ff1))
+
+
+### Bug Fixes
+
+* attempt to fix pnpm issue ([bc49f65](https://github.com/Martichou/rquickshare/commit/bc49f65b150202dfee7bc87745d6b95492c56cb4))
+* display received file.s once finished ([505258c](https://github.com/Martichou/rquickshare/commit/505258c1aae1037e573487b314db03698dbc17ed))
+* fmt script go back to correct directory ([1e007db](https://github.com/Martichou/rquickshare/commit/1e007db8522c6fd761c492fa6e1a39b454e4701f))
+* improve sanity wait ([c595dcd](https://github.com/Martichou/rquickshare/commit/c595dcd099909bc87fdcf29b79fa85a0acae369d))
+* missing appindicator library pkg and fix glob for release ([5859434](https://github.com/Martichou/rquickshare/commit/585943473867dde3e34c5efd6c5f7c8e4aac4a8e))
+
 ## [0.8.2](https://github.com/Martichou/rquickshare/compare/v0.8.1...v0.8.2) (2024-06-19)
 
 
