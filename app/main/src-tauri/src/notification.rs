@@ -14,7 +14,7 @@ use tauri_plugin_notification::NotificationExt;
 #[cfg(target_os = "linux")]
 use crate::cmds;
 
-pub fn send_request_notification(name: String, _id: String, app_handle: &AppHandle) {
+pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
     let body = format!("{name} want to initiate a transfer");
 
     #[cfg(not(target_os = "linux"))]
@@ -42,7 +42,7 @@ pub fn send_request_notification(name: String, _id: String, app_handle: &AppHand
                     "accept" => {
                         let _ = cmds::send_to_rs(
                             ChannelMessage {
-                                _id,
+                                id,
                                 direction: ChannelDirection::FrontToLib,
                                 action: Some(ChannelAction::AcceptTransfer),
                                 ..Default::default()
@@ -53,7 +53,7 @@ pub fn send_request_notification(name: String, _id: String, app_handle: &AppHand
                     "reject" => {
                         let _ = cmds::send_to_rs(
                             ChannelMessage {
-                                _id,
+                                id,
                                 direction: ChannelDirection::FrontToLib,
                                 action: Some(ChannelAction::RejectTransfer),
                                 ..Default::default()
