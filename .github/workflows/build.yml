@@ -101,6 +101,6 @@ jobs:
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-debug-rquickshare
+          name: artifact-debug-rquickshare-${{ matrix.os }}
           path: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/${{ matrix.generated_bundle }}
