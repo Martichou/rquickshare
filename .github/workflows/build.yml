@@ -28,6 +28,8 @@ jobs:
         with:
           cache-directories: "${{ github.workspace }}/core_lib/target"
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install dependencies
         if: matrix.os != 'macos-latest'
         run: |
@@ -76,6 +78,8 @@ jobs:
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Linux dependencies for U
         if: matrix.os != 'macos-latest'
         run: |

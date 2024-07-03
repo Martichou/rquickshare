@@ -41,6 +41,8 @@ jobs:
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Linux dependencies for U
         run: |
