@@ -15,6 +15,9 @@ use tauri_plugin_notification::NotificationExt;
 use crate::cmds;
 
 pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
+    // Is not used in macos, get rid of warning
+    let _ = id;
+
     let body = format!("{name} want to initiate a transfer");
 
     #[cfg(not(target_os = "linux"))]
@@ -72,7 +75,7 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
 }
 
 pub fn send_temporarily_notification(app_handle: &AppHandle) {
-    let body = format!("RQuickShare is temporarily hidden");
+    let body = "RQuickShare is temporarily hidden".to_string();
 
     #[cfg(not(target_os = "linux"))]
     let _ = app_handle
