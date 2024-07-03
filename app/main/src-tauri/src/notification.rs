@@ -1,14 +1,29 @@
+#[cfg(target_os = "linux")]
 use notify_rust::Notification;
-use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
-use rqs_lib::Visibility;
-use tauri::{AppHandle, Manager};
+#[cfg(target_os = "linux")]
+use rqs_lib::{
+    channel::{ChannelAction, ChannelDirection, ChannelMessage},
+    Visibility,
+};
+use tauri::AppHandle;
+#[cfg(target_os = "linux")]
+use tauri::Manager;
 #[cfg(not(target_os = "linux"))]
 use tauri_plugin_notification::NotificationExt;
 
+#[cfg(target_os = "linux")]
 use crate::cmds;
 
-pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
+pub fn send_request_notification(name: String, _id: String, app_handle: &AppHandle) {
     let body = format!("{name} want to initiate a transfer");
+
+    #[cfg(not(target_os = "linux"))]
+    let _ = app_handle
+        .notification()
+        .builder()
+        .title("RQuickShare")
+        .body(&body)
+        .show();
 
     #[cfg(target_os = "linux")]
     match Notification::new()
@@ -21,12 +36,13 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
         Ok(n) => {
             let capp_handle = app_handle.clone();
             // TODO - Meh, untracked, unwaited tasks...
+            #[cfg(target_os = "linux")]
             tokio::task::spawn(async move {
                 n.wait_for_action(|action| match action {
                     "accept" => {
                         let _ = cmds::send_to_rs(
                             ChannelMessage {
-                                id,
+                                _id,
                                 direction: ChannelDirection::FrontToLib,
                                 action: Some(ChannelAction::AcceptTransfer),
                                 ..Default::default()
@@ -37,7 +53,7 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
                     "reject" => {
                         let _ = cmds::send_to_rs(
                             ChannelMessage {
-                                id,
+                                _id,
                                 direction: ChannelDirection::FrontToLib,
                                 action: Some(ChannelAction::RejectTransfer),
                                 ..Default::default()
@@ -53,6 +69,10 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
             error!("Couldn't show notification: {}", e);
         }
     }
+}
+
+pub fn send_temporarily_notification(app_handle: &AppHandle) {
+    let body = format!("RQuickShare is temporarily hidden");
 
     #[cfg(not(target_os = "linux"))]
     let _ = app_handle
@@ -61,12 +81,11 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
         .title("RQuickShare")
         .body(&body)
         .show();
-}
 
-pub fn send_temporarily_notification(app_handle: &AppHandle) {
+    #[cfg(target_os = "linux")]
     match Notification::new()
         .summary("RQuickShare")
-        .body("A device is sharing nearby")
+        .body(&body)
         .action("visible", "Be visible (1m)")
         .action("ignore", "Ignore")
         .id(1919)
@@ -75,6 +94,7 @@ pub fn send_temporarily_notification(app_handle: &AppHandle) {
         Ok(n) => {
             let capp_handle = app_handle.clone();
             // TODO - Meh, untracked, unwaited tasks...
+            #[cfg(target_os = "linux")]
             tokio::task::spawn(async move {
                 n.wait_for_action(|action| match action {
                     "visible" => {
