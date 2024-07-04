@@ -44,9 +44,9 @@ for file in $files; do
 
     # Construct the new filename
     if [ -n "$glib_ver" ]; then
-        new_filename="r-quick-share_${version}_glibc-${glib_ver}_${anything}.${extension}"
+        new_filename="r-quick-share-${tauri_ver}_${version}_glibc-${glib_ver}_${anything}.${extension}"
     else
-        new_filename="r-quick-share_${version}_${anything}.${extension}"
+        new_filename="r-quick-share-${tauri_ver}_${version}_${anything}.${extension}"
     fi
 
     # Rename the file
