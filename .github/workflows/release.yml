@@ -76,7 +76,7 @@ jobs:
 
       - name: Add files to release
         if: github.event_name != 'workflow_dispatch'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/*/r-quick-share-${{ matrix.name }}*
