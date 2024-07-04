@@ -87,7 +87,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-debug-rquickshare-${{ matrix.name }}
+          name: artifact-debug-rquickshare-${{ matrix.os }}
           path: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/*/r-quick-share-${{ matrix.name }}*
             ${{ env.SNAP_FILE }}
