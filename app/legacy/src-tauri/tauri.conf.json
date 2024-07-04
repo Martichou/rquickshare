@@ -15,7 +15,7 @@
     },
     "bundle": {
       "active": true,
-      "targets": "all",
+      "targets": ["deb", "appimage"],
       "identifier": "dev.mandre.rquickshare",
       "icon": [
         "icons/32x32.png",

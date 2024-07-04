@@ -10,9 +10,9 @@ use crate::utils::RemoteDeviceInfo;
 
 mod ble;
 pub use ble::*;
-#[cfg(feature = "experimental")]
+#[cfg(all(feature = "experimental", target_os = "linux"))]
 mod blea;
-#[cfg(feature = "experimental")]
+#[cfg(all(feature = "experimental", target_os = "linux"))]
 pub use blea::*;
 mod inbound;
 pub use inbound::*;

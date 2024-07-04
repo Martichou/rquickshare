@@ -15,7 +15,12 @@ env:
 
 jobs:
   build_core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+          - os: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -23,7 +28,10 @@ jobs:
         with:
           cache-directories: "${{ github.workspace }}/core_lib/target"
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install dependencies
+        if: matrix.os != 'macos-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-dev
@@ -43,11 +51,20 @@ jobs:
             dependencies: |
               sudo apt-get install -y libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.0-dev
             cache_directory: app/legacy/src-tauri/target
+            build_cmd: deb:build
+            generated_bundle: appimage/r-quick-share*.AppImage
           - os: ubuntu-24.04
             target_path: app/main
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
+            build_cmd: deb:build
+            generated_bundle: appimage/r-quick-share*.AppImage
+          - os: macos-latest
+            target_path: app/main
+            cache_directory: app/main/src-tauri/target
+            build_cmd: dmg:build
+            generated_bundle: dmg/RQuickShare_*.dmg
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -61,13 +78,18 @@ jobs:
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Linux dependencies for U
+        if: matrix.os != 'macos-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
       - name: Install Linux dependencies
+        if: matrix.os != 'macos-latest'
         run: ${{ matrix.dependencies }}
       - name: GLIBC version
+        if: matrix.os != 'macos-latest'
         run: |
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
@@ -75,10 +97,10 @@ jobs:
         run: |
           cd ./${{ matrix.target_path }}
           pnpm install
-          pnpm deb:build
+          pnpm ${{ matrix.build_cmd }}
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-debug-rquickshare
+          name: artifact-debug-rquickshare-${{ matrix.os }}
           path: |
-            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/appimage/r-quick-share*.AppImage
+            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/${{ matrix.generated_bundle }}

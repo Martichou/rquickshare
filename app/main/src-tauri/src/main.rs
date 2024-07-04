@@ -72,9 +72,16 @@ async fn main() -> Result<(), anyhow::Error> {
             debug!("Starting setup of RQuickShare app");
 
             // Initialize system Tray
+            let name = MenuItemBuilder::new("RQuickShare")
+                .enabled(false)
+                .build(app)?;
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
-            let menu = MenuBuilder::new(app).items(&[&show, &quit]).build()?;
+            let menu = MenuBuilder::new(app)
+                .item(&name)
+                .separator()
+                .items(&[&show, &quit])
+                .build()?;
             let _tray = TrayIconBuilder::new()
                 .icon(Image::from_bytes(include_bytes!("../icons/icon.png")).unwrap())
                 .menu(&menu)

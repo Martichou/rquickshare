@@ -39,6 +39,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: pnpm/action-setup@v3
         with:
           version: 8
@@ -70,8 +72,9 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.directory }}/target"
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
+      - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Linux dependencies for U
         run: |
