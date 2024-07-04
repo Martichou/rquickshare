@@ -2,11 +2,11 @@
   <h1>rquickshare</h1>
 
   <p>
-    <strong>NearbyShare/QuickShare for Linux</strong>
+    <strong>NearbyShare/QuickShare for Linux and MacOS</strong>
   </p>
   <p>
 
-[![CI](https://github.com/Martichou/rquickshare/actions/workflows/build_ubuntu.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
+[![CI](https://github.com/Martichou/rquickshare/actions/workflows/build.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 [![CI](https://github.com/Martichou/rquickshare/actions/workflows/lint.yml/badge.svg)](https://github.com/Martichou/rquickshare/actions)
 
   </p>
