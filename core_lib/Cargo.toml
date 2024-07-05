@@ -12,6 +12,9 @@ path = "src/bin.rs"
 [target.'cfg(target_os = "linux")'.dependencies]
 bluer = { version = "0.17", features = ["full"], optional = true }
 
+[target.'cfg(all(target_arch = "aarch64", target_os = "linux"))'.dependencies]
+dbus = {version = "0.9", features = ["vendored"]}
+
 [dependencies]
 anyhow = "1.0"
 arboard = "3.3"
