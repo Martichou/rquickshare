@@ -10,11 +10,11 @@ How to build
 
 Building the core_lib is straightforward because it is a basic Rust project. Simply use `cargo build` to compile it.
 
-### app/legacy
+### app/main
 
-The app/legacy is developed as a Tauri application. For package management, pnpm is recommended (though npm and others may also work, pnpm is preferred for this project).
+The app/main is developed as a Tauri application. For package management, pnpm is recommended (though npm and others may also work, pnpm is preferred for this project).
 
-(all commands are run inside the `app/legacy` folder)
+(all commands are run inside the `app/main` folder)
 
 First, install the necessary dependencies:
 
@@ -27,6 +27,18 @@ pnpm install
 ```
 pnpm dev
 ```
+
+- To build a release package (.deb & .AppImage & .rpm & .dmg (only on macos)):
+
+```
+pnpm build
+```
+
+For more detailed information on building the app/legacy and understanding any potential limitations, it’s advised to consult the [Tauri documentation](https://v2.tauri.app/start).
+
+### app/legacy
+
+Everything is the same as the app/main one, except the output of the build :)
 
 - To build a release package (.deb & .AppImage):
 
