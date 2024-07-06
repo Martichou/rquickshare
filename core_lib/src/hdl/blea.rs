@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bluer::adv::{Advertisement, Feature, SecondaryChannel};
+use bluer::adv::Advertisement;
 use bluer::UuidExt;
 use bytes::Bytes;
 use tokio_util::sync::CancellationToken;
@@ -29,7 +29,7 @@ impl BleAdvertiser {
     }
 
     pub async fn run(&self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
-        debug!(
+        info!(
             "{INNER_NAME}: advertising on Bluetooth adapter {} with address {}",
             self.adapter.name(),
             self.adapter.address().await?
@@ -50,11 +50,7 @@ impl BleAdvertiser {
     fn get_advertisment(&self, service_uuid: Uuid, adv_data: Bytes) -> Advertisement {
         Advertisement {
             advertisement_type: bluer::adv::Type::Broadcast,
-            service_uuids: vec![service_uuid].into_iter().collect(),
             service_data: [(service_uuid, adv_data.into())].into(),
-            secondary_channel: Some(SecondaryChannel::OneM),
-            system_includes: [Feature::TxPower].into(),
-            tx_power: Some(20),
             ..Default::default()
         }
     }
