@@ -7,8 +7,7 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 const SERVICE_DATA: Bytes = Bytes::from_static(&[
-    252, 18, 142, 7, 66, 47, 226, 147, 129, 18, 72, 93, 15, 230, 180, 225, 83, 75, 101, 17, 229,
-    106, 29, 0,
+    252, 18, 142, 1, 66, 0, 0, 0, 0, 0, 0, 0, 0, 0, 191, 45, 91, 160, 225, 216, 117, 36, 202, 0,
 ]);
 
 const INNER_NAME: &str = "BleAdvertiser";
