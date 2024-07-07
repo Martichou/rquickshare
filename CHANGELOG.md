@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.10.0](https://github.com/Martichou/rquickshare/compare/v0.9.0...v0.10.0) (2024-07-07)
+
+
+### Features
+
+* add new version notification ([4710dae](https://github.com/Martichou/rquickshare/commit/4710dae128608fd9d80abd23074920c63c1cf5ff))
+
+
+### Bug Fixes
+
+* blea use correct service_data ([121631c](https://github.com/Martichou/rquickshare/commit/121631cd5c60db8c711d2ee7eb9caa2c6bd5c2ef))
+* bluetooth advertisement is working now ([0a066d8](https://github.com/Martichou/rquickshare/commit/0a066d88169650ca83e7f2138f6b28861e2bb105))
+* set dbus to vendored for aarch64 ([#118](https://github.com/Martichou/rquickshare/issues/118)) ([5151f99](https://github.com/Martichou/rquickshare/commit/5151f999020ad64cc74eb9a3fa93a771627c6c66))
+
 ## [0.9.0](https://github.com/Martichou/rquickshare/compare/v0.8.2...v0.9.0) (2024-07-04)
 
 
