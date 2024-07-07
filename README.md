@@ -104,7 +104,10 @@ Make sure both your devices are on the same WiFi network. mDNS communication sho
 
 ### My laptop doesn't see my Android device
 
-For some reason, Android doesn't broadcast it's mDNS service all the time; even when in "Everyone" mode.
+For some reason, Android doesn't broadcast its mDNS service all the time; even when in "Everyone" mode.
+
+The first solution (implemented in RQuickShare for Linux) is to broadcast a bluetooth advertisement so that Android will then make its mDNS available.
+Of course, for this you need to have bluetooth on your laptop/desktop. If you don't have that, continue reading.
 
 As a workaround, you can use the "[Files](https://play.google.com/store/apps/details?id=com.google.android.apps.nbu.files)" app on your android device and go to "Nearby Share" tab (if it's not present, continue reading).
 
@@ -119,6 +122,12 @@ A second workaround, you can download a Shortcut maker (see [here](https://xdafo
 
 _Note: there's a current WIP to add a BLE advertisment in RQuickShare to overcome this._
 _Note2: Samsung did something shady with Quick Share, so the above workaround may not work. Unfortunately, there's no alternative at the moment. Sorry._
+
+### When sharing a file, my phone appears and disapears "randomly"
+
+TLDR: This is normal if you're just using bluetooth (as explained in the previous point).
+
+Android will see that your laptop/desktop is trying to share a file and will reveal itself. But for some reason Android will de-register its service from time to time and will only then be revealed again once it detect the bluetooth message again.
 
 ### Once I close the app, it won't reopen
 
