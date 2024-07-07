@@ -14,6 +14,9 @@ importers:
       '@tauri-apps/api':
         specifier: 1.5.6
         version: 1.5.6
+      semver:
+        specifier: ^7.6.2
+        version: 7.6.2
       tauri-plugin-autostart-api:
         specifier: github:tauri-apps/tauri-plugin-autostart#v1
         version: https://codeload.github.com/tauri-apps/tauri-plugin-autostart/tar.gz/95dbee4b9e1209cbbea17c77d197b267fa7fe8d9
@@ -39,6 +42,9 @@ importers:
       '@types/node':
         specifier: ^20.14.2
         version: 20.14.2
+      '@types/semver':
+        specifier: ^7.5.8
+        version: 7.5.8
       '@vitejs/plugin-vue':
         specifier: ^5.0.5
         version: 5.0.5(vite@5.2.13(@types/node@20.14.2))(vue@3.4.27(typescript@5.4.5))
@@ -590,6 +596,9 @@ packages:
 
   '@types/responselike@1.0.3':
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
+
+  '@types/semver@7.5.8':
+    resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -2698,6 +2707,8 @@ snapshots:
   '@types/responselike@1.0.3':
     dependencies:
       '@types/node': 20.14.2
+
+  '@types/semver@7.5.8': {}
 
   '@types/yauzl@2.10.3':
     dependencies:

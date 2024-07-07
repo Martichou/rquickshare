@@ -46,9 +46,21 @@
 				</h2>
 			</div>
 			<div class="flex justify-center items-center gap-4">
-				<p class="text-sm">
-					v{{ version }}
-				</p>
+				<div
+					class="flex items-center gap-2 text-sm transition duration-150 ease-in-out"
+					:class="{'btn active:scale-95': new_version}"
+					@click="new_version && invoke('open_url', { message: 'https://github.com/Martichou/rquickshare/releases/latest' })">
+					<span v-if="new_version">Update available</span>
+					<p>
+						v{{ version }}
+					</p>
+					<p v-if="new_version" class="text-lg">
+						🡒
+					</p>
+					<p v-if="new_version">
+						v{{ new_version }}
+					</p>
+				</div>
 				<div class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out" @click="settingsOpen = true">
 					<svg
 						xmlns="http://www.w3.org/2000/svg" height="24"
@@ -330,6 +342,7 @@
 </template>
 
 <script lang="ts">
+import { gt } from 'semver'
 import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
@@ -347,7 +360,7 @@ import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
 import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, _displayedItems, setAutoStart,
 	applyAutoStart, setRealClose, getRealclose, setVisibility, getVisibility, invertVisibility, clearSending,
-	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath } from 'vue_lib';
+	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath, getLatestVersion } from 'vue_lib';
 
 export default {
 	name: "HomePage",
@@ -377,7 +390,8 @@ export default {
 			blured,
 			getProgress,
 			setDownloadPath,
-			getDownloadPath
+			getDownloadPath,
+			getLatestVersion
 		};
 	},
 
@@ -404,7 +418,9 @@ export default {
 
 			hostname: ref<string>(),
 
-			settingsOpen: ref<boolean>(false)
+			settingsOpen: ref<boolean>(false),
+
+			new_version: opt<string>(),
 		};
 	},
 
@@ -505,6 +521,8 @@ export default {
 					}
 				})
 			);
+
+			await this.getLatestVersion(this, gt);
 		});
 	},
 

@@ -171,3 +171,21 @@ export async function setDownloadPath(vm: TauriVM, dest: string) {
 export async function getDownloadPath(vm: TauriVM) {
 	vm.downloadPath = await vm.store.get(downloadPathKey) ?? undefined;
 }
+
+export async function getLatestVersion(vm: TauriVM, gt: (a: string, b: string) => boolean) {
+	try {
+		const response = await fetch('https://api.github.com/repos/martichou/rquickshare/releases/latest');
+		if (!response.ok) {
+			throw new Error(`Error: ${response.status} ${response.statusText}`);
+		}
+		const data = await response.json();
+		const new_version = data.tag_name.substring(1);
+		console.log(`Latest version: ${vm.version} vs ${new_version}`);
+
+		if (vm.version && gt(new_version, vm.version)) {
+			vm.new_version = new_version;
+		}
+	} catch (err) {
+		console.error(err);
+	}
+}

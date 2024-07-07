@@ -24,6 +24,7 @@
     "@tauri-apps/plugin-dialog": "2.0.0-beta.5",
     "@tauri-apps/plugin-notification": "^2.0.0-beta.5",
     "@tauri-apps/plugin-store": "^2.0.0-beta.5",
+    "semver": "^7.6.2",
     "vue": "3.4.27",
     "vue_lib": "link:../common/vue_lib"
   },
@@ -32,6 +33,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "@tauri-apps/cli": "2.0.0-beta.20",
     "@types/node": "^20.14.2",
+    "@types/semver": "^7.5.8",
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/devtools": "^7.3.4",
     "@vue/eslint-config-typescript": "13.0.0",

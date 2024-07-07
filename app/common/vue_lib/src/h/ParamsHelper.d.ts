@@ -25,6 +25,7 @@ export interface TauriVM {
     downloadPath: string | undefined;
     hostname: string | undefined;
     settingsOpen: boolean;
+    new_version: string | null;
     enable: () => Promise<void>;
     disable: () => Promise<void>;
     invoke: (cmd: string, args?: InvokeArgs) => Promise<unknown>

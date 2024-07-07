@@ -19,6 +19,7 @@
   "dependencies": {
     "@martichou/core_lib": "link:../../core_lib",
     "@tauri-apps/api": "1.5.6",
+    "semver": "^7.6.2",
     "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1",
     "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
     "vue": "3.4.27",
@@ -29,6 +30,7 @@
     "@tailwindcss/typography": "^0.5.13",
     "@tauri-apps/cli": "1.5.14",
     "@types/node": "^20.14.2",
+    "@types/semver": "^7.5.8",
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/devtools": "^7.3.4",
     "@vue/eslint-config-typescript": "13.0.0",
