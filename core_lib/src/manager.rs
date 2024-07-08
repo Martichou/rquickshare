@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast::Sender;
@@ -58,7 +57,7 @@ impl TcpServer {
                 Some(i) = self.connect_receiver.recv() => {
                     info!("{INNER_NAME}: connect_receiver: got {:?}", i);
                     if let Err(e) = self.connect(cctk, i).await {
-                        error!("{INNER_NAME}: error sending: {:?}", e);
+                        error!("{INNER_NAME}: error sending: {}", e.to_string());
                     }
                 }
                 r = self.tcp_listener.accept() => {
@@ -112,13 +111,7 @@ impl TcpServer {
     /// To be called inside a separate task if we want to handle concurrency
     pub async fn connect(&self, ctk: CancellationToken, si: SendInfo) -> Result<(), anyhow::Error> {
         debug!("{INNER_NAME}: Connecting to: {}", si.addr);
-        let socket = match TcpStream::connect(si.addr.clone()).await {
-            Ok(r) => r,
-            Err(e) => {
-                warn!("Couldn't connect to {}: {}", si.addr, e);
-                return Err(anyhow!("failed to connect to {}", si.addr));
-            }
-        };
+        let socket = TcpStream::connect(si.addr.clone()).await?;
 
         let mut or = OutboundRequest::new(
             self.endpoint_id,

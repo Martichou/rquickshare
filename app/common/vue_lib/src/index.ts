@@ -126,7 +126,7 @@ export async function sendInfo(vm: TauriVM, eid: string) {
 	if (vm.outboundPayload === undefined) return;
 
 	const ei = vm.endpointsInfo.find((el) => el.id === eid);
-	if (!ei) return;
+	if (!ei || !ei.ip || !ei.port) return;
 
 	const msg: SendInfo = {
 		id: ei.id,

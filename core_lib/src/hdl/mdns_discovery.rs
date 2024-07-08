@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
@@ -11,6 +13,7 @@ use crate::DeviceType;
 #[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
 #[ts(export)]
 pub struct EndpointInfo {
+    pub fullname: String,
     pub id: String,
     pub name: Option<String>,
     pub ip: Option<String>,
@@ -36,6 +39,9 @@ impl MDnsDiscovery {
 
         let service_type = "_FC9F5ED42C8A._tcp.local.";
         let receiver = self.daemon.browse(service_type)?;
+
+        // Map with fullname as key and EndpointInfo as value
+        let mut cache: HashMap<String, EndpointInfo> = HashMap::new();
 
         loop {
             tokio::select! {
@@ -77,25 +83,40 @@ impl MDnsDiscovery {
                                         Err(_) => continue
                                     };
 
-                                    if TcpStream::connect(format!("{ip}:{port}")).await.is_ok() {
+                                    let ip_port = format!("{ip}:{port}");
+                                    let fullname = info.get_fullname().to_string();
+                                    if TcpStream::connect(&ip_port).await.is_ok() {
                                         let ei = EndpointInfo {
-                                            id: info.get_fullname().to_string(),
+                                            fullname: fullname.clone(),
+                                            id: ip_port,
                                             name: Some(dn),
                                             ip: Some(ip.to_string()),
                                             port: Some(port.to_string()),
                                             rtype: Some(dt),
                                             present: Some(true),
                                         };
-                                        info!("Resolved a new service: {:?}", ei);
+                                        info!("ServiceResolved: Resolved a new service: {:?}", ei);
+                                        cache.insert(fullname.clone(), ei.clone());
                                         let _ = self.sender.send(ei);
                                     }
                                 }
                                 ServiceEvent::ServiceRemoved(_, fullname) => {
-                                    info!("Remove a previous service: {}", fullname);
-                                    let _ = self.sender.send(EndpointInfo {
-                                        id: fullname,
-                                        ..Default::default()
-                                    });
+                                    trace!("ServiceRemoved: checking if should remove {}", fullname);
+                                    // Only remove if it has not been seen in the last cleanup_threshold
+                                    let should_remove = if let Some(ei) = cache.get(&fullname) {
+                                        Some(ei.id.clone())
+                                    } else {
+                                        None
+                                    };
+
+                                    if let Some(id) = should_remove {
+                                        info!("ServiceRemoved: Remove a previous service: {}", fullname);
+                                        cache.remove(&fullname);
+                                        let _ = self.sender.send(EndpointInfo {
+                                            id,
+                                            ..Default::default()
+                                        });
+                                    }
                                 }
                                 ServiceEvent::SearchStarted(_) | ServiceEvent::SearchStopped(_) => {}
                                 _ => {}
