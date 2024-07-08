@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.10.1](https://github.com/Martichou/rquickshare/compare/v0.10.0...v0.10.1) (2024-07-08)
+
+
+### Bug Fixes
+
+* avoid click propagation when clicking child ([614bcbc](https://github.com/Martichou/rquickshare/commit/614bcbcdc63c771cbb2f513050f39d8aa703b7a1))
+* correctly remove device from list when sending ([758ada8](https://github.com/Martichou/rquickshare/commit/758ada81e30cc44ee92d985193a747bb1dc878b4))
+* **tauri:** add default (-) signing identity for macos ([44de621](https://github.com/Martichou/rquickshare/commit/44de621f0d752c78e60a94b5bdb3298355e1eff7))
+
 ## [0.10.0](https://github.com/Martichou/rquickshare/compare/v0.9.0...v0.10.0) (2024-07-07)
 
 
