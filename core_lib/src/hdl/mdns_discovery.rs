@@ -103,11 +103,7 @@ impl MDnsDiscovery {
                                 ServiceEvent::ServiceRemoved(_, fullname) => {
                                     trace!("ServiceRemoved: checking if should remove {}", fullname);
                                     // Only remove if it has not been seen in the last cleanup_threshold
-                                    let should_remove = if let Some(ei) = cache.get(&fullname) {
-                                        Some(ei.id.clone())
-                                    } else {
-                                        None
-                                    };
+                                    let should_remove = cache.get(&fullname).map(|ei| ei.id.clone());
 
                                     if let Some(id) = should_remove {
                                         info!("ServiceRemoved: Remove a previous service: {}", fullname);
