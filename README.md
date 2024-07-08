@@ -29,13 +29,7 @@ At the moment, only **Deb**, **Rpm** and **AppImage** are generated and supporte
 
 #### macOS
 
-For the moment, you need to run the following command for the app on macOS to works:
-
-```
-xattr -d com.apple.quarantine RQuickShare.app
-```
-
-(if anyone have an idea how to fix that, a PR is welcome :))
+Simply install the .dmg.
 
 #### Debian
 
