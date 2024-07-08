@@ -23,7 +23,7 @@
     "macOS": {
       "frameworks": [],
       "exceptionDomain": "",
-      "signingIdentity": null,
+      "signingIdentity": "-",
       "providerShortName": null,
       "entitlements": null
     },
