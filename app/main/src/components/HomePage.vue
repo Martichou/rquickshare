@@ -241,12 +241,12 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="sendCmd(vm, item.id, 'AcceptTransfer')" class="btn px-3
+									@click.stop="sendCmd(vm, item.id, 'AcceptTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Accept
 								</p>
 								<p
-									@click="sendCmd(vm, item.id, 'RejectTransfer')" class="btn px-3
+									@click.stop="sendCmd(vm, item.id, 'RejectTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Decline
 								</p>
@@ -265,7 +265,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="sendCmd(vm, item.id, 'CancelTransfer')" class="btn px-3
+									@click.stop="sendCmd(vm, item.id, 'CancelTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Cancel
 								</p>
@@ -284,12 +284,12 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									v-if="item.destination" @click="invoke('open_url', { message: item.destination })"
+									v-if="item.destination" @click.stop="invoke('open_url', { message: item.destination })"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Open
 								</p>
 								<p
-									@click="removeRequest(vm, item.id)" class="btn px-3
+									@click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -302,7 +302,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(vm, item.id)" class="btn px-3
+									@click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -315,7 +315,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(vm, item.id)" class="btn px-3
+									@click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
@@ -328,7 +328,7 @@
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									@click="removeRequest(vm, item.id)" class="btn px-3
+									@click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
