@@ -2146,6 +2146,13 @@
           ]
         },
         {
+          "description": "window:allow-set-title-bar-style -> Enables the set_title_bar_style command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "window:allow-set-title-bar-style"
+          ]
+        },
+        {
           "description": "window:allow-set-visible-on-all-workspaces -> Enables the set_visible_on_all_workspaces command without any pre-configured scope.",
           "type": "string",
           "enum": [
@@ -2584,6 +2591,13 @@
           "type": "string",
           "enum": [
             "window:deny-set-title"
+          ]
+        },
+        {
+          "description": "window:deny-set-title-bar-style -> Denies the set_title_bar_style command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "window:deny-set-title-bar-style"
           ]
         },
         {

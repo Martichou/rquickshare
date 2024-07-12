@@ -14,7 +14,7 @@ use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
-    AppHandle, Manager, Window, WindowEvent,
+    AppHandle, Emitter, Manager, Window, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::{broadcast, mpsc, watch};
@@ -270,7 +270,7 @@ fn handle_window_event(w: &Window, event: &WindowEvent) {
     }
 }
 
-fn rs2js_channelmessage<R: tauri::Runtime>(message: ChannelMessage, manager: &impl Manager<R>) {
+fn rs2js_channelmessage(message: ChannelMessage, manager: &AppHandle) {
     if message.direction == ChannelDirection::FrontToLib {
         return;
     }
@@ -279,7 +279,7 @@ fn rs2js_channelmessage<R: tauri::Runtime>(message: ChannelMessage, manager: &im
     manager.emit("rs2js_channelmessage", &message).unwrap();
 }
 
-fn rs2js_endpointinfo<R: tauri::Runtime>(message: EndpointInfo, manager: &impl Manager<R>) {
+fn rs2js_endpointinfo(message: EndpointInfo, manager: &AppHandle) {
     info!("rs2js_endpointinfo: {:?}", &message);
     manager.emit("rs2js_endpointinfo", &message).unwrap();
 }

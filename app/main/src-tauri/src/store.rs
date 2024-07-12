@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use rqs_lib::Visibility;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_store::{with_store, JsonValue};
 
 pub fn init_default(app_handle: &AppHandle) {
