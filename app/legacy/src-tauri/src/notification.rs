@@ -2,15 +2,12 @@ use notify_rust::Notification;
 use rqs_lib::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Manager};
-#[cfg(not(target_os = "linux"))]
-use tauri_plugin_notification::NotificationExt;
 
 use crate::cmds;
 
 pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
     let body = format!("{name} want to initiate a transfer");
 
-    #[cfg(target_os = "linux")]
     match Notification::new()
         .summary("RQuickShare")
         .body(&body)
@@ -53,14 +50,6 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
             error!("Couldn't show notification: {}", e);
         }
     }
-
-    #[cfg(not(target_os = "linux"))]
-    let _ = app_handle
-        .notification()
-        .builder()
-        .title("RQuickShare")
-        .body(&body)
-        .show();
 }
 
 pub fn send_temporarily_notification(app_handle: &AppHandle) {
