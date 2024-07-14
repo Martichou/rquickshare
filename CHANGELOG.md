@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.2](https://github.com/Martichou/rquickshare/compare/v0.10.1...v0.10.2) (2024-07-14)
+
+
+### Bug Fixes
+
+* also build x86 macos & update deps ([037100a](https://github.com/Martichou/rquickshare/commit/037100a7fb692e405734190e31f96fd7e1cffa1d))
+* legacy should not be built for macos ([9709c52](https://github.com/Martichou/rquickshare/commit/9709c52c26ab73fb07087e71a7ba0a6ab31c536a))
+
 ## [0.10.1](https://github.com/Martichou/rquickshare/compare/v0.10.0...v0.10.1) (2024-07-08)
 
 
