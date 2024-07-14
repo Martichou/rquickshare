@@ -18,7 +18,6 @@ Installation
 --------------------------
 
 You simply have to download the latest release.
-At the moment, only **Deb**, **Rpm** and **AppImage** are generated and supported.
 
 **Important notes:**
 - The minimum GLIBC version supported is included in the pkg name.
