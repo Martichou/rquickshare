@@ -4,7 +4,11 @@ import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realc
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
+
 export * from './types';
+export * from './stores/useToastStore';
+
+export { default as ToastNotification } from './components/ToastNotification.vue';
 
 export function opt<T>(v?: T) {
 	return v ?? null;

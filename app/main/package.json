@@ -24,6 +24,7 @@
     "@tauri-apps/plugin-dialog": "2.0.0-beta.6",
     "@tauri-apps/plugin-notification": "2.0.0-beta.6",
     "@tauri-apps/plugin-store": "2.0.0-beta.6",
+    "pinia": "^2.2.0",
     "semver": "^7.6.2",
     "vue": "3.4.27",
     "vue_lib": "link:../common/vue_lib"

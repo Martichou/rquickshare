@@ -56,6 +56,7 @@ pub fn set_up_logging(app_handle: &AppHandle) -> Result<(), anyhow::Error> {
         .level_for("bluer", log::LevelFilter::Error)
         .level_for("async_io", log::LevelFilter::Error)
         .level_for("polling", log::LevelFilter::Error)
+        .level_for("btleplug", log::LevelFilter::Error)
         .chain(std::io::stdout());
 
     if let Some(path) = app_handle.path_resolver().app_log_dir() {

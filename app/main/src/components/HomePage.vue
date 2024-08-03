@@ -1,5 +1,6 @@
 <template>
 	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full overflow-hidden">
+		<ToastNotification />
 		<div v-if="settingsOpen" class="absolute z-10 w-full h-full flex justify-center items-center bg-black bg-opacity-25">
 			<div class="bg-white rounded-xl shadow-xl p-4 w-[24rem]">
 				<div class="flex flex-row justify-between items-center">
@@ -49,13 +50,13 @@
 				<div
 					class="flex items-center gap-2 text-sm transition duration-150 ease-in-out"
 					:class="{'btn active:scale-95': new_version}"
-					@click="new_version && invoke('open_url', { message: 'https://github.com/Martichou/rquickshare/releases/latest' })">
+					@click="new_version && openUrl('https://github.com/Martichou/rquickshare/releases/latest')">
 					<span v-if="new_version">Update available</span>
 					<p>
 						v{{ version }}
 					</p>
 					<p v-if="new_version" class="text-lg">
-						🡒
+						→
 					</p>
 					<p v-if="new_version">
 						v{{ new_version }}
@@ -279,12 +280,14 @@
 							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ f }}
 							</p>
-							<p v-if="item.destination" :class="{'overflow-hidden whitespace-nowrap text-ellipsis': !item.files, 'mt-2': item.files}">
+							<p
+								v-if="item.destination" class="!select-text cursor-text"
+								:class="{'overflow-hidden whitespace-nowrap text-ellipsis': !item.files, 'mt-2': item.files}">
 								<span v-if="item.files">Saved to </span>{{ item.destination }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									v-if="item.destination" @click.stop="invoke('open_url', { message: item.destination })"
+									v-if="item.destination" @click.stop="openUrl(item.destination)"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Open
 								</p>
@@ -360,17 +363,24 @@ import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
 import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, _displayedItems, setAutoStart,
 	applyAutoStart, setRealClose, getRealclose, setVisibility, getVisibility, invertVisibility, clearSending,
-	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath, getLatestVersion } from 'vue_lib';
+	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath, getLatestVersion,
+	useToastStore, ToastType, ToastNotification} from 'vue_lib';
 
 export default {
 	name: "HomePage",
 
+	components: {
+		ToastNotification
+	},
+
 	setup() {
 		const store = new Store(".settings.json");
+		const toastStore = useToastStore();
 
 		return {
 			stateToDisplay,
 			store,
+			toastStore,
 			invoke,
 			getVersion,
 			enable,
@@ -576,6 +586,14 @@ export default {
 
 				await this.setDownloadPath(this, el as string);
 			})
+		},
+		openUrl: async function(url: string) {
+			try {
+				await invoke('open_url', { message: url });
+			} catch (e) {
+				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
+				console.error("Error opening URL", e);
+			}
 		},
 	},
 }
