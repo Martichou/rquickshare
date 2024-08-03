@@ -350,7 +350,7 @@ import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
-import { getCurrent } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Store } from "@tauri-apps/plugin-store";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
@@ -517,10 +517,10 @@ export default {
 			);
 
 			this.unlisten.push(
-				await getCurrent().onDragDropEvent(async (event) => {
-					if (event.payload.type === 'dragOver') {
+				await getCurrentWindow().onDragDropEvent(async (event) => {
+					if (event.payload.type === 'over') {
 						this.isDragHovering = true;
-					} else if (event.payload.type === 'dropped') {
+					} else if (event.payload.type === 'drop') {
 						console.log("Dropped");
 						this.isDragHovering = false;
 						this.outboundPayload = {
