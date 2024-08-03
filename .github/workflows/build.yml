@@ -51,24 +51,20 @@ jobs:
             dependencies: |
               sudo apt-get install -y libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.0-dev
             cache_directory: app/legacy/src-tauri/target
-            build_cmd: deb:build
             generated_bundle: appimage/r-quick-share*.AppImage
           - os: ubuntu-24.04
             target_path: app/main
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
-            build_cmd: deb:build
             generated_bundle: appimage/r-quick-share*.AppImage
           - os: macos-latest
             target_path: app/main
             cache_directory: app/main/src-tauri/target
-            build_cmd: dmg:build
             generated_bundle: dmg/RQuickShare_*.dmg
           - os: macos-13
             target_path: app/main
             cache_directory: app/main/src-tauri/target
-            build_cmd: dmg:build
             generated_bundle: dmg/RQuickShare_*.dmg
     steps:
       - uses: actions/checkout@v4
@@ -102,7 +98,7 @@ jobs:
         run: |
           cd ./${{ matrix.target_path }}
           pnpm install
-          pnpm ${{ matrix.build_cmd }}
+          pnpm build:debug
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
