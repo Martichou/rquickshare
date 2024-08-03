@@ -40,7 +40,7 @@ export default defineConfig({
 		sourcemap: !!process.env.TAURI_DEBUG,
 		emptyOutDir: true,
 		rollupOptions: {
-			external: ['pinia']
+			external: ['pinia', 'semver']
 		}
 	},
 	// See https://vitest.dev/config/

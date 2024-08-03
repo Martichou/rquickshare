@@ -4,6 +4,7 @@ import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realc
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
+import { gt } from 'semver';
 
 export * from './types';
 export * from './stores/useToastStore';
@@ -174,7 +175,7 @@ export async function getDownloadPath(vm: TauriVM) {
 	vm.downloadPath = await vm.store.get(downloadPathKey) ?? undefined;
 }
 
-export async function getLatestVersion(vm: TauriVM, gt: (a: string, b: string) => boolean) {
+export async function getLatestVersion(vm: TauriVM) {
 	try {
 		const response = await fetch('https://api.github.com/repos/martichou/rquickshare/releases/latest');
 		if (!response.ok) {

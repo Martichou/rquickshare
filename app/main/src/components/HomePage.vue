@@ -345,7 +345,6 @@
 </template>
 
 <script lang="ts">
-import { gt } from 'semver'
 import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
@@ -534,7 +533,7 @@ export default {
 				})
 			);
 
-			await this.getLatestVersion(this, gt);
+			await this.getLatestVersion(this);
 		});
 	},
 
