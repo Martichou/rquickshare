@@ -364,7 +364,9 @@ import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, _displayedItems, setAutoStart,
 	applyAutoStart, setRealClose, getRealclose, setVisibility, getVisibility, invertVisibility, clearSending,
 	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath, getLatestVersion,
-	useToastStore, ToastType, ToastNotification} from 'vue_lib';
+	useToastStore, ToastType} from 'vue_lib';
+
+import ToastNotification from 'vue_lib/src/components/organisms/ToastNotification.vue';
 
 export default {
 	name: "HomePage",

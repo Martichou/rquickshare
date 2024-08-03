@@ -8,8 +8,6 @@ import { ChannelAction } from '@martichou/core_lib';
 export * from './types';
 export * from './stores/useToastStore';
 
-export { default as ToastNotification } from './components/ToastNotification.vue';
-
 export function opt<T>(v?: T) {
 	return v ?? null;
 }
