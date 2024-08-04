@@ -63,6 +63,7 @@ jobs:
 
       - name: Build Vite + Tauri
         run: |
+          rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/
           cd ./${{ matrix.target_path }}
           pnpm install
           pnpm build

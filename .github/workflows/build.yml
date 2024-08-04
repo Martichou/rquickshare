@@ -47,25 +47,25 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
+            name: legacy
             target_path: app/legacy
             dependencies: |
               sudo apt-get install -y libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.0-dev
             cache_directory: app/legacy/src-tauri/target
-            generated_bundle: appimage/r-quick-share*.AppImage
           - os: ubuntu-24.04
+            name: main
             target_path: app/main
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
-            generated_bundle: appimage/r-quick-share*.AppImage
           - os: macos-latest
+            name: main
             target_path: app/main
             cache_directory: app/main/src-tauri/target
-            generated_bundle: dmg/RQuickShare_*.dmg
           - os: macos-13
+            name: main
             target_path: app/main
             cache_directory: app/main/src-tauri/target
-            generated_bundle: dmg/RQuickShare_*.dmg
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -81,6 +81,7 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install Linux dependencies for U
         if: contains(matrix.os, 'macos') == false
         run: |
@@ -89,19 +90,25 @@ jobs:
       - name: Install Linux dependencies
         if: contains(matrix.os, 'macos') == false
         run: ${{ matrix.dependencies }}
+
       - name: GLIBC version
         if: contains(matrix.os, 'macos') == false
         run: |
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
+
       - name: Build Vite + Tauri
         run: |
+          rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/
           cd ./${{ matrix.target_path }}
           pnpm install
           pnpm build:debug
+          cd ${{ github.workspace }}
+          ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/ ${{ matrix.name }}
+
       - name: Upload result
         uses: actions/upload-artifact@v4
         with:
           name: artifact-debug-rquickshare-${{ matrix.os }}
           path: |
-            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/${{ matrix.generated_bundle }}
+            ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/*/r-quick-share-${{ matrix.name }}*
