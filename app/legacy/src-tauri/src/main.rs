@@ -115,12 +115,11 @@ async fn main() -> Result<(), anyhow::Error> {
         .on_window_event(handle_window_event)
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app_handle, event| match event {
-            tauri::RunEvent::ExitRequested { .. } => {
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { .. } = event {
                 trace!("RunEvent::ExitRequested");
                 kill_app(app_handle);
             }
-            _ => {}
         });
 
     info!("Application stopped");
