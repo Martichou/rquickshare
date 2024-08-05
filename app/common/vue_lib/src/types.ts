@@ -40,3 +40,15 @@ export const visibilityKey = "visibility";
 export const downloadPathKey = "download_path";
 export const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
 	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
+
+export interface Toast {
+	id: number;
+	type: ToastType;
+	message: string;
+}
+
+export enum ToastType {
+	Success = "SUCCESS",
+	Error = "ERROR",
+	Info = "INFO",
+}

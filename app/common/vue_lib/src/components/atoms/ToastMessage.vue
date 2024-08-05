@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { PropType } from 'vue';
-import { ToastType } from '../../stores/useToastStore';
+import { ToastType } from '../../types';
 
 defineProps({
 	id: {

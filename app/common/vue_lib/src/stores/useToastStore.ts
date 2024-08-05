@@ -1,17 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-
-export interface Toast {
-    id: number;
-    type: ToastType;
-    message: string;
-}
-
-export enum ToastType {
-    Success = "SUCCESS",
-    Error = "ERROR",
-    Info = "INFO",
-}
+import { Toast, ToastType } from "../types";
 
 export const useToastStore = defineStore("toasts", () => {
 	const toasts = ref<Toast[]>([]);

@@ -358,10 +358,7 @@ import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
-import { opt, ToDelete, stateToDisplay, autostartKey, DisplayedItem, _displayedItems, setAutoStart,
-	applyAutoStart, setRealClose, getRealclose, setVisibility, getVisibility, invertVisibility, clearSending,
-	removeRequest, sendInfo, sendCmd, blured, getProgress, setDownloadPath, getDownloadPath, getLatestVersion,
-	useToastStore, ToastType} from 'vue_lib';
+import { ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, UtilsType, opt, ToastType } from 'vue_lib';
 
 import ToastNotification from 'vue_lib/src/components/organisms/ToastNotification.vue';
 
@@ -374,7 +371,9 @@ export default {
 
 	setup() {
 		const store = new Store(".settings.json");
+
 		const toastStore = useToastStore();
+		const utils = inject('utils') as UtilsType;
 
 		return {
 			stateToDisplay,
@@ -384,23 +383,7 @@ export default {
 			getVersion,
 			enable,
 			disable,
-			// Coming from vue_lib, aka common
-			setAutoStart,
-			applyAutoStart,
-			setRealClose,
-			getRealclose,
-			setVisibility,
-			getVisibility,
-			invertVisibility,
-			clearSending,
-			removeRequest,
-			sendInfo,
-			sendCmd,
-			blured,
-			getProgress,
-			setDownloadPath,
-			getDownloadPath,
-			getLatestVersion
+			...utils
 		};
 	},
 
@@ -551,7 +534,7 @@ export default {
 			return this.displayedItems.length == 0;
 		},
 		displayedItems(): Array<DisplayedItem> {
-			return _displayedItems(this);
+			return this._displayedItems(this);
 		}
 	},
 
