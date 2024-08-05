@@ -55,8 +55,9 @@ async fn main() -> Result<(), anyhow::Error> {
             MacosLauncher::LaunchAgent,
             None,
         ))
-        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
-            println!("{}, {argv:?}, {cwd}", app.package_info().name);
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            trace!("tauri_plugin_single_instance: instance already running");
+            open_main_window(app);
         }))
         .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
@@ -68,10 +69,11 @@ async fn main() -> Result<(), anyhow::Error> {
             cmds::open_url,
             cmds::send_payload,
             cmds::send_to_rs,
-            sanity_check,
         ])
         .setup(|app| {
+            // Setting up logging inside file for the app
             set_up_logging(&app.app_handle())?;
+
             debug!("Starting setup of RQuickShare app");
 
             // Initialize default values for the store
@@ -113,10 +115,12 @@ async fn main() -> Result<(), anyhow::Error> {
         .on_window_event(handle_window_event)
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|_app_handle, event| {
-            if let tauri::RunEvent::ExitRequested { api, .. } = event {
-                api.prevent_exit();
+        .run(|app_handle, event| match event {
+            tauri::RunEvent::ExitRequested { .. } => {
+                trace!("RunEvent::ExitRequested");
+                kill_app(app_handle);
             }
+            _ => {}
         });
 
     info!("Application stopped");
@@ -220,21 +224,12 @@ fn handle_system_tray_event(app: &tauri::AppHandle, event: SystemTrayEvent) {
     if let SystemTrayEvent::MenuItemClick { id, .. } = event {
         match id.as_str() {
             "show" => {
-                if let Some(webview_window) = app.get_window("main") {
-                    let _ = webview_window.show();
-                    let _ = webview_window.set_focus();
-                }
+                trace!("tray_show");
+                open_main_window(app);
             }
             "quit" => {
-                tokio::task::block_in_place(|| {
-                    #[allow(clippy::await_holding_lock)]
-                    tauri::async_runtime::block_on(async move {
-                        let state: tauri::State<'_, AppState> = app.state();
-                        let _ = state.rqs.lock().unwrap().stop().await;
-
-                        app.app_handle().exit(0);
-                    });
-                });
+                trace!("tray_quit");
+                kill_app(&app.app_handle());
             }
             _ => {}
         }
@@ -243,23 +238,14 @@ fn handle_system_tray_event(app: &tauri::AppHandle, event: SystemTrayEvent) {
 
 fn handle_window_event(event: GlobalWindowEvent) {
     if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
-        if !get_realclose(&event.window().app_handle()) {
-            trace!("Prevent close");
-            event.window().hide().unwrap();
-            api.prevent_close();
-        } else {
-            trace!("Real close");
-            tokio::task::block_in_place(|| {
-                #[allow(clippy::await_holding_lock)]
-                tauri::async_runtime::block_on(async move {
-                    let app_handle = event.window().app_handle();
-                    let state: tauri::State<'_, AppState> = app_handle.state();
-                    let _ = state.rqs.lock().unwrap().stop().await;
-
-                    app_handle.exit(0);
-                });
-            });
+        if get_realclose(&event.window().app_handle()) {
+            trace!("handle_window_event: real close");
+            return;
         }
+
+        trace!("handle_window_event: prevent close");
+        event.window().hide().unwrap();
+        api.prevent_close();
     }
 }
 
@@ -277,7 +263,25 @@ fn rs2js_endpointinfo<R: tauri::Runtime>(message: EndpointInfo, manager: &impl M
     manager.emit_all("rs2js_endpointinfo", &message).unwrap();
 }
 
-#[tauri::command]
-fn sanity_check() {
-    info!("sanity_check");
+fn open_main_window(app_handle: &AppHandle) {
+    if let Some(webview_window) = app_handle.get_window("main") {
+        let _ = webview_window.show();
+        let _ = webview_window.set_focus();
+        return;
+    }
+
+    warn!("open_main_window: no main window found");
+}
+
+fn kill_app(app_handle: &AppHandle) {
+    let state: tauri::State<'_, AppState> = app_handle.state();
+
+    tokio::task::block_in_place(|| {
+        #[allow(clippy::await_holding_lock)]
+        tauri::async_runtime::block_on(async move {
+            let _ = state.rqs.lock().unwrap().stop().await;
+        });
+    });
+
+    app_handle.exit(-1);
 }
