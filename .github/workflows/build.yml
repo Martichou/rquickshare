@@ -97,6 +97,11 @@ jobs:
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
 
+      - name: Install VueLib dependencies
+        run: |
+          cd ./app/common/vue_lib
+          pnpm install
+
       - name: Build Vite + Tauri
         run: |
           rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/
