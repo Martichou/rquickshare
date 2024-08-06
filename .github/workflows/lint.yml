@@ -14,6 +14,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  ensure_vue_lib_same:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          diff -qr app/legacy/src/vue_lib app/main/src/vue_lib
+
   style_rust:
     runs-on: ubuntu-latest
     strategy:
@@ -23,7 +30,7 @@ jobs:
           - directory: ./app/legacy/src-tauri
           - directory: ./app/main/src-tauri
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: |
           cd ${{ matrix.directory }}
@@ -67,7 +74,7 @@ jobs:
             os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
