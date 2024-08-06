@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -78,6 +78,16 @@ async function setRealClose(vm: TauriVM, realclose: boolean) {
 
 async function getRealclose(vm: TauriVM) {
 	vm.realclose = await vm.store.get(realcloseKey) ?? false;
+}
+
+async function setStartMinimized(vm: TauriVM, startminimized: boolean) {
+	await vm.store.set(startminimizedKey, startminimized);
+	await vm.store.save();
+	vm.startminimized = startminimized;
+}
+
+async function getStartMinimized(vm: TauriVM) {
+	vm.startminimized = await vm.store.get(startminimizedKey) ?? false;
 }
 
 async function setVisibility(vm: TauriVM, visibility: Visibility) {
@@ -205,6 +215,8 @@ const utils = {
 	setDownloadPath,
 	getDownloadPath,
 	getLatestVersion,
+	setStartMinimized,
+	getStartMinimized
 };
 
 export default utils;

@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
+use store::get_startminimized;
 use tauri::{
     AppHandle, CustomMenuItem, GlobalWindowEvent, Manager, SystemTray, SystemTrayEvent,
     SystemTrayMenu, SystemTrayMenuItem,
@@ -115,11 +116,18 @@ async fn main() -> Result<(), anyhow::Error> {
         .on_window_event(handle_window_event)
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app_handle, event| {
-            if let tauri::RunEvent::ExitRequested { .. } = event {
+        .run(|app_handle, event| match event {
+            tauri::RunEvent::Ready { .. } => {
+                trace!("RunEvent::Ready");
+                if get_startminimized(app_handle) {
+                    app_handle.get_window("main").unwrap().hide().unwrap();
+                }
+            }
+            tauri::RunEvent::ExitRequested { .. } => {
                 trace!("RunEvent::ExitRequested");
                 kill_app(app_handle);
             }
+            _ => {}
         });
 
     info!("Application stopped");

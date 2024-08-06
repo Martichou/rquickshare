@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
+use store::get_startminimized;
 use tauri::{
     image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
@@ -138,6 +139,19 @@ async fn main() -> Result<(), anyhow::Error> {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| match event {
+            tauri::RunEvent::Ready { .. } => {
+                trace!("RunEvent::Ready");
+                if get_startminimized(app_handle) {
+                    #[cfg(not(target_os = "macos"))]
+                    app_handle
+                        .get_webview_window("main")
+                        .unwrap()
+                        .hide()
+                        .unwrap();
+                    #[cfg(target_os = "macos")]
+                    app_handle.hide().unwrap();
+                }
+            }
             tauri::RunEvent::ExitRequested { code, .. } => {
                 trace!("RunEvent::ExitRequested");
                 if code != Some(-1) {

@@ -25,6 +25,12 @@
 						</label>
 					</div>
 					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setStartMinimized(vm, !startminimized)">
+							<span class="label-text">Start minimized</span>
+							<input type="checkbox" :checked="startminimized" class="checkbox focus:outline-none">
+						</label>
+					</div>
+					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
 						<label class="cursor-pointer flex flex-col items-start" @click="openDownloadPicker()">
 							<span class="">Change download folder</span>
 							<span class="overflow-hidden whitespace-nowrap text-ellipsis text-xs max-w-80">
@@ -405,6 +411,7 @@ export default {
 
 			autostart: ref<boolean>(true),
 			realclose: ref<boolean>(false),
+			startminimized: ref<boolean>(false),
 			visibility: ref<Visibility>('Visible'),
 			downloadPath: ref<string | undefined>(),
 
@@ -430,6 +437,7 @@ export default {
 			}
 
 			await this.getRealclose(this);
+			await this.getStartMinimized(this);
 			await this.getDownloadPath(this);
 
 			// Check permission for notification

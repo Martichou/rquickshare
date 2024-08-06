@@ -21,6 +21,7 @@ export interface TauriVM {
     version: string | null;
     autostart: boolean;
     realclose: boolean;
+    startminimized: boolean;
     visibility: Visibility;
     downloadPath: string | undefined;
     hostname: string | undefined;

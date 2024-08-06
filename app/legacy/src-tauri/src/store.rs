@@ -30,6 +30,12 @@ pub fn init_default(app_handle: &AppHandle) {
                     )
                     .ok();
             }
+
+            if !store.has("startminimized") {
+                store
+                    .insert("startminimized".to_owned(), JsonValue::Bool(false))
+                    .ok();
+            }
             Ok(())
         },
     );
@@ -112,4 +118,18 @@ pub fn get_logging_level(app_handle: &AppHandle) -> Option<String> {
     )
     .ok()
     .flatten()
+}
+
+pub fn get_startminimized(app_handle: &AppHandle) -> bool {
+    with_store(
+        app_handle.clone(),
+        app_handle.state(),
+        ".settings.json",
+        |store| Ok(store.get("startminimized").and_then(|json| json.as_bool())),
+    )
+    .unwrap_or_else(|e| {
+        error!("get_startminimized: error: {}", e);
+        None
+    })
+    .unwrap_or(false)
 }
