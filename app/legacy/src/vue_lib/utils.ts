@@ -197,7 +197,7 @@ async function getLatestVersion(vm: TauriVM) {
 }
 
 // Default export
-const utils = {
+export const utils = {
 	_displayedItems,
 	setAutoStart,
 	applyAutoStart,
@@ -218,5 +218,4 @@ const utils = {
 	setStartMinimized,
 	getStartMinimized
 };
-
-export default utils;
+export type UtilsType = typeof utils;

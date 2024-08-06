@@ -25,8 +25,6 @@ export default defineConfig({
 		strictPort: true,
 		fs: {
 			allow: [
-				// Resolve the path dynamically
-				path.resolve(__dirname, '../common/vue_lib'),
 				// Optionally, include other directories
 				path.resolve(__dirname)
 			]

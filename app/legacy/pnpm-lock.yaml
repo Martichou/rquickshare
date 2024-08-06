@@ -29,9 +29,6 @@ importers:
       vue:
         specifier: 3.4.27
         version: 3.4.27(typescript@5.4.5)
-      vue_lib:
-        specifier: link:../common/vue_lib
-        version: link:../common/vue_lib
     devDependencies:
       '@stylistic/eslint-plugin':
         specifier: ^2.1.0

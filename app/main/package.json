@@ -25,8 +25,7 @@
     "@tauri-apps/plugin-store": "2.0.0-rc.0",
     "pinia": "^2.2.0",
     "semver": "^7.6.3",
-    "vue": "3.4.27",
-    "vue_lib": "link:../common/vue_lib"
+    "vue": "3.4.27"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.0.0-rc.1",

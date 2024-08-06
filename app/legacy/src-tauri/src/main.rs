@@ -9,7 +9,9 @@ extern crate log;
 use std::sync::{Arc, Mutex};
 
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
-use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
+#[cfg(not(target_os = "macos"))]
+use rqs_lib::State;
+use rqs_lib::{EndpointInfo, SendInfo, Visibility, RQS};
 use store::get_startminimized;
 use tauri::{
     AppHandle, CustomMenuItem, GlobalWindowEvent, Manager, SystemTray, SystemTrayEvent,
@@ -19,6 +21,7 @@ use tauri_plugin_autostart::MacosLauncher;
 use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::logger::set_up_logging;
+#[cfg(not(target_os = "macos"))]
 use crate::notification::{send_request_notification, send_temporarily_notification};
 use crate::store::{
     get_download_path, get_port, get_realclose, get_visibility, init_default, set_visibility,
@@ -26,6 +29,7 @@ use crate::store::{
 
 mod cmds;
 mod logger;
+#[cfg(not(target_os = "macos"))]
 mod notification;
 mod store;
 
@@ -145,6 +149,7 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
 
             match rinfo {
                 Ok(info) => {
+                    #[cfg(not(target_os = "macos"))]
                     if info.state.as_ref().unwrap_or(&State::Initial)
                         == &State::WaitingForUserConsent
                     {
@@ -216,6 +221,7 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
                     trace!("Tauri: ble received: {:?}", v);
 
                     if v == Visibility::Invisible {
+                        #[cfg(not(target_os = "macos"))]
                         send_temporarily_notification(&capp_handle);
                     }
                 }

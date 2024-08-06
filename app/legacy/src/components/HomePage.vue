@@ -364,9 +364,7 @@ import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
-import { ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, UtilsType, opt, ToastType } from 'vue_lib';
-
-import ToastNotification from 'vue_lib/src/components/organisms/ToastNotification.vue';
+import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils } from '../vue_lib';
 
 export default {
 	name: "HomePage",
@@ -379,7 +377,6 @@ export default {
 		const store = new Store(".settings.json");
 
 		const toastStore = useToastStore();
-		const utils = inject('utils') as UtilsType;
 
 		return {
 			stateToDisplay,
