@@ -1,6 +1,6 @@
 name: r-quick-share
 base: core20
-version: 0.10.2
+version: 0.11.0
 summary: QuickShare implementation for Linux
 description: |
   Rust implementation of NearbyShare/QuickShare from Android for Linux.
