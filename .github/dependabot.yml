@@ -5,11 +5,71 @@
 
 version: 2
 updates:
-  - package-ecosystem: "cargo"
-    directory: "."
+  # npm packages
+  - package-ecosystem: 'npm'
+    directory: '/app/legacy'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps(legacy-npm): '
     groups:
       dependencies:
         patterns:
-          - "*"
+          - '*'
+
+  - package-ecosystem: 'npm'
+    directory: '/app/main'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps(main-npm): '
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+
+  # rust packages
+  - package-ecosystem: 'cargo'
+    directory: '/core_lib'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps(core_lib): '
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: 'cargo'
+    directory: '/app/legacy/src-tauri'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps(legacy-rust): '
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+
+  - package-ecosystem: 'cargo'
+    directory: '/app/main/src-tauri'
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'deps(main-rust): '
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+
+  # github actions
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'deps(actions): '
+    groups:
+      dependencies:
+        patterns:
+          - '*'
