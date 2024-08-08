@@ -20,7 +20,7 @@ anyhow = "1.0"
 arboard = "3.3"
 base64 = "0.22"
 btleplug = "0.11"
-bytes = "1.5"
+bytes = "1.7"
 directories = "5.0"
 futures = "0.3"
 get_if_addrs = "0.5"
@@ -33,21 +33,21 @@ mdns-sd = { git = "https://github.com/Martichou/mdns-sd", branch = "unsolicited"
 mime_guess = "2.0"
 num-bigint = "0.4"
 once_cell = "1.0"
-open = "5.0"
+open = "5.3"
 p256 = { version = "0.13", features = ["ecdh"] }
-prost = "0.12"
+prost = "0.13"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 sha2 = "0.10"
 sys_metrics = "0.2"
-tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
+tokio = { version = "1.39", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ts-rs = { version = "9.0", features = ["serde-compat", "uuid-impl", "chrono-impl"] }
-uuid = "1.8"
+uuid = "1.10"
 
 [build-dependencies]
-prost-build = "0.12"
+prost-build = "0.13"
 
 [features]
 default = ["experimental"]
