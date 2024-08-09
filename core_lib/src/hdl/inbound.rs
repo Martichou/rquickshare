@@ -570,7 +570,7 @@ impl InboundRequest {
 
                                 match self.state.text_payload.clone().unwrap() {
                                     TextPayloadInfo::Url(_) => {
-                                        if let Err(e) = open::that(&payload) {
+                                        if let Err(e) = open::that_detached(&payload) {
                                             error!("Cannot open URL: {e}");
                                         }
 
