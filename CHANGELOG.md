@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.0](https://github.com/Martichou/rquickshare/compare/v0.10.2...v0.11.0) (2024-08-09)
+
+
+### Features
+
+* add minimize on startup option ([e084c4b](https://github.com/Martichou/rquickshare/commit/e084c4b8ddd1cb3a67c09d8d72a54eec1382566c))
+* add toast notification if error while open_url ([4798d78](https://github.com/Martichou/rquickshare/commit/4798d78b7ae3d01a14c1ff61a4c68062f1566487))
+* rework app closing & quit & prevent ([cdcf5f3](https://github.com/Martichou/rquickshare/commit/cdcf5f31e3e5ac74277b32d705d3526c959f1e38))
+
+
+### Bug Fixes
+
+* clippy error in main.rs(legacy) ([4e45096](https://github.com/Martichou/rquickshare/commit/4e450965ff54c65b64f7dd3b30c540560f72c63f))
+* import not found for ToastNotification ([a5e118a](https://github.com/Martichou/rquickshare/commit/a5e118ad66b990aecec85ad800dfd51272a44f83))
+* rework vue_lib plugin ([e77f7cb](https://github.com/Martichou/rquickshare/commit/e77f7cb688de41d5a84bbb10f88f67be9158d61e))
+* vue_lib is not a lib anymore, I give up for now ([7c8ce74](https://github.com/Martichou/rquickshare/commit/7c8ce74d273bfe0efeb3e3590a46a6bac5e27df5))
+
 ## [0.10.2](https://github.com/Martichou/rquickshare/compare/v0.10.1...v0.10.2) (2024-07-14)
 
 
