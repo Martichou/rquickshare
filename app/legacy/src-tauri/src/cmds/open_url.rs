@@ -2,7 +2,7 @@
 pub fn open_url(message: String) -> Result<(), String> {
     info!("open_url: {:?}", &message);
 
-    match open::that(message) {
+    match open::that_detached(message) {
         Ok(_) => {
             trace!("open_url: success");
 
