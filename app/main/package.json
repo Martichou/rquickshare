@@ -23,7 +23,8 @@
     "@tauri-apps/plugin-dialog": "2.0.0-rc.0",
     "@tauri-apps/plugin-notification": "2.0.0-rc.0",
     "@tauri-apps/plugin-store": "2.0.0-rc.0",
-    "pinia": "^2.2.1",
+    "@tauri-apps/plugin-shell": "2.0.0-rc.0",
+    "pinia": "^2.2.0",
     "semver": "^7.6.3",
     "vue": "3.4.37"
   },

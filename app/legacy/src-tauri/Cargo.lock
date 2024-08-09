@@ -4161,7 +4161,6 @@ dependencies = [
  "humantime",
  "log",
  "notify-rust",
- "open 5.3.0",
  "rqs_lib",
  "serde",
  "serde_json",

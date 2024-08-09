@@ -41,7 +41,11 @@
   },
   "productName": "RQuickShare",
   "identifier": "dev.mandre.rquickshare",
-  "plugins": {},
+  "plugins": {
+    "shell": {
+      "open": ".*"
+    }
+  },
   "app": {
     "windows": [
       {

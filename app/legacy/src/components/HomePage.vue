@@ -353,6 +353,7 @@ import { ref, nextTick } from 'vue'
 import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { Store } from 'tauri-plugin-store-api';
 import { invoke } from '@tauri-apps/api/tauri'
+import { open } from '@tauri-apps/api/shell';
 import { getVersion } from '@tauri-apps/api/app';
 import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notification';
 import { getCurrent } from '@tauri-apps/api/window';
@@ -587,7 +588,7 @@ export default {
 		},
 		openUrl: async function(url: string) {
 			try {
-				await invoke('open_url', { message: url });
+				await open(url);
 			} catch (e) {
 				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
 				console.error("Error opening URL", e);
