@@ -359,7 +359,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Store } from "@tauri-apps/plugin-store";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
-import { open } from '@tauri-apps/plugin-dialog';
+import { open as dialog } from '@tauri-apps/plugin-dialog';
+import { open } from '@tauri-apps/plugin-shell';
 
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
@@ -547,7 +548,7 @@ export default {
 
 	methods: {
 		openFilePicker: function() {
-			open({
+			dialog({
 				title: "Select a file to send",
 				directory: false,
 				multiple: true,
@@ -564,7 +565,7 @@ export default {
 			})
 		},
 		openDownloadPicker: function() {
-			open({
+			dialog({
 				title: "Select the destination for files",
 				directory: true,
 				multiple: false,
@@ -578,7 +579,7 @@ export default {
 		},
 		openUrl: async function(url: string) {
 			try {
-				await invoke('open_url', { message: url });
+				await open(url);
 			} catch (e) {
 				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
 				console.error("Error opening URL", e);
