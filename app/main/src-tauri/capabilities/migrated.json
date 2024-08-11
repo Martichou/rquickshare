@@ -23,6 +23,7 @@
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "clipboard-manager:default"
   ]
 }

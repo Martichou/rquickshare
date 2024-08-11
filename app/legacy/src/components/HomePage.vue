@@ -3,42 +3,8 @@
 		<ToastNotification />
 		<SettingsModal :vm="vm" @close="settingsOpen = false" />
 
-		<div class="flex flex-row justify-between items-center px-6 py-4">
-			<!-- Header, Pc name left and options right -->
-			<div>
-				<h4 class="text-md">
-					Device name
-				</h4>
-				<h2 class="text-2xl font-medium">
-					{{ hostname }}
-				</h2>
-			</div>
-			<div class="flex justify-center items-center gap-4">
-				<div
-					class="flex items-center gap-2 text-sm transition duration-150 ease-in-out"
-					:class="{'btn active:scale-95': new_version}"
-					@click="new_version && openUrl('https://github.com/Martichou/rquickshare/releases/latest')">
-					<span v-if="new_version">Update available</span>
-					<p>
-						v{{ version }}
-					</p>
-					<p v-if="new_version" class="text-lg">
-						→
-					</p>
-					<p v-if="new_version">
-						v{{ new_version }}
-					</p>
-				</div>
-				<div class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out" @click="settingsOpen = true">
-					<svg
-						xmlns="http://www.w3.org/2000/svg" height="24"
-						viewBox="0 -960 960 960" width="24">
-						<!-- eslint-disable-next-line -->
-						<path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/>
-					</svg>
-				</div>
-			</div>
-		</div>
+		<Heading :vm="vm" :open-url="openUrl" @open-settings="settingsOpen = true" />
+
 		<div class="flex-1 flex flex-row">
 			<!-- Content -->
 			<!-- When uploading: left info about current file being uploaded -->
@@ -146,6 +112,7 @@
 				<div
 					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
 					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(vm, item.id)">
+					<!-- Loader and image of the device type & pin_code -->
 					<div>
 						<div class="relative w-[62px] h-[62px]">
 							<svg
@@ -198,6 +165,7 @@
 							{{ item.pin_code }}
 						</p>
 					</div>
+					<!-- Content and state of the transfer -->
 					<div class="flex-1 flex flex-col text-sm min-w-0" :class="{'justify-center': item.state === undefined}">
 						<h4 class="text-base font-medium">
 							{{ item.name }}
@@ -242,23 +210,36 @@
 
 						<div v-else-if="item.state === 'Finished'">
 							<p class="mt-2">
-								Received <span v-if="!item.files && item.destination">link</span>
+								Received <span v-if="item.text_type">text</span>
 							</p>
+
+							<!-- If files -->
 							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ f }}
 							</p>
-							<p v-if="item.destination" :class="{'overflow-hidden whitespace-nowrap text-ellipsis': !item.files, 'mt-2': item.files}">
+							<p v-if="item.files" class="mt-2 overflow-hidden whitespace-nowrap text-ellipsis">
 								<span v-if="item.files">Saved to </span>{{ item.destination }}
 							</p>
+
+							<!-- If text -->
+							<p v-if="item.text_type" class="!select-text cursor-text overflow-hidden whitespace-nowrap text-ellipsis">
+								{{ item.text_payload }}
+							</p>
+
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									v-if="item.destination" @click.stop="openUrl(item.destination)"
+									v-if="item.destination || item.text_type === 'Url'" @click.stop="openUrl(item.destination ?? item.text_payload)"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Open
 								</p>
 								<p
-									@click.stop="removeRequest(vm, item.id)" class="btn px-3
-									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
+									v-if="item.text_type && item.text_payload" @click.stop="writeToClipboard(item.text_payload)"
+									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
+									Copy
+								</p>
+								<p
+									@click.stop="removeRequest(vm, item.id)"
+									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Clear
 								</p>
 							</div>
@@ -320,6 +301,7 @@ import { isPermissionGranted, requestPermission } from '@tauri-apps/api/notifica
 import { getCurrent } from '@tauri-apps/api/window';
 import { disable, enable } from 'tauri-plugin-autostart-api';
 import { dialog } from '@tauri-apps/api';
+import { writeText } from '@tauri-apps/api/clipboard';
 
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
@@ -329,18 +311,19 @@ import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils } from '../vue_lib';
 
 import SettingsModal from '../composables/SettingsModal.vue';
+import Heading from '../composables/Heading.vue';
 
 export default {
 	name: "HomePage",
 
 	components: {
 		ToastNotification,
-		SettingsModal
+		SettingsModal,
+		Heading
 	},
 
 	setup() {
 		const store = new Store(".settings.json");
-
 		const toastStore = useToastStore();
 
 		return {
@@ -511,6 +494,15 @@ export default {
 	},
 
 	methods: {
+		writeToClipboard: async function(text: string) {
+			try {
+				await writeText(text);
+				this.toastStore.addToast("Copied to clipboard", ToastType.Success);
+			} catch (e) {
+				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
+				console.error("Error opening URL", e);
+			}
+		},
 		openFilePicker: function() {
 			dialog.open({
 				title: "Select a file to send",

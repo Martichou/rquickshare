@@ -47,6 +47,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Build and run Tauri app
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             None,

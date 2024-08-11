@@ -17,6 +17,9 @@ importers:
       '@tauri-apps/plugin-autostart':
         specifier: 2.0.0-rc.0
         version: 2.0.0-rc.0
+      '@tauri-apps/plugin-clipboard-manager':
+        specifier: 2.0.0-rc.0
+        version: 2.0.0-rc.0
       '@tauri-apps/plugin-dialog':
         specifier: 2.0.0-rc.0
         version: 2.0.0-rc.0
@@ -30,7 +33,7 @@ importers:
         specifier: 2.0.0-rc.0
         version: 2.0.0-rc.0
       pinia:
-        specifier: ^2.2.1
+        specifier: ^2.2.0
         version: 2.2.1(typescript@5.4.5)(vue@3.4.37(typescript@5.4.5))
       semver:
         specifier: ^7.6.3
@@ -577,6 +580,9 @@ packages:
 
   '@tauri-apps/plugin-autostart@2.0.0-rc.0':
     resolution: {integrity: sha512-V49lm++vhrMPPDGMtmOcbJLF4TYu78ZmAiMhyd4FFnbYlgin6ZTjiMCFEl4JKVy2lqP3C8DQvXf/gkUMuER7Iw==}
+
+  '@tauri-apps/plugin-clipboard-manager@2.0.0-rc.0':
+    resolution: {integrity: sha512-2fS3wbRQEtorkk3Np2msJUeKCXRqLQ9sSo2FzlFdUPYNzThsu43uWCF55McGLAfltNOvXQIcQLUBf05jbBL/5w==}
 
   '@tauri-apps/plugin-dialog@2.0.0-rc.0':
     resolution: {integrity: sha512-DPOXYe8SQ6Radk/67EOdaomlxL7oF99JO/ZUaPp1IBEs3Wro7lhlz63CfdKIBfKIZTLJLzP1R7/EiPL/GTA3Bg==}
@@ -2731,6 +2737,10 @@ snapshots:
       '@tauri-apps/cli-win32-x64-msvc': 2.0.0-rc.3
 
   '@tauri-apps/plugin-autostart@2.0.0-rc.0':
+    dependencies:
+      '@tauri-apps/api': 2.0.0-rc.0
+
+  '@tauri-apps/plugin-clipboard-manager@2.0.0-rc.0':
     dependencies:
       '@tauri-apps/api': 2.0.0-rc.0
 
