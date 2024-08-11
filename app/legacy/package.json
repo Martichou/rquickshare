@@ -19,20 +19,20 @@
   "dependencies": {
     "@martichou/core_lib": "link:../../core_lib",
     "@tauri-apps/api": "1.5.6",
-    "pinia": "^2.2.0",
-    "semver": "^7.6.2",
+    "pinia": "^2.2.1",
+    "semver": "^7.6.3",
     "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1",
     "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
     "vue": "3.4.27"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^2.1.0",
-    "@tailwindcss/typography": "^0.5.13",
+    "@stylistic/eslint-plugin": "^2.6.2",
+    "@tailwindcss/typography": "^0.5.14",
     "@tauri-apps/cli": "1.5.14",
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.14.15",
     "@types/semver": "^7.5.8",
-    "@vitejs/plugin-vue": "^5.0.5",
-    "@vue/devtools": "^7.3.4",
+    "@vitejs/plugin-vue": "^5.1.2",
+    "@vue/devtools": "^7.3.7",
     "@vue/eslint-config-typescript": "13.0.0",
     "autoprefixer": "10.4.19",
     "concurrently": "8.2.2",
@@ -45,11 +45,11 @@
     "postcss": "8.4.38",
     "postcss-import": "16.1.0",
     "postcss-nesting": "12.1.5",
-    "tailwindcss": "^3.4.4",
-    "typescript": "5.4.5",
+    "tailwindcss": "^3.4.9",
+    "typescript": "^5.6.0-beta",
     "unplugin-auto-import": "0.17.6",
-    "vite": "^5.2.13",
+    "vite": "^5.4.0",
     "vitest": "1.6.0",
-    "vue-tsc": "^2.0.20"
+    "vue-tsc": "^2.0.29"
   }
 }
