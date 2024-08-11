@@ -1,46 +1,7 @@
 <template>
 	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full overflow-hidden">
 		<ToastNotification />
-		<div v-if="settingsOpen" class="absolute z-10 w-full h-full flex justify-center items-center bg-black bg-opacity-25">
-			<div class="bg-white rounded-xl shadow-xl p-4 w-[24rem]">
-				<div class="flex flex-row justify-between items-center">
-					<h3 class="font-medium text-xl">
-						Settings
-					</h3>
-					<div class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out" @click="settingsOpen = false">
-						Close
-					</div>
-				</div>
-				<div class="py-4 flex flex-col">
-					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setAutoStart(vm, !autostart)">
-							<span class="label-text">Start on boot</span>
-							<input type="checkbox" :checked="autostart" class="checkbox focus:outline-none">
-						</label>
-					</div>
-					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setRealClose(vm, !realclose)">
-							<span class="label-text">Keep running on close</span>
-							<input type="checkbox" :checked="!realclose" class="checkbox focus:outline-none">
-						</label>
-					</div>
-					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-						<label class="cursor-pointer flex flex-row justify-between items-center" @click="setStartMinimized(vm, !startminimized)">
-							<span class="label-text">Start minimized</span>
-							<input type="checkbox" :checked="startminimized" class="checkbox focus:outline-none">
-						</label>
-					</div>
-					<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
-						<label class="cursor-pointer flex flex-col items-start" @click="openDownloadPicker()">
-							<span class="">Change download folder</span>
-							<span class="overflow-hidden whitespace-nowrap text-ellipsis text-xs max-w-80">
-								> {{ downloadPath ?? 'OS User\'s download folder' }}
-							</span>
-						</label>
-					</div>
-				</div>
-			</div>
-		</div>
+		<SettingsModal :vm="vm" @close="settingsOpen = false" />
 
 		<div class="flex flex-row justify-between items-center px-6 py-4">
 			<!-- Header, Pc name left and options right -->
@@ -367,11 +328,14 @@ import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
 import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils } from '../vue_lib';
 
+import SettingsModal from '../composables/SettingsModal.vue';
+
 export default {
 	name: "HomePage",
 
 	components: {
-		ToastNotification
+		ToastNotification,
+		SettingsModal
 	},
 
 	setup() {
@@ -456,6 +420,8 @@ export default {
 							triggered: new Date().getTime()
 						});
 					}
+
+					// TODO - Automatically open || copy to clipboard + toast
 
 					if (idx !== -1) {
 						const prev = this.requests.at(idx);
@@ -571,19 +537,6 @@ export default {
 				} as OutboundPayload;
 				if (!this.discoveryRunning) await invoke('start_discovery');
 				this.discoveryRunning = true;
-			})
-		},
-		openDownloadPicker: function() {
-			dialog.open({
-				title: "Select the destination for files",
-				directory: true,
-				multiple: false,
-			}).then(async (el) => {
-				if (el === null) {
-					return;
-				}
-
-				await this.setDownloadPath(this, el as string);
 			})
 		},
 		openUrl: async function(url: string) {
