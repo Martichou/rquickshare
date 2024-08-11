@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { dialog } from '@tauri-apps/api';
 import { utils } from '../vue_lib';
 import { PropType } from 'vue';
 import { TauriVM } from '../vue_lib/helper/ParamsHelper';
@@ -14,7 +13,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 function openDownloadPicker() {
-	dialog.open({
+	props.vm.dialogOpen({
 		title: "Select the destination for files",
 		directory: true,
 		multiple: false,
@@ -24,7 +23,7 @@ function openDownloadPicker() {
 		}
 
 		await utils.setDownloadPath(props.vm, el as string);
-	})
+	});
 }
 </script>
 

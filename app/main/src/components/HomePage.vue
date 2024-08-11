@@ -6,165 +6,17 @@
 		<Heading :vm="vm" :open-url="openUrl" @open-settings="settingsOpen = true" />
 
 		<div class="flex-1 flex flex-row">
-			<!-- Content -->
-			<!-- When uploading: left info about current file being uploaded -->
-			<!-- 				 right, list of nearby devices -->
-			<!-- Default: left settings about visibility -->
-			<!-- 		  right, ready to receive with hint for drag & drop, then request (to accept or not) -->
-			<div class="w-72 p-3" v-if="outboundPayload === undefined">
-				<p class="mt-4 mb-2 pt-3 px-3">
-					Visibility state
-				</p>
-				<h4
-					tabindex="0" role="button" class="btn font-medium flex flex-row !justify-between w-full
-					items-center rounded-xl active:scale-95 transition duration-150 ease-in-out p-3" @click="invertVisibility(vm)">
-					<span v-if="visibility === 'Visible'">Always visible</span>
-					<span v-else-if="visibility === 'Invisible'">Hidden from everyone</span>
-					<span v-else>Temporarily visible</span>
+			<SideMenu :vm="vm" @invert-visibility="invertVisibility(vm)" @clear-sending="clearSending(vm)" />
 
-					<svg
-						xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
-						:class="{'rotate-180': visibility === 'Invisible'}">
-						<path d="M504-480 320-664l56-56 240 240-240 240-56-56 184-184Z" />
-					</svg>
-				</h4>
-				<p class="text-xs mt-2 pb-3 px-3">
-					<span v-if="visibility === 'Visible'">
-						Nearby devices can share files with you, but you'll always be
-						notified and have to approve each transfer before receiving it.
-					</span>
-					<span v-else-if="visibility === 'Invisible'">
-						No one can see your device at the moment. However, keep in mind that if another
-						device has saved yours before, it might still attempt to start a transfer with you.
-						<br>
-						<br>
-						You will get a notification when someone nearby is sharing
-						giving you the ability to become visible for 1 minute.
-					</span>
-					<span v-else>
-						You are temporarily visible to everyone.
-					</span>
-				</p>
-			</div>
-			<div class="w-72 p-6 flex flex-col justify-between" v-else>
-				<div>
-					<p class="mt-4 mb-2">
-						Sharing {{ outboundPayload.Files.length }} file{{ outboundPayload.Files.length > 1 ? 's' : '' }}
-					</p>
-					<div class="bg-white w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
-						<svg
-							xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
-							class="w-8 h-8">
-							<!-- eslint-disable-next-line -->
-							<path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
-						</svg>
-					</div>
-					<p v-for="f in outboundPayload.Files" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
-						{{ f.split('/').pop() }}
-					</p>
-
-					<p class="text-xs mt-3">
-						Make sure both devices are unlocked, close together, and have bluetooth turned on. Device you're sharing with need
-						Quick Share turned on and visible to you.
-					</p>
-				</div>
-
-				<p
-					@click="clearSending(vm)"
-					class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out w-fit">
-					Cancel
-				</p>
-			</div>
-			<div
-				class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
-				<h3 class="mb-4 font-medium text-xl">
-					<span v-if="displayedIsEmpty">Ready to receive{{ outboundPayload != undefined ? ' / send' : '' }}</span>
-					<span v-else>Nearby devices</span>
-				</h3>
-
-				<div v-if="displayedIsEmpty && endpointsInfo.length === 0" class="m-auto status-indicator status-indicator--success status-indicator--xl">
-					<div class="circle circle--animated circle-main" />
-					<div class="circle circle--animated circle-secondary" />
-					<div class="circle circle--animated circle-tertiary" />
-				</div>
-
-				<div
-					v-if="displayedIsEmpty && outboundPayload === undefined" class="w-full border
-					rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-auto"
-					:class="{'border-green-200 bg-green-100 scale-105': isDragHovering}">
-					<svg
-						xmlns="http://www.w3.org/2000/svg" height="24"
-						viewBox="0 -960 960 960" width="24" class="w-8 h-8">
-						<!-- eslint-disable-next-line -->
-						<path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
-					</svg>
-					<h4 class="mt-2 font-medium">
-						Drop files to send
-					</h4>
-					<div class="btn mt-2 active:scale-95 transition duration-150 ease-in-out" @click="openFilePicker()">
-						<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-							<path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
-						</svg>
-						<span class="ml-2">Select</span>
-					</div>
-				</div>
+			<div class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
+				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
 
 				<div
 					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
 					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(vm, item.id)">
 					<!-- Loader and image of the device type & pin_code -->
-					<div>
-						<div class="relative w-[62px] h-[62px]">
-							<svg
-								v-if="item.ack_bytes" width="62" height="62" viewBox="0 0 250 250"
-								class="circular-progress" :style="getProgress(item)">
-								<circle class="bg" />
-								<circle class="fg" />
-							</svg>
-							<div class="h-14 w-14 rounded-full bg-white absolute top-0 left-0 bottom-0 right-0 m-auto">
-								<svg
-									v-if="item.state === 'Finished'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
-									width="24" class="w-full h-full p-4">
-									<!-- eslint-disable-next-line -->
-									<path d="M268-240 42-466l57-56 170 170 56 56-57 56Zm226 0L268-466l56-57 170 170 368-368 56 57-424 424Zm0-226-57-56 198-198 57 56-198 198Z" />
-								</svg>
-								<svg
-									v-else-if="item.deviceType === 'Laptop'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
-									width="24" class="w-full h-full p-4">
-									<!-- eslint-disable-next-line -->
-									<path d="M0-160v-80h160v-40q-33 0-56.5-23.5T80-360v-400q0-33 23.5-56.5T160-840h640q33 0 56.5 23.5T880-760v400q0 33-23.5 56.5T800-280v40h160v80H0Zm160-200h640v-400H160v400Zm0 0v-400 400Z" />
-								</svg>
-								<svg
-									v-else-if="item.deviceType === 'Phone'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
-									width="24" class="w-full h-full p-4">
-									<!-- eslint-disable-next-line -->
-									<path d="M280-40q-33 0-56.5-23.5T200-120v-720q0-33 23.5-56.5T280-920h400q33 0 56.5 23.5T760-840v720q0 33-23.5 56.5T680-40H280Zm0-120v40h400v-40H280Zm0-80h400v-480H280v480Zm0-560h400v-40H280v40Zm0 0v-40 40Zm0 640v40-40Z" />
-								</svg>
-								<svg
-									v-else-if="item.deviceType === 'Tablet'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
-									width="24" class="w-full h-full p-4">
-									<!-- eslint-disable-next-line -->
-									<path d="M120-160q-33 0-56.5-23.5T40-240v-480q0-33 23.5-56.5T120-800h720q33 0 56.5 23.5T920-720v480q0 33-23.5 56.5T840-160H120Zm40-560h-40v480h40v-480Zm80 480h480v-480H240v480Zm560-480v480h40v-480h-40Zm0 0h40-40Zm-640 0h-40 40Z" />
-								</svg>
-								<svg
-									v-else xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
-									width="24" class="w-full h-full p-4">
-									<!-- eslint-disable-next-line -->
-									<path d="M280-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640v80H160v480h120v80Zm160-100q25 0 42.5-17.5T500-320q0-25-17.5-42.5T440-380q-25 0-42.5 17.5T380-320q0 25 17.5 42.5T440-260Zm-80 100v-71q-19-17-29.5-40T320-320q0-26 10.5-49t29.5-40v-71h160v71q19 17 29.5 40t10.5 49q0 26-10.5 49T520-231v71H360Zm480 0H640q-17 0-28.5-11.5T600-200v-360q0-17 11.5-28.5T640-600h200q17 0 28.5 11.5T880-560v360q0 17-11.5 28.5T840-160Zm-160-80h120v-280H680v280Zm0 0h120-120Z" />
-								</svg>
-							</div>
-						</div>
+					<ItemSide :item="item" />
 
-						<p
-							v-if="(item.state === 'WaitingForUserConsent' || item.state === 'SentIntroduction') && item.pin_code"
-							class="text-center inline-flex gap-1 mt-4 text-sm items-center">
-							<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
-								<!-- eslint-disable-next-line -->
-								<path d="M420-360h120l-23-129q20-10 31.5-29t11.5-42q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 23 11.5 42t31.5 29l-23 129Zm60 280q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Z" />
-							</svg>
-							{{ item.pin_code }}
-						</p>
-					</div>
 					<!-- Content and state of the transfer -->
 					<div class="flex-1 flex flex-col text-sm min-w-0" :class="{'justify-center': item.state === undefined}">
 						<h4 class="text-base font-medium">
@@ -300,7 +152,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Store } from "@tauri-apps/plugin-store";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
-import { open as dialog } from '@tauri-apps/plugin-dialog';
+import { open as tauriDialog } from '@tauri-apps/plugin-dialog';
 import { open } from '@tauri-apps/plugin-shell';
 import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 
@@ -313,6 +165,9 @@ import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedIte
 
 import SettingsModal from '../composables/SettingsModal.vue';
 import Heading from '../composables/Heading.vue';
+import SideMenu from '../composables/SideMenu.vue';
+import ContentStatus from '../composables/ContentStatus.vue';
+import ItemSide from '../composables/ItemSide.vue';
 
 export default {
 	name: "HomePage",
@@ -320,12 +175,17 @@ export default {
 	components: {
 		ToastNotification,
 		SettingsModal,
-		Heading
+		Heading,
+		SideMenu,
+		ContentStatus,
+		ItemSide
 	},
 
 	setup() {
 		const store = new Store(".settings.json");
 		const toastStore = useToastStore();
+
+		const dialogOpen = tauriDialog;
 
 		return {
 			stateToDisplay,
@@ -335,6 +195,7 @@ export default {
 			getVersion,
 			enable,
 			disable,
+			dialogOpen,
 			...utils
 		};
 	},
@@ -501,36 +362,6 @@ export default {
 				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
 				console.error("Error opening URL", e);
 			}
-		},
-		openFilePicker: function() {
-			dialog({
-				title: "Select a file to send",
-				directory: false,
-				multiple: true,
-			}).then(async (el) => {
-				if (el === null) {
-					return;
-				}
-
-				this.outboundPayload = {
-					Files: el.map((e) => e.path)
-				} as OutboundPayload;
-				if (!this.discoveryRunning) await invoke('start_discovery');
-				this.discoveryRunning = true;
-			})
-		},
-		openDownloadPicker: function() {
-			dialog({
-				title: "Select the destination for files",
-				directory: true,
-				multiple: false,
-			}).then(async (el) => {
-				if (el === null) {
-					return;
-				}
-
-				await this.setDownloadPath(this, el as string);
-			})
 		},
 		openUrl: async function(url: string) {
 			try {
