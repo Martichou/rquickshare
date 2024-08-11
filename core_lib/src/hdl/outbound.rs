@@ -550,7 +550,7 @@ impl OutboundRequest {
             info!("Transfer canceled");
             self.update_state(
                 |e| {
-                    e.state = State::Disconnected;
+                    e.state = State::Cancelled;
                 },
                 true,
             )

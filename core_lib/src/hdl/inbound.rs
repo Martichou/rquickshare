@@ -3,7 +3,6 @@ use std::os::unix::fs::FileExt;
 use std::time::Duration;
 
 use anyhow::anyhow;
-use arboard::Clipboard;
 use bytes::Bytes;
 use hmac::{Hmac, Mac};
 use libaes::{Cipher, AES_256_KEY_LEN};
@@ -20,7 +19,7 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use super::{InnerState, State};
 use crate::channel::{ChannelAction, ChannelDirection, ChannelMessage};
 use crate::hdl::info::{InternalFileInfo, TransferMetadata};
-use crate::hdl::TextPayloadInfo;
+use crate::hdl::{TextPayloadInfo, TextPayloadType};
 use crate::location_nearby_connections::payload_transfer_frame::{
     payload_header, PacketType, PayloadChunk, PayloadHeader,
 };
@@ -570,14 +569,11 @@ impl InboundRequest {
 
                                 match self.state.text_payload.clone().unwrap() {
                                     TextPayloadInfo::Url(_) => {
-                                        if let Err(e) = open::that_detached(&payload) {
-                                            error!("Cannot open URL: {e}");
-                                        }
-
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
                                                     tmd.text_payload = Some(payload);
+                                                    tmd.text_type = Some(TextPayloadType::Url);
                                                 }
                                             },
                                             false,
@@ -585,20 +581,11 @@ impl InboundRequest {
                                         .await;
                                     }
                                     TextPayloadInfo::Text(_) => {
-                                        let mut ctx = Clipboard::new().unwrap();
-
-                                        let tp = match ctx.set_text(payload.clone()) {
-                                            Ok(_) => String::from("Copied to clipboard"),
-                                            Err(e) => {
-                                                error!("Cannot copy to cliboard: {e}");
-                                                payload
-                                            }
-                                        };
-
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
-                                                    tmd.text_payload = Some(tp);
+                                                    tmd.text_payload = Some(payload);
+                                                    tmd.text_type = Some(TextPayloadType::Text);
                                                 }
                                             },
                                             false,
@@ -609,10 +596,9 @@ impl InboundRequest {
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
-                                                    tmd.text_payload = Some(format!(
-                                                        "{ssid} : {}",
-                                                        payload.trim().to_owned()
-                                                    ));
+                                                    tmd.text_payload =
+                                                        Some(format!("{ssid}: {}", payload.trim()));
+                                                    tmd.text_type = Some(TextPayloadType::Wifi);
                                                 }
                                             },
                                             false,
@@ -734,7 +720,7 @@ impl InboundRequest {
             info!("Transfer canceled");
             self.update_state(
                 |e| {
-                    e.state = State::Disconnected;
+                    e.state = State::Cancelled;
                 },
                 true,
             )
