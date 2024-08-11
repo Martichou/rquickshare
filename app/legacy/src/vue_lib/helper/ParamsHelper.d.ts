@@ -40,5 +40,5 @@ export interface TauriVM {
         title: string,
         directory: boolean,
         multiple: boolean,
-    }) => Promise<null | string | string[]>;
+    }) => Promise<unknown>;
 }

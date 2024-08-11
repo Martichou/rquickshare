@@ -31,4 +31,14 @@ export interface TauriVM {
     disable: () => Promise<void>;
     invoke: (cmd: string, args?: InvokeArgs) => Promise<unknown>
     setVisibility: (vm: TauriVM, visibility: Visibility) => Promise<void>;
+
+    displayedIsEmpty: boolean;
+    displayedItems: DisplayedItem[];
+
+    // Remapped function for compatibility with Tauri v1 and v2
+    dialogOpen: (options?: {
+        title: string,
+        directory: boolean,
+        multiple: boolean,
+    }) => Promise<unknown>;
 }
