@@ -90,6 +90,13 @@ pub enum TextPayloadInfo {
     Wifi((i64, String)),
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+pub enum TextPayloadType {
+    Url,
+    Text,
+    Wifi,
+}
+
 impl TextPayloadInfo {
     fn get_i64_value(&self) -> i64 {
         match self {

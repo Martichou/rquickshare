@@ -6,6 +6,8 @@ use ts_rs::TS;
 
 use crate::utils::RemoteDeviceInfo;
 
+use super::TextPayloadType;
+
 #[derive(Debug)]
 pub struct InternalFileInfo {
     pub payload_id: i64,
@@ -19,12 +21,16 @@ pub struct InternalFileInfo {
 #[ts(export)]
 pub struct TransferMetadata {
     pub id: String,
-    pub destination: Option<String>,
     pub source: Option<RemoteDeviceInfo>,
-    pub files: Option<Vec<String>>,
     pub pin_code: Option<String>,
+
+    pub destination: Option<String>,
+    pub files: Option<Vec<String>>,
+
+    pub text_type: Option<TextPayloadType>,
     pub text_description: Option<String>,
     pub text_payload: Option<String>,
+
     pub total_bytes: u64,
     pub ack_bytes: u64,
 }

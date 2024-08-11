@@ -17,7 +17,6 @@ dbus = { version = "0.9", features = ["vendored"] }
 
 [dependencies]
 anyhow = "1.0"
-arboard = "3.3"
 base64 = "0.22"
 btleplug = "0.11"
 bytes = "1.7"
@@ -33,7 +32,6 @@ mdns-sd = { git = "https://github.com/Martichou/mdns-sd", branch = "unsolicited"
 mime_guess = "2.0"
 num-bigint = "0.4"
 once_cell = "1.0"
-open = "5.3"
 p256 = { version = "0.13", features = ["ecdh"] }
 prost = "0.13"
 rand = "0.8"
