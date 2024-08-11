@@ -31,9 +31,11 @@ function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 
 			state: el.state ?? undefined,
 			pin_code: el.meta?.pin_code ?? undefined,
-			destination: el.meta?.destination ?? el.meta?.text_payload ?? undefined,
+			destination: el.meta?.destination ?? undefined,
 			files: el.meta?.files ?? undefined,
 			text_description: el.meta?.text_description ?? undefined,
+			text_payload: el.meta?.text_payload ?? undefined,
+			text_type: el.meta?.text_type ?? undefined,
 			ack_bytes: (el.meta?.ack_bytes as number | undefined) ?? undefined,
 			total_bytes: (el.meta?.total_bytes as number | undefined) ?? undefined,
 		};

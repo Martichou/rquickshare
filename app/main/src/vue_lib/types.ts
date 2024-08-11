@@ -17,6 +17,8 @@ export interface DisplayedItem {
 	pin_code?: string,
 	files?: string[],
 	text_description?: string,
+	text_payload?: string,
+	text_type?: string,
 	destination?: string,
 	total_bytes?: number,
 	ack_bytes?: number,
