@@ -228,7 +228,8 @@
 
 							<div class="flex flex-row justify-end gap-4 mt-1">
 								<p
-									v-if="item.destination || item.text_type === 'Url'" @click.stop="openUrl(item.destination ?? item.text_payload)"
+									v-if="item.destination || (item.text_type === 'Url' && item.text_payload)"
+									@click.stop="openUrl(item.destination ?? item.text_payload!)"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
 									Open
 								</p>
@@ -304,7 +305,7 @@ import { dialog } from '@tauri-apps/api';
 import { writeText } from '@tauri-apps/api/clipboard';
 
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
-import { EndpointInfo } from '@martichou/core_lib/dist/EndpointInfo';
+import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
