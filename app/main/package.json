@@ -31,7 +31,7 @@
     "@tauri-apps/cli": "2.0.0-rc.3",
     "@stylistic/eslint-plugin": "^2.6.2",
     "@tailwindcss/typography": "^0.5.14",
-    "@types/node": "^20.14.14",
+    "@types/node": "^20.14.15",
     "@types/semver": "^7.5.8",
     "@vitejs/plugin-vue": "^5.1.2",
     "@vue/devtools": "^7.3.7",
