@@ -1,9 +1,10 @@
 {
-    "packages": {
+	"draft": true,
+	"packages": {
 		".": {
 			"release-type": "simple"
 		}
-    },
+	},
 	"extra-files": [
 		{
 			"type": "toml",
@@ -51,5 +52,5 @@
 			"jsonpath": "$.version"
 		}
 	],
-    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+	"$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
 }

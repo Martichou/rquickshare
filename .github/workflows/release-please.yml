@@ -14,10 +14,11 @@ jobs:
   release_please_tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           token: ${{ secrets.GH_PAT_RELEASE_ACCESS }}
           skip-github-pull-request: true
+          draft: true
 
   release_please_pr:
     runs-on: ubuntu-latest
@@ -26,6 +27,6 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
           skip-github-release: true
