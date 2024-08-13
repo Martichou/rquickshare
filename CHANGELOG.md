@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.11.0](https://github.com/Martichou/rquickshare/compare/v0.10.2...v0.11.0) (2024-08-13)
+
+
+### Features
+
+* add minimize on startup option ([e084c4b](https://github.com/Martichou/rquickshare/commit/e084c4b8ddd1cb3a67c09d8d72a54eec1382566c))
+* add toast notification if error while open_url ([4798d78](https://github.com/Martichou/rquickshare/commit/4798d78b7ae3d01a14c1ff61a4c68062f1566487))
+* rework app closing & quit & prevent ([cdcf5f3](https://github.com/Martichou/rquickshare/commit/cdcf5f31e3e5ac74277b32d705d3526c959f1e38))
+* rework texts's payload transfer info to frontend ([63464b3](https://github.com/Martichou/rquickshare/commit/63464b301e8cfe13ffe9740fab5f041bdda0eb32))
+* update core_lib to report text payload type ([3fd00c4](https://github.com/Martichou/rquickshare/commit/3fd00c46b4a5e86407dd2c051bbe86b6544ed6b7))
+
+
+### Bug Fixes
+
+* also open_detached in core_lib ([c35a06c](https://github.com/Martichou/rquickshare/commit/c35a06cc34fbb31589b29fda7244faf562df2fbd))
+* attempt to use open::detached for [#88](https://github.com/Martichou/rquickshare/issues/88) and [#91](https://github.com/Martichou/rquickshare/issues/91) ([22410f2](https://github.com/Martichou/rquickshare/commit/22410f24ae1195fd7ca05a76681b06215593704b))
+* attempt to use tauri's shell open ([fa63e82](https://github.com/Martichou/rquickshare/commit/fa63e823a4b96a8afe99f413b952e483e71ab7bf))
+* clippy error in main.rs(legacy) ([4e45096](https://github.com/Martichou/rquickshare/commit/4e450965ff54c65b64f7dd3b30c540560f72c63f))
+* import not found for ToastNotification ([a5e118a](https://github.com/Martichou/rquickshare/commit/a5e118ad66b990aecec85ad800dfd51272a44f83))
+* missing check for open ([b06431d](https://github.com/Martichou/rquickshare/commit/b06431d4d07cb8cfedbcddd0e5c2f34480a596e0))
+* rework vue_lib plugin ([e77f7cb](https://github.com/Martichou/rquickshare/commit/e77f7cb688de41d5a84bbb10f88f67be9158d61e))
+* vue_lib is not a lib anymore, I give up for now ([7c8ce74](https://github.com/Martichou/rquickshare/commit/7c8ce74d273bfe0efeb3e3590a46a6bac5e27df5))
+
 ## [0.10.2](https://github.com/Martichou/rquickshare/compare/v0.10.1...v0.10.2) (2024-07-14)
 
 
