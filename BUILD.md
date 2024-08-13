@@ -8,7 +8,9 @@ How to build
 
 ### core_lib
 
-Building the core_lib is straightforward because it is a basic Rust project. Simply use `cargo build` to compile it.
+Building the core_lib is straightforward because it is a basic Rust project.
+
+Install `protobuf-compiler` system package, and then simply run `cargo build` or `cargo build --release` from `core_lib` folder. 
 
 ### app/main
 
