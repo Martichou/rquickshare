@@ -61,8 +61,8 @@ importers:
         specifier: ^5.1.2
         version: 5.1.2(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
       '@vue/devtools':
-        specifier: ^7.3.7
-        version: 7.3.7(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
+        specifier: ^7.3.8
+        version: 7.3.8(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
       '@vue/eslint-config-typescript':
         specifier: 13.0.0
         version: 13.0.0(eslint-plugin-vue@9.27.0(eslint@8.57.0))(eslint@8.57.0)(typescript@5.6.0-dev.20240811)
@@ -772,22 +772,22 @@ packages:
   '@vue/devtools-api@6.6.3':
     resolution: {integrity: sha512-0MiMsFma/HqA6g3KLKn+AGpL1kgKhFWszC9U29NfpWK5LE7bjeXxySWJrOJ77hBz+TBrBQ7o4QJqbPbqbs8rJw==}
 
-  '@vue/devtools-core@7.3.7':
-    resolution: {integrity: sha512-IapWbHUqvO6n+p5JFTCE5JyNjpsZ5IS1GYIRX0P7/SqYPgFCOdH0dG+u8PbBHYdnp+VPxHLO+GGZ/WBZFCZnsA==}
+  '@vue/devtools-core@7.3.8':
+    resolution: {integrity: sha512-mEwsR7GMklWuPOBH/++DiJe0GWqQ0syDtWP0HhU8m9tebs5zQtujMXrgu+cgBAKquJAWnBz0PwNzBgBD2P+M9A==}
     peerDependencies:
       vue: ^3.0.0
 
-  '@vue/devtools-electron@7.3.7':
-    resolution: {integrity: sha512-Hwo0IrzGhgIDEeYDn2jvcwhYWHJa3tkGbryDHcqRHqsubKjjBnJVtycZJCCld18rBFuKw7du17ZXiGpbAJxhQg==}
+  '@vue/devtools-electron@7.3.8':
+    resolution: {integrity: sha512-PejNARJBH1jMvgMu2g60T/h00hFqiZ7fxWk2xA4ku3cffimfAkw1bxaAYxDlMIg+Oegy5OoZpd4fE3jPK84Ntg==}
 
-  '@vue/devtools-kit@7.3.7':
-    resolution: {integrity: sha512-ktHhhjI4CoUrwdSUF5b/MFfjrtAtK8r4vhOkFyRN5Yp9kdXTwsRBYcwarHuP+wFPKf4/KM7DVBj2ELO8SBwdsw==}
+  '@vue/devtools-kit@7.3.8':
+    resolution: {integrity: sha512-HYy3MQP1nZ6GbE4vrgJ/UB+MvZnhYmEwCa/UafrEpdpwa+jNCkz1ZdUrC5I7LpkH1ShREEV2/pZlAQdBj+ncLQ==}
 
-  '@vue/devtools-shared@7.3.7':
-    resolution: {integrity: sha512-M9EU1/bWi5GNS/+IZrAhwGOVZmUTN4MH22Hvh35nUZZg9AZP2R2OhfCb+MG4EtAsrUEYlu3R43/SIj3G7EZYtQ==}
+  '@vue/devtools-shared@7.3.8':
+    resolution: {integrity: sha512-1NiJbn7Yp47nPDWhFZyEKpB2+5/+7JYv8IQnU0ccMrgslPR2dL7u1DIyI7mLqy4HN1ll36gQy0k8GqBYSFgZJw==}
 
-  '@vue/devtools@7.3.7':
-    resolution: {integrity: sha512-3Z6Y7KcaqGgoI6WKGgciFI+8C+vIyLI7eEZd9o5jIn92jXMkRyPb+7BdQJrhE8IK8AbqhrQUtApjsSsqYA/72g==}
+  '@vue/devtools@7.3.8':
+    resolution: {integrity: sha512-QeijhyDSa3BCSRtNgep387nrTq5CjbvnzZ0mEACSN9eqEo3m2ABGd/Pby5Qjz7akXXds05nAZaIHSSSYjNR75Q==}
     hasBin: true
 
   '@vue/eslint-config-typescript@13.0.0':
@@ -3011,10 +3011,10 @@ snapshots:
 
   '@vue/devtools-api@6.6.3': {}
 
-  '@vue/devtools-core@7.3.7(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))':
+  '@vue/devtools-core@7.3.8(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))':
     dependencies:
-      '@vue/devtools-kit': 7.3.7
-      '@vue/devtools-shared': 7.3.7
+      '@vue/devtools-kit': 7.3.8
+      '@vue/devtools-shared': 7.3.8
       mitt: 3.0.1
       nanoid: 3.3.7
       pathe: 1.1.2
@@ -3023,11 +3023,11 @@ snapshots:
     transitivePeerDependencies:
       - vite
 
-  '@vue/devtools-electron@7.3.7(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))':
+  '@vue/devtools-electron@7.3.8(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))':
     dependencies:
-      '@vue/devtools-core': 7.3.7(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
-      '@vue/devtools-kit': 7.3.7
-      '@vue/devtools-shared': 7.3.7
+      '@vue/devtools-core': 7.3.8(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
+      '@vue/devtools-kit': 7.3.8
+      '@vue/devtools-shared': 7.3.8
       electron: 29.4.5
       execa: 8.0.1
       h3: 1.12.0
@@ -3043,9 +3043,9 @@ snapshots:
       - vite
       - vue
 
-  '@vue/devtools-kit@7.3.7':
+  '@vue/devtools-kit@7.3.8':
     dependencies:
-      '@vue/devtools-shared': 7.3.7
+      '@vue/devtools-shared': 7.3.8
       birpc: 0.2.17
       hookable: 5.5.3
       mitt: 3.0.1
@@ -3053,14 +3053,14 @@ snapshots:
       speakingurl: 14.0.1
       superjson: 2.2.1
 
-  '@vue/devtools-shared@7.3.7':
+  '@vue/devtools-shared@7.3.8':
     dependencies:
       rfdc: 1.4.1
 
-  '@vue/devtools@7.3.7(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))':
+  '@vue/devtools@7.3.8(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))':
     dependencies:
-      '@vue/devtools-electron': 7.3.7(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
-      '@vue/devtools-kit': 7.3.7
+      '@vue/devtools-electron': 7.3.8(utf-8-validate@5.0.10)(vite@5.4.0(@types/node@20.14.15))(vue@3.4.37(typescript@5.6.0-dev.20240811))
+      '@vue/devtools-kit': 7.3.8
     transitivePeerDependencies:
       - bufferutil
       - supports-color

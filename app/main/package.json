@@ -36,7 +36,7 @@
     "@types/node": "^20.14.15",
     "@types/semver": "^7.5.8",
     "@vitejs/plugin-vue": "^5.1.2",
-    "@vue/devtools": "^7.3.7",
+    "@vue/devtools": "^7.3.8",
     "@vue/eslint-config-typescript": "13.0.0",
     "autoprefixer": "10.4.20",
     "concurrently": "8.2.2",
