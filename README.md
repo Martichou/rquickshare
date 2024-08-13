@@ -30,15 +30,17 @@ You simply have to download the latest release.
 
 Simply install the .dmg.
 
+Note that you may have to allow the app for installation and first open under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission.)
+
 #### Debian
 
-```
+```bash
 sudo dpkg -i r-quick-share_${VERSION}.deb
 ```
 
 #### RPM
 
-```
+```bash
 sudo rpm -i r-quick-share-${VERSION}.rpm
 ```
 
@@ -46,13 +48,13 @@ sudo rpm -i r-quick-share-${VERSION}.rpm
 
 AppImage is a little different. There's no installation needed, you simply have to give it the executable permission (+x on a chmod) to run it.
 
-```
+```bash
 chmod +x r-quick-share_${VERSION}.AppImage
 ```
 
 You can then either double click on it, or run it from the cmd line:
 
-```
+```bash
 ./r-quick-share_${VERSION}.AppImage
 ```
 
@@ -60,16 +62,20 @@ You can then either double click on it, or run it from the cmd line:
 
 The snap is not yet on the store, but you can install it with the following (you may need sudo).
 
-```
+```bash
 snap install --dangerous r-quick-share_${VERSION}.snap
 ```
+<br>
 
-### Unofficial Installation
+---
+
+<details>
+<summary>Unofficial Installation Methods</summary>
 
 #### AUR (Arch)
 
 For Arch Linux, you can install it from the AUR by using an AUR helper like yay.
-```
+```bash
 yay -S r-quick-share
 ```
 
@@ -79,9 +85,13 @@ Available here: [NixOS](https://search.nixos.org/packages?channel=24.05&show=rqu
 
 A nix-shell will temporarily modify your $PATH environment variable. This can be used to try a piece of software before deciding to permanently install it.
 
-```
+```bash
 $ nix-shell -p rquickshare
 ```
+</details>
+
+---
+<br>
 
 Limitations
 --------------------------
@@ -125,7 +135,7 @@ Android will see that your laptop/desktop is trying to share a file and will rev
 ### Once I close the app, it won't reopen
 
 Make sure the app is really closed by running:
-```
+```bash
 ps aux | grep r-quick-share
 ```
 If you see that the process is still running, it's because the app is not closed. This may be an intended behavior: when closing the window, the app won't stop and instead is still running and accessible via the system tray icon. But if your distribution doesn't support/don't have enabled them, it may be an issue for you.
@@ -136,9 +146,10 @@ If you want to **really** close the app when clicking on the close button, you c
 
 In this case, you may want to configure a static port to allow it in your firewall. You can do so by modifying the config file as follow:
 
+```bash
+vim ./.local/share/dev.mandre.rquickshare/.settings.json
 ```
-rtin :: ~ » vim ./.local/share/dev.mandre.rquickshare/.settings.json
-
+```json
 {
 	...existing_config...,
 	"port": 12345
@@ -146,6 +157,15 @@ rtin :: ~ » vim ./.local/share/dev.mandre.rquickshare/.settings.json
 ```
 
 By default the port is random (the OS will decide).
+
+### The app open but I just get a blank window
+
+This happens for some users running Linux + NVIDIA cards.
+
+The workaround is to start RQuickShare with an env variable defined as follow:
+```bash
+env WEBKIT_DISABLE_COMPOSITING_MODE=1 rquickshare
+```
 
 WIP Notes
 --------------------------
