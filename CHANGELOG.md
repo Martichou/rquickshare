@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.1](https://github.com/Martichou/rquickshare/compare/v0.11.0...v0.11.1) (2024-08-14)
+
+
+### Bug Fixes
+
+* opening URL permission for main ([#165](https://github.com/Martichou/rquickshare/issues/165)) ([0b50082](https://github.com/Martichou/rquickshare/commit/0b50082faba6f1f3258873f378ef93802b0e480f))
+* **revert:** use old google-github-actions/release-please-action ([7584073](https://github.com/Martichou/rquickshare/commit/75840735825110ebbaf4701511b1a85b9dbc480c))
+
 ## [0.11.0](https://github.com/Martichou/rquickshare/compare/v0.10.2...v0.11.0) (2024-08-13)
 
 
