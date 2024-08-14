@@ -15,7 +15,8 @@ defineProps({
 		<div class="relative w-[62px] h-[62px]">
 			<svg
 				v-if="item.ack_bytes" width="62" height="62" viewBox="0 0 250 250"
-				class="circular-progress" :style="utils.getProgress(item)">
+				class="circular-progress" :style="utils.getProgress(item)"
+				:class="{'error': ['Cancelled', 'Rejected', 'Disconnected'].includes(item.state)}">
 				<circle class="bg" />
 				<circle class="fg" />
 			</svg>
