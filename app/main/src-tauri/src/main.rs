@@ -59,6 +59,7 @@ async fn main() -> Result<(), anyhow::Error> {
         }))
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
             cmds::change_download_path,
             cmds::change_visibility,

@@ -28,6 +28,7 @@ tauri-plugin-notification = "2.0.0-beta"
 tauri-plugin-single-instance = "2.0.0-beta"
 tauri-plugin-store = "2.0.0-beta"
 tauri-plugin-dialog = "2.0.0-beta"
+tauri-plugin-shell = "2.0.0-beta"
 time = { version = "0.3", features = ["formatting"] }
 tokio = { version = "1.25", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }

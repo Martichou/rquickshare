@@ -13,14 +13,14 @@
     "resources:default",
     "menu:default",
     "tray:default",
-	"autostart:allow-enable",
+     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled",
-	"notification:default",
-	"store:allow-get",
-	"store:allow-has",
-	"store:allow-set",
-	"store:allow-save"
+    "notification:default",
+    "store:allow-get",
+    "store:allow-has",
+    "store:allow-set",
+    "store:allow-save"
   ],
   "platforms": [
     "linux",
