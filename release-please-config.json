@@ -1,6 +1,5 @@
 {
 	"draft": true,
-	"include-component-in-tag": true,
 	"packages": {
 		".": {
 			"release-type": "simple"
