@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.2](https://github.com/Martichou/rquickshare/compare/v0.11.1...v0.11.2) (2024-08-21)
+
+
+### Bug Fixes
+
+* **ci:** upgrade (again) to googleapis/release-please-action ([52d3089](https://github.com/Martichou/rquickshare/commit/52d308989dd539fdfd92d63f8860523c9e1a500a))
+* display red circle if error/cancelled/rejected, [#128](https://github.com/Martichou/rquickshare/issues/128) ([f62b9c0](https://github.com/Martichou/rquickshare/commit/f62b9c09b672b287fde0e473dc1431b35a0969b8))
+* file picker different types returned ([50bc6c8](https://github.com/Martichou/rquickshare/commit/50bc6c80252fcd56632302bb82ffad6e7cd6d2de))
+
 ## [0.11.1](https://github.com/Martichou/rquickshare/compare/v0.11.0...v0.11.1) (2024-08-14)
 
 
