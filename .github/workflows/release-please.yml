@@ -20,8 +20,6 @@ jobs:
           skip-github-pull-request: true
 
   release_please_pr:
-    # Only run if the manifest file is not modified
-    if: contains(github.event.commits.head_commit.modified, '.release-please-manifest.json') == false
     runs-on: ubuntu-latest
     needs: release_please_tag
     permissions:
