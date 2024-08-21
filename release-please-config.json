@@ -1,4 +1,5 @@
 {
+	"prerelease": true,
 	"packages": {
 		".": {
 			"release-type": "simple"
