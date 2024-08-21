@@ -23,7 +23,11 @@ function openFilePicker() {
 		}
 
 		if (el instanceof Array) {
-			elem = el;
+			if (el.length > 0 && Object.hasOwn(el[0], 'path')) {
+				elem = el.map((e) => e.path);
+			} else {
+				elem = el;
+			}
 		} else {
 			elem = [el];
 		}
