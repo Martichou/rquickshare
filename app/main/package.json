@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@martichou/core_lib": "link:../../core_lib",
-    "@tauri-apps/api": "2.0.0-rc.1",
+    "@tauri-apps/api": "2.0.0-rc.3",
     "@tauri-apps/plugin-autostart": "2.0.0-rc.0",
     "@tauri-apps/plugin-clipboard-manager": "2.0.0-rc.0",
     "@tauri-apps/plugin-dialog": "2.0.0-rc.0",
@@ -32,11 +32,11 @@
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.6.4",
     "@tailwindcss/typography": "^0.5.14",
-    "@tauri-apps/cli": "2.0.0-rc.4",
+    "@tauri-apps/cli": "2.0.0-rc.7",
     "@types/node": "^20.16.1",
     "@types/semver": "^7.5.8",
     "@vitejs/plugin-vue": "^5.1.2",
-    "@vue/devtools": "^7.3.8",
+    "@vue/devtools": "^7.3.9",
     "@vue/eslint-config-typescript": "13.0.0",
     "autoprefixer": "10.4.20",
     "concurrently": "8.2.2",
@@ -52,7 +52,7 @@
     "tailwindcss": "^3.4.10",
     "typescript": "^5.6.0-beta",
     "unplugin-auto-import": "0.18.2",
-    "vite": "^5.4.1",
+    "vite": "^5.4.2",
     "vitest": "2.0.5",
     "vue-tsc": "^2.0.29"
   }
