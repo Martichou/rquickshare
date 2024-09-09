@@ -38,7 +38,7 @@ rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 sha2 = "0.10"
 sys_metrics = "0.2"
-tokio = { version = "1.39", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
+tokio = { version = "1.40", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ts-rs = { version = "9.0", features = ["serde-compat", "uuid-impl", "chrono-impl"] }
