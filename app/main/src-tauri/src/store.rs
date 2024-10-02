@@ -1,135 +1,95 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
 use rqs_lib::Visibility;
-use tauri::{AppHandle, Emitter, Manager};
-use tauri_plugin_store::{with_store, JsonValue};
+use tauri::{AppHandle, Emitter, Wry};
+use tauri_plugin_store::{JsonValue, Store, StoreExt};
+
+fn _get_store(app_handle: &AppHandle) -> Store<Wry> {
+    app_handle
+        .store_builder(".settings.json")
+        .auto_save(Duration::from_millis(100))
+        .build()
+}
 
 pub fn init_default(app_handle: &AppHandle) {
-    let _ = with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| {
-            if !store.has("autostart") {
-                store
-                    .insert("autostart".to_owned(), JsonValue::Bool(true))
-                    .ok();
-            }
+    let store = _get_store(app_handle);
 
-            if !store.has("realclose") {
-                store
-                    .insert("realclose".to_owned(), JsonValue::Bool(false))
-                    .ok();
-            }
+    if !store.has("autostart") {
+        store.set("autostart", JsonValue::Bool(true));
+    }
 
-            if !store.has("visibility") {
-                store
-                    .insert(
-                        "visibility".to_owned(),
-                        JsonValue::Number((Visibility::Visible as u8).into()),
-                    )
-                    .ok();
-            }
+    if !store.has("realclose") {
+        store.set("realclose", JsonValue::Bool(false));
+    }
 
-            if !store.has("startminimized") {
-                store
-                    .insert("startminimized".to_owned(), JsonValue::Bool(false))
-                    .ok();
-            }
-            Ok(())
-        },
-    );
+    if !store.has("visibility") {
+        store.set(
+            "visibility",
+            JsonValue::Number((Visibility::Visible as u8).into()),
+        );
+    }
+
+    if !store.has("startminimized") {
+        store.set("startminimized", JsonValue::Bool(false));
+    }
 }
 
 pub fn get_realclose(app_handle: &AppHandle) -> bool {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| Ok(store.get("realclose").and_then(|json| json.as_bool())),
-    )
-    .unwrap_or_else(|e| {
-        error!("get_realclose: error: {}", e);
-        None
-    })
-    .unwrap_or(false)
+    let store = _get_store(app_handle);
+
+    store
+        .get("port")
+        .and_then(|json| json.as_bool())
+        .unwrap_or_default()
 }
 
 pub fn get_port(app_handle: &AppHandle) -> Option<u32> {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| Ok(store.get("port").and_then(|json| json.as_u64())),
-    )
-    .ok()
-    .flatten()
-    .map(|v| v as u32)
+    let store = _get_store(app_handle);
+
+    store
+        .get("port")
+        .and_then(|json| json.as_u64().map(|v| v as u32))
 }
 
 pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| Ok(store.get("visibility").and_then(|json| json.as_u64())),
-    )
-    .unwrap_or_else(|e| {
-        error!("get_visibility: error: {}", e);
-        None
-    })
-    .map_or(Visibility::Visible, |v| Visibility::from_raw_value(v as u8))
+    let store = _get_store(app_handle);
+
+    store
+        .get("visibility")
+        .and_then(|json| json.as_u64().map(Visibility::from_raw_value))
+        .unwrap_or(Visibility::Visible)
 }
 
 pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyhow::Error> {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| store.insert("visibility".to_owned(), JsonValue::Number((v as u8).into())),
-    )?;
+    let store = _get_store(app_handle);
 
+    store.set("visibility", JsonValue::Number((v as u8).into()));
     app_handle.emit("visibility_updated", ())?;
+
     Ok(())
 }
 
 pub fn get_download_path(app_handle: &AppHandle) -> Option<PathBuf> {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| Ok(store.get("download_path").cloned()),
-    )
-    .ok()
-    .flatten()
-    .and_then(|v| v.as_str().map(PathBuf::from))
+    let store = _get_store(app_handle);
+
+    store
+        .get("download_path")
+        .and_then(|json| json.as_str().map(PathBuf::from))
 }
 
 pub fn get_logging_level(app_handle: &AppHandle) -> Option<String> {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| {
-            Ok(store
-                .get("debug_level")
-                .and_then(|json| json.as_str().map(String::from)))
-        },
-    )
-    .ok()
-    .flatten()
+    let store = _get_store(app_handle);
+
+    store
+        .get("debug_level")
+        .and_then(|json| json.as_str().map(String::from))
 }
 
 pub fn get_startminimized(app_handle: &AppHandle) -> bool {
-    with_store(
-        app_handle.clone(),
-        app_handle.state(),
-        ".settings.json",
-        |store| Ok(store.get("startminimized").and_then(|json| json.as_bool())),
-    )
-    .unwrap_or_else(|e| {
-        error!("get_startminimized: error: {}", e);
-        None
-    })
-    .unwrap_or(false)
+    let store = _get_store(app_handle);
+
+    store
+        .get("startminimized")
+        .and_then(|json| json.as_bool())
+        .unwrap_or_default()
 }
