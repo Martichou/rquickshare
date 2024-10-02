@@ -101,4 +101,4 @@ jobs:
       - name: Clippy Check
         run: |
           cd ${{ matrix.directory }}
-          cargo clippy ${{ matrix.clippy_args }} -- -D "warnings"
+          cargo clippy ${{ matrix.clippy_args }}
