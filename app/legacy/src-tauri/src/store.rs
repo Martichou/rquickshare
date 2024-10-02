@@ -78,7 +78,7 @@ pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
         error!("get_visibility: error: {}", e);
         None
     })
-    .map_or(Visibility::Visible, |v| Visibility::from_raw_value(v as u8))
+    .map_or(Visibility::Visible, Visibility::from_raw_value)
 }
 
 pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyhow::Error> {

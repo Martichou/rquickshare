@@ -24,7 +24,7 @@ pub enum Visibility {
 
 #[allow(dead_code)]
 impl Visibility {
-    pub fn from_raw_value(value: u8) -> Self {
+    pub fn from_raw_value(value: u64) -> Self {
         match value {
             0 => Visibility::Visible,
             1 => Visibility::Invisible,
