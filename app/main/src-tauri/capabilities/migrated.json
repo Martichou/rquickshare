@@ -25,6 +25,7 @@
     "autostart:allow-is-enabled",
     "dialog:allow-open",
     "clipboard-manager:default",
-    "shell:allow-open"
+    "shell:allow-open",
+    "store:default"
   ]
 }

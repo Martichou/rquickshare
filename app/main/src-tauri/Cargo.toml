@@ -26,7 +26,7 @@ tauri-plugin-autostart = "2.0.0"
 tauri-plugin-process = "2.0.0"
 tauri-plugin-notification = "2.0.0"
 tauri-plugin-single-instance = "2.0.0"
-tauri-plugin-store = "2.0.0"
+tauri-plugin-store = "2"
 tauri-plugin-dialog = "2.0.0"
 tauri-plugin-shell = "2.0.0"
 time = { version = "0.3", features = ["formatting"] }

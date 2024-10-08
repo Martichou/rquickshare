@@ -47,6 +47,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Build and run Tauri app
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
@@ -57,7 +58,6 @@ async fn main() -> Result<(), anyhow::Error> {
             trace!("tauri_plugin_single_instance: instance already running");
             open_main_window(app);
         }))
-        .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![

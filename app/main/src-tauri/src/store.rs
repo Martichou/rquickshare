@@ -2,7 +2,7 @@ use std::{path::PathBuf, time::Duration};
 
 use rqs_lib::Visibility;
 use tauri::{AppHandle, Emitter, Wry};
-use tauri_plugin_store::{JsonValue, Store, StoreExt};
+use tauri_plugin_store::{Store, StoreExt};
 
 fn _get_store(app_handle: &AppHandle) -> Store<Wry> {
     app_handle
@@ -15,22 +15,19 @@ pub fn init_default(app_handle: &AppHandle) {
     let store = _get_store(app_handle);
 
     if !store.has("autostart") {
-        store.set("autostart", JsonValue::Bool(true));
+        store.set("autostart", true);
     }
 
     if !store.has("realclose") {
-        store.set("realclose", JsonValue::Bool(false));
+        store.set("realclose", false);
     }
 
     if !store.has("visibility") {
-        store.set(
-            "visibility",
-            JsonValue::Number((Visibility::Visible as u8).into()),
-        );
+        store.set("visibility", Visibility::Visible as u8);
     }
 
     if !store.has("startminimized") {
-        store.set("startminimized", JsonValue::Bool(false));
+        store.set("startminimized", false);
     }
 }
 
@@ -63,7 +60,7 @@ pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
 pub fn set_visibility(app_handle: &AppHandle, v: Visibility) -> Result<(), anyhow::Error> {
     let store = _get_store(app_handle);
 
-    store.set("visibility", JsonValue::Number((v as u8).into()));
+    store.set("visibility", v as u8);
     app_handle.emit("visibility_updated", ())?;
 
     Ok(())
