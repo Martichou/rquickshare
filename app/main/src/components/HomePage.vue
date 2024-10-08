@@ -182,7 +182,7 @@ export default {
 	},
 
 	async setup() {
-		const store = await createStore(".settings.json", { autoSave: true });
+		const store = await createStore(".settings.json", { autoSave: 1 as any });
 		const toastStore = useToastStore();
 
 		const dialogOpen = tauriDialog;
