@@ -361,8 +361,8 @@ export default {
 				await writeText(text);
 				this.toastStore.addToast("Copied to clipboard", ToastType.Success);
 			} catch (e) {
-				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
-				console.error("Error opening URL", e);
+				this.toastStore.addToast("Unknown error while copying text", ToastType.Error);
+				console.error("Error copying text", e);
 			}
 		},
 		openUrl: async function(url: string) {
