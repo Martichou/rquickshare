@@ -32,6 +32,16 @@ Simply install the .dmg.
 
 Note that you may have to allow the app for installation and first open under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission.)
 
+#### Ubuntu 22.04.6 LTS
+##### Install dependencies
+```bash
+sudo apt install libayatana-indicator3-7 libayatana-appindicator3-1 
+```
+##### Install rquickshare
+```bash
+sudo dpkg -i r-quick-share_${VERSION}.deb
+```
+
 #### Debian
 
 ```bash
