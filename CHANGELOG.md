@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.3](https://github.com/Martichou/rquickshare/compare/v0.11.2...v0.11.3) (2024-10-08)
+
+
+### Bug Fixes
+
+* once_cell 1.20 yanked ([cd237a5](https://github.com/Martichou/rquickshare/commit/cd237a59ce3a4e795d024666687c769814f9192b))
+* store in main Vue app due to upgrade to 2.0.0 of store ([7a9c0e5](https://github.com/Martichou/rquickshare/commit/7a9c0e53cef49c436c3cbd5a6ab4f1007865e8e6))
+* store issues due to 2.0.0 ([91487bb](https://github.com/Martichou/rquickshare/commit/91487bbb2afa3fd3dee4137d565ac53ea501bf10))
+
 ## [0.11.2](https://github.com/Martichou/rquickshare/compare/v0.11.1...v0.11.2) (2024-08-21)
 
 
