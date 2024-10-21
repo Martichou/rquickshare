@@ -42,7 +42,7 @@ tokio = { version = "1.40", features = ["macros", "rt", "rt-multi-thread", "net"
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ts-rs = { version = "10.0", features = ["serde-compat", "uuid-impl", "chrono-impl"] }
-uuid = "1.10"
+uuid = "1.11"
 
 [build-dependencies]
 prost-build = "0.13"
