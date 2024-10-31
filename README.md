@@ -44,6 +44,11 @@ sudo dpkg -i r-quick-share_${VERSION}.deb
 sudo rpm -i r-quick-share-${VERSION}.rpm
 ```
 
+#### DNF (preferred over RPM)
+```bash
+sudo dnf install r-quick-share-${VERSION}.rpm
+```
+
 #### AppImage (no root required)
 
 AppImage is a little different. There's no installation needed, you simply have to give it the executable permission (+x on a chmod) to run it.
