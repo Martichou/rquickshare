@@ -33,7 +33,7 @@
     "@stylistic/eslint-plugin": "^2.10.1",
     "@tailwindcss/typography": "^0.5.15",
     "@tauri-apps/cli": "^2.0.4",
-    "@types/node": "^20.16.5",
+    "@types/node": "^20.17.6",
     "@types/semver": "^7.5.8",
     "@vitejs/plugin-vue": "^5.1.4",
     "@vue/devtools": "^7.6.2",
