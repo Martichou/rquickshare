@@ -830,6 +830,10 @@ impl OutboundRequest {
                             r#type: Some(payload_header::PayloadType::File.into()),
                             total_size: Some(curr_state.total_size),
                             is_sensitive: Some(false),
+                            file_name: curr_state
+                                .file_url
+                                .file_name()
+                                .map(|name| name.to_string_lossy().into_owned()),
                             ..Default::default()
                         };
 
