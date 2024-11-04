@@ -149,7 +149,7 @@ import { UnlistenFn, listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { createStore } from "@tauri-apps/plugin-store";
+import { getStore } from "@tauri-apps/plugin-store";
 import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
 import { open as tauriDialog } from '@tauri-apps/plugin-dialog';
@@ -182,7 +182,7 @@ export default {
 	},
 
 	async setup() {
-		const store = await createStore(".settings.json", { autoSave: 1 as any });
+		const store = (await getStore(".settings.json"))!;
 		const toastStore = useToastStore();
 
 		const dialogOpen = tauriDialog;
