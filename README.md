@@ -32,11 +32,17 @@ Simply install the .dmg.
 
 Note that you may have to allow the app for installation and first open under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission.)
 
-#### Ubuntu 22.04.6 LTS
+#### Linux
+
 ##### Install dependencies
-```bash
-sudo apt install libayatana-indicator3-7 libayatana-appindicator3-1 
-```
+
+RQuickShare requires one of the following library installed.
+
+- `libayatana-appindicator`
+- `libappindicator3`
+
+The files should (in theory) install those dependencies by themselves, but in case this is not the case you may have to install those manually.
+
 ##### Install rquickshare
 ```bash
 sudo dpkg -i r-quick-share_${VERSION}.deb
