@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.3](https://github.com/Martichou/rquickshare/compare/v0.11.2...v0.11.3) (2024-11-04)
+
+
+### Bug Fixes
+
+* Include file_name in PayloadHeader ([#231](https://github.com/Martichou/rquickshare/issues/231)) ([59bc405](https://github.com/Martichou/rquickshare/commit/59bc4053b63fe3f1632d1489a49afd4d7f338fb4))
+* once_cell 1.20 yanked ([cd237a5](https://github.com/Martichou/rquickshare/commit/cd237a59ce3a4e795d024666687c769814f9192b))
+* store in main Vue app due to upgrade to 2.0.0 of store ([7a9c0e5](https://github.com/Martichou/rquickshare/commit/7a9c0e53cef49c436c3cbd5a6ab4f1007865e8e6))
+* store issues due to 2.0.0 ([91487bb](https://github.com/Martichou/rquickshare/commit/91487bbb2afa3fd3dee4137d565ac53ea501bf10))
+* tauri breaking changes ([7d68734](https://github.com/Martichou/rquickshare/commit/7d687345068731c18d23eaf09ec1b3aa29b8847e))
+
 ## [0.11.2](https://github.com/Martichou/rquickshare/compare/v0.11.1...v0.11.2) (2024-08-21)
 
 

@@ -4603,7 +4603,7 @@ checksum = "57397d16646700483b67d2dd6511d79318f9d057fdbd21a4066aeac8b41d310a"
 
 [[package]]
 name = "rqs_lib"
-version = "0.11.2"
+version = "0.11.3"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -4639,7 +4639,7 @@ dependencies = [
 
 [[package]]
 name = "rquickshare"
-version = "0.11.2"
+version = "0.11.3"
 dependencies = [
  "anyhow",
  "fern",
