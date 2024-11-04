@@ -32,6 +32,22 @@ Simply install the .dmg.
 
 Note that you may have to allow the app for installation and first open under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission.)
 
+#### Linux
+
+##### Install dependencies
+
+RQuickShare requires one of the following library installed.
+
+- `libayatana-appindicator`
+- `libappindicator3`
+
+The files should (in theory) install those dependencies by themselves, but in case this is not the case you may have to install those manually.
+
+##### Install rquickshare
+```bash
+sudo dpkg -i r-quick-share_${VERSION}.deb
+```
+
 #### Debian
 
 ```bash
@@ -42,6 +58,11 @@ sudo dpkg -i r-quick-share_${VERSION}.deb
 
 ```bash
 sudo rpm -i r-quick-share-${VERSION}.rpm
+```
+
+#### DNF (preferred over RPM)
+```bash
+sudo dnf install r-quick-share-${VERSION}.rpm
 ```
 
 #### AppImage (no root required)

@@ -9,7 +9,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/app/legacy'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     commit-message:
       prefix: 'deps(legacy-npm): '
     groups:
@@ -20,7 +20,7 @@ updates:
   - package-ecosystem: 'npm'
     directory: '/app/main'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     commit-message:
       prefix: 'deps(main-npm): '
     groups:
@@ -32,7 +32,7 @@ updates:
   - package-ecosystem: 'cargo'
     directory: '/core_lib'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     commit-message:
       prefix: 'deps(core_lib): '
     groups:
@@ -43,7 +43,7 @@ updates:
   - package-ecosystem: 'cargo'
     directory: '/app/legacy/src-tauri'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     commit-message:
       prefix: 'deps(legacy-rust): '
     groups:
@@ -54,7 +54,7 @@ updates:
   - package-ecosystem: 'cargo'
     directory: '/app/main/src-tauri'
     schedule:
-      interval: 'weekly'
+      interval: 'monthly'
     commit-message:
       prefix: 'deps(main-rust): '
     groups:
@@ -66,7 +66,7 @@ updates:
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
-      interval: weekly
+      interval: monthly
     commit-message:
       prefix: 'deps(actions): '
     groups:
