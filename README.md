@@ -49,13 +49,11 @@ sudo dpkg -i r-quick-share_${VERSION}.deb
 ```
 
 #### Debian
-
 ```bash
 sudo dpkg -i r-quick-share_${VERSION}.deb
 ```
 
 #### RPM
-
 ```bash
 sudo rpm -i r-quick-share-${VERSION}.rpm
 ```
@@ -86,7 +84,6 @@ The snap is not yet on the store, but you can install it with the following (you
 ```bash
 snap install --dangerous r-quick-share_${VERSION}.snap
 ```
-<br>
 
 ---
 
@@ -96,6 +93,7 @@ snap install --dangerous r-quick-share_${VERSION}.snap
 #### AUR (Arch)
 
 For Arch Linux, you can install it from the AUR by using an AUR helper like yay.
+
 ```bash
 yay -S r-quick-share
 ```
@@ -112,7 +110,6 @@ $ nix-shell -p rquickshare
 </details>
 
 ---
-<br>
 
 Limitations
 --------------------------
@@ -144,8 +141,7 @@ A second workaround, you can download a Shortcut maker (see [here](https://xdafo
 	- Action: `com.google.android.gms.RECEIVE_NEARBY`
 	- Mime type: `*/*`
 
-_Note: there's a current WIP to add a BLE advertisment in RQuickShare to overcome this._
-_Note2: Samsung did something shady with Quick Share, so the above workaround may not work. Unfortunately, there's no alternative at the moment. Sorry._
+_Note: Samsung did something shady with Quick Share, so the above workaround may not work. Unfortunately, there's no alternative at the moment. Sorry._
 
 ### When sharing a file, my phone appears and disapears "randomly"
 
@@ -156,9 +152,11 @@ Android will see that your laptop/desktop is trying to share a file and will rev
 ### Once I close the app, it won't reopen
 
 Make sure the app is really closed by running:
+
 ```bash
 ps aux | grep r-quick-share
 ```
+
 If you see that the process is still running, it's because the app is not closed. This may be an intended behavior: when closing the window, the app won't stop and instead is still running and accessible via the system tray icon. But if your distribution doesn't support/don't have enabled them, it may be an issue for you.
 
 If you want to **really** close the app when clicking on the close button, you can change that inside the app by clicking on the three dots and then "Stop app on close".
@@ -168,8 +166,20 @@ If you want to **really** close the app when clicking on the close button, you c
 In this case, you may want to configure a static port to allow it in your firewall. You can do so by modifying the config file as follow:
 
 ```bash
+# linux
 vim ./.local/share/dev.mandre.rquickshare/.settings.json
+
+# mac
+vim Library/Application\ Support/dev.mandre.rquickshare/.settings.json
+
+# to be sure
+find $HOME -name ".settings.json"
 ```
+
+> [!WARNING]
+>
+> The json must stay valid after your modification, this means if "port" is the last item of the JSON it must not have a comma after it, otherwise the config will be reset.
+
 ```json
 {
 	...existing_config...,
@@ -184,6 +194,7 @@ By default the port is random (the OS will decide).
 This happens for some users running Linux + NVIDIA cards.
 
 The workaround is to start RQuickShare with an env variable defined as follow:
+
 ```bash
 env WEBKIT_DISABLE_COMPOSITING_MODE=1 rquickshare
 ```
@@ -194,7 +205,6 @@ WIP Notes
 `rquickshare` is still in development (WIP) and currently only supports Linux even tho it should be compatible with macOS too. Keep in mind that the design may change between versions, so flexibility is key.
 
 Got feedback or suggestions? We'd love to hear them! Feel free to open an issue and share your thoughts.
-
 
 Credits
 --------------------------
