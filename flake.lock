@@ -1,5 +1,20 @@
 {
   "nodes": {
+    "corelib": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1,
+        "narHash": "sha256-tTlcmV5iVVQc2V6Nb14ZDJy6HXQAcGX873wszn9DqpA=",
+        "path": "/nix/store/4al0ybv47gjla7pxjya4af63309cpwbm-source/core_lib",
+        "type": "path"
+      },
+      "original": {
+        "path": "/nix/store/4al0ybv47gjla7pxjya4af63309cpwbm-source/core_lib",
+        "type": "path"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1731139594,
@@ -32,9 +47,26 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1731139594,
+        "narHash": "sha256-IigrKK3vYRpUu+HEjPL/phrfh7Ox881er1UEsZvw9Q4=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "76612b17c0ce71689921ca12d9ffdc9c23ce40b2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs",
+        "corelib": "corelib",
+        "nixpkgs": "nixpkgs_2",
         "nixpkgs2": "nixpkgs2"
       }
     }
