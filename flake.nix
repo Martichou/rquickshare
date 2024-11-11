@@ -1,5 +1,5 @@
 {
-  description = "NeoHTop flake";
+  description = "rquickshare flake";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
@@ -24,28 +24,33 @@
           src = ./app/main;
           nativeBuildInputs = [ tauri.hook pnpm.configHook nodejs ];
           cargoRoot = "src-tauri";
-          cargoHash = "";
+          cargoLock = {
+            lockFile = app/main/src-tauri/Cargo.lock;
+            outputHashes = {
+              "mdns-sd-0.10.4" = "sha256-y8pHtG7JCJvmWCDlWuJWJDbCGOheD4PN+WmOxnakbE4=";
+            };
+          };
           pnpmDeps = pnpm.fetchDeps {
             inherit src;
             pname = name;
             hash = "";
           };
-          # remove macOS signing
+          # remove macOS signing and relative links
           postConfigure = ''
-            ${jq}/bin/jq 'del(.bundle.macOS.signingIdentity, .bundle.macOS.hardenedRuntime)' src-tauri/tauri.conf.json > tmp.json 
-            mv tmp.json src-tauri/tauri.conf.json
+            ${jq}/bin/jq -i 'del(.bundle.macOS.signingIdentity, .bundle.macOS.hardenedRuntime)' src-tauri/tauri.conf.json
+            ${yq}/bin/yq -i '.importers.".".dependencies."@martichou/core_lib".specifier = "link:${corelib}" | .importers.".".dependencies."@martichou/core_lib".version = "link:${corelib}"' pnpm-lock.yaml
           '';
-          checkPhase = "true"; # idk why checks fail, todo
-          installPhase = let path = "${cargoRoot}/target/${stdenv.hostPlatform.rust.cargoShortTarget}/release/bundle"; in 
-          if stdenv.isDarwin then ''
-            mkdir -p $out/bin
-            mv ${path}/macos $out/Applications
-            echo "#!${zsh}/bin/zsh" >> $out/bin/${name}
-            echo "open -a $out/Applications/${name}.app" >> $out/bin/${name}
-            chmod +x $out/bin/${name}
-          '' else ''
-            mv ${path}/deb/*/data/usr $out
-          '';
+          # checkPhase = "true"; # idk why checks fail, todo
+          # installPhase = let path = "${cargoRoot}/target/${stdenv.hostPlatform.rust.cargoShortTarget}/release/bundle"; in 
+          # if stdenv.isDarwin then ''
+          #   mkdir -p $out/bin
+          #   mv ${path}/macos $out/Applications
+          #   echo "#!${zsh}/bin/zsh" >> $out/bin/${name}
+          #   echo "open -a $out/Applications/${name}.app" >> $out/bin/${name}
+          #   chmod +x $out/bin/${name}
+          # '' else ''
+          #   mv ${path}/deb/*/data/usr $out
+          # '';
         };
         default = rquickshare;
       });
