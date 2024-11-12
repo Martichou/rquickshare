@@ -20,18 +20,37 @@
       packages = forAllSystems (system: with spkgs system; rec {
         remote2 = inputs.nixpkgs2.legacyPackages.${system};
         tauri = remote2.pkgs.cargo-tauri;
-        corelib = inputs.corelib.outputs.packages.${system}.default;
-        rquickshare = rustPlatform.buildRustPackage rec {
+        corelib_pkgs = inputs.corelib.outputs.packages.${system};
+        corelib_src = corelib_pkgs.rqscore_src;
+        corelib_vendored = (stdenvNoCC.mkDerivation {
+          name = "cargo-vendor";
+          src = corelib_src;
+          phases = [ "installPhase" ];
+          installPhase = ''
+            mkdir -p $out/rqs_lib
+            cp -r $src/* $out/rqs_lib
+          '';
+        });
+        deps_vendored = (rustPlatform.importCargoLock {
+          lockFile = app/main/src-tauri/Cargo.lock;
+          outputHashes = {
+            "mdns-sd-0.10.4" = "sha256-y8pHtG7JCJvmWCDlWuJWJDbCGOheD4PN+WmOxnakbE4=";
+          };
+        });
+        cargo_vendor_dir = symlinkJoin {
+          name = "cargo-vendor";
+          paths = [ 
+            deps_vendored
+            corelib_vendored
+          ];
+        };
+        vendorDir = "vendorr";
+        rquickshare = stdenv.mkDerivation rec {
           name = "rquickshare";
           src = ./app/main;
           nativeBuildInputs = [ tauri.hook pnpm.configHook nodejs moreutils ];
           cargoRoot = "src-tauri";
-          cargoLock = {
-            lockFile = app/main/src-tauri/Cargo.lock;
-            outputHashes = {
-              "mdns-sd-0.10.4" = "sha256-y8pHtG7JCJvmWCDlWuJWJDbCGOheD4PN+WmOxnakbE4=";
-            };
-          };
+          cargoDeps = vendorDir;
           pnpmDeps = pnpm.fetchDeps {
             inherit src;
             pname = name;
@@ -39,8 +58,10 @@
           };
           # remove macOS signing and relative links
           postConfigure = ''
-            ${jq}/bin/jq -i 'del(.bundle.macOS.signingIdentity, .bundle.macOS.hardenedRuntime)' src-tauri/tauri.conf.json | sponge src-tauri/tauri.conf.json
-            ${yq}/bin/yq -i '.importers.".".dependencies."@martichou/core_lib".specifier = "link:${corelib}" | .importers.".".dependencies."@martichou/core_lib".version = "link:${corelib}"' pnpm-lock.yaml
+            ${jq}/bin/jq     'del(.bundle.macOS.signingIdentity, .bundle.macOS.hardenedRuntime)' src-tauri/tauri.conf.json | sponge src-tauri/tauri.conf.json
+            ${yq}/bin/yq -iy '.importers.".".dependencies."@martichou/core_lib".specifier = "link:${corelib_src}" | .importers.".".dependencies."@martichou/core_lib".version = "link:${corelib_src}"' pnpm-lock.yaml
+            ${jq}/bin/jq     '.dependencies."@martichou/core_lib" = "link:${corelib_src}"' package.json | sponge package.json
+            cp -r ${cargo_vendor_dir} ${vendorDir}
           '';
           checkPhase = "true"; # idk why checks fail, todo
           installPhase = let path = "${cargoRoot}/target/${stdenv.hostPlatform.rust.cargoShortTarget}/release/bundle"; in 

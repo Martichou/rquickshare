@@ -15,7 +15,8 @@
     in
     {
       packages = forAllSystems (system: with spkgs system; rec {
-        rqscore = rustPlatform.buildRustPackage rec {
+        rqscore_src = rqscore.src;
+        rqscore = rustPlatform.buildRustPackage {
           name = "rquickshare-core";
           src = ./.;
           nativeBuildInputs = [ protobuf ];
@@ -25,14 +26,6 @@
               "mdns-sd-0.10.4" = "sha256-y8pHtG7JCJvmWCDlWuJWJDbCGOheD4PN+WmOxnakbE4=";
             };
           };
-          installPhase = ''
-            mkdir -p $out/bin
-            cp -r package.json $out/
-            cp -r esm $out/
-            cp -r dist $out/
-            cp -r target $out/
-            cp -r target/${stdenv.hostPlatform.rust.cargoShortTarget}/release/core_bin $out/bin/${name}
-          '';
         };
         default = rqscore;
       });
