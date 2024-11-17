@@ -3,8 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    # as upstream nixpkgs doesn't have tauri 2, we use a fork
-    nixpkgs2.url = "github:hannesGitH/nixpkgs?ref=tauri2";
     corelib.url = "./core_lib";
   };
 
@@ -18,8 +16,7 @@
     in
     {
       packages = forAllSystems (system: with spkgs system; rec {
-        remote2 = inputs.nixpkgs2.legacyPackages.${system};
-        tauri = remote2.pkgs.cargo-tauri;
+        tauri = cargo-tauri;
         corelib_pkgs = inputs.corelib.outputs.packages.${system};
         corelib_src = corelib_pkgs.rqscore_src;
         corelib_path = "rqs_lib";
