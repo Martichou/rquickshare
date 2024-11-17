@@ -7,11 +7,11 @@
       "locked": {
         "lastModified": 1,
         "narHash": "sha256-3I2lB6V7aRPR5AGNkJD7VGq6f3fELpgsVg0PQmlK0jU=",
-        "path": "/nix/store/hligicv9b7vcs5vvzh14ngmgrgr30rmi-source/core_lib",
+        "path": "/nix/store/hqs54wki1cv48pipd0kkx7xwr9mvwyb7-source/core_lib",
         "type": "path"
       },
       "original": {
-        "path": "/nix/store/hligicv9b7vcs5vvzh14ngmgrgr30rmi-source/core_lib",
+        "path": "/nix/store/hqs54wki1cv48pipd0kkx7xwr9mvwyb7-source/core_lib",
         "type": "path"
       }
     },
