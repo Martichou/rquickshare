@@ -226,7 +226,7 @@ impl OutboundRequest {
                 ),
                 connection_request: Some(location_nearby_connections::ConnectionRequestFrame {
                     endpoint_id: Some(String::from_utf8_lossy(&self.endpoint_id).to_string()),
-                    endpoint_name: Some(sys_metrics::host::get_hostname()?),
+                    endpoint_name: Some(sys_metrics::host::get_hostname()?.into()),
                     endpoint_info: Some(
                         RemoteDeviceInfo {
                             name: sys_metrics::host::get_hostname()?,

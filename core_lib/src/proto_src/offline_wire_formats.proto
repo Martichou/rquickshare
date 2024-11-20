@@ -76,7 +76,7 @@ message ConnectionRequestFrame {
   // LINT.ThenChange(//depot/google3/third_party/nearby/proto/connections_enums.proto)
 
   optional string endpoint_id = 1;
-  optional string endpoint_name = 2;
+  optional bytes endpoint_name = 2;
   optional bytes handshake_data = 3;
   // A random number generated for each outgoing connection that is presently
   // used to act as a tiebreaker when 2 devices connect to each other
