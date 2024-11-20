@@ -4112,7 +4112,7 @@ dependencies = [
 
 [[package]]
 name = "rqs_lib"
-version = "0.11.2"
+version = "0.11.3"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -4148,7 +4148,7 @@ dependencies = [
 
 [[package]]
 name = "rquickshare"
-version = "0.11.2"
+version = "0.11.3"
 dependencies = [
  "anyhow",
  "fern",
