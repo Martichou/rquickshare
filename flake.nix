@@ -110,6 +110,8 @@
               cargo
               rustc
               nodejs
+              pnpm
+              protobuf
             ];
           };
         }
