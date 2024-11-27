@@ -9,7 +9,7 @@
 			<SideMenu :vm="vm" @invert-visibility="invertVisibility(vm)" @clear-sending="clearSending(vm)" />
 
 			<div class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
-				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
+				<ContentStatus :vm="vm" :refresh-c-b="checkClipboardContents" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
 
 				<div
 					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
@@ -154,7 +154,7 @@ import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notif
 import { disable, enable } from '@tauri-apps/plugin-autostart';
 import { open as tauriDialog } from '@tauri-apps/plugin-dialog';
 import { open } from '@tauri-apps/plugin-shell';
-import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
 
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
@@ -210,8 +210,9 @@ export default {
 			endpointsInfo: ref<EndpointInfo[]>([]),
 			toDelete: ref<ToDelete[]>([]),
 			outboundPayload: ref<OutboundPayload | undefined>(),
+			clipboardContent: ref<OutboundPayload | undefined>(),
 
-			cleanupInterval: opt<NodeJS.Timeout>(),
+			clipboardInterval: opt<NodeJS.Timeout>(),
 			unlisten: Array<UnlistenFn>(),
 
 			version: opt<string>(),
@@ -231,6 +232,12 @@ export default {
 	},
 
 	mounted: function () {
+		// XXX: 
+		if (!this.clipboardInterval) {
+			this.clipboardInterval = setInterval(() => {
+				this.checkClipboardContents();
+			}, 800);
+		}
 		nextTick(async () => {
 			this.hostname = await invoke('get_hostname');
 			this.version = await getVersion();
@@ -310,6 +317,8 @@ export default {
 				await listen('visibility_updated', async () => {
 					console.log("Visibility changed");
 					await this.getVisibility(this);
+					// TODO: this does not yet work
+					if (this.visibility == "Visible") this.checkClipboardContents();
 				})
 			);
 
@@ -338,8 +347,8 @@ export default {
 	unmounted: function() {
 		this.unlisten.forEach((el) => el());
 
-		if (this.cleanupInterval && this.cleanupInterval[Symbol.dispose]) {
-			this.cleanupInterval[Symbol.dispose]();
+		if (this.clipboardInterval && this.clipboardInterval[Symbol.dispose]) {
+			this.clipboardInterval[Symbol.dispose]();
 		}
 	},
 
@@ -373,6 +382,21 @@ export default {
 				console.error("Error opening URL", e);
 			}
 		},
+		checkClipboardContents: async function ()  {
+			console.log("refreshing cb")
+			const clipboardText = await readText();
+			console.log({clipboardText})
+			if (!clipboardText) return;
+			
+			// there are apis in tauri that would also allow 
+			// checking and reading an image from the clipboard
+			// but as its hard to determine if the clipboards contents
+			// are text or an image, this version of RQuickShare
+			// only supports pasting text from the clipboard for now
+			
+			this.clipboardContent = { Text: clipboardText };
+		}
+
 	},
 }
 </script>
