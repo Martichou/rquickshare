@@ -51,8 +51,11 @@ const pluralize = (n: number, s: string) => n === 1 ? s : `${s}s`;
 	</div>
 	<div class="w-72 p-6 flex flex-col justify-between" v-else>
 		<div>
-			<p class="mt-4 mb-2">
+			<p class="mt-4 mb-2" v-if="'Files' in props.vm.outboundPayload">
 				Sharing {{ props.vm.outboundPayload.Files.length }} {{ pluralize(props.vm.outboundPayload.Files.length, "file") }}
+			</p>
+			<p class="mt-4 mb-2" v-if="'Text' in props.vm.outboundPayload">
+				Sharing Text
 			</p>
 			<div class="bg-white w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
 				<svg
@@ -62,7 +65,7 @@ const pluralize = (n: number, s: string) => n === 1 ? s : `${s}s`;
                     <path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
 				</svg>
 			</div>
-			<p v-for="f in props.vm.outboundPayload.Files" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
+			<p v-for="f in props.vm.outboundPayload.Files" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis" v-if="'Files' in props.vm.outboundPayload">
 				{{ f.split('/').pop() }}
 			</p>
 

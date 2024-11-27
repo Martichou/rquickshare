@@ -39,6 +39,11 @@ function openFilePicker() {
 		emits('discoveryRunning');
 	})
 }
+async function sendClipboard(){
+	emits('outboundPayload', props.vm.clipboardContent);
+	if (!props.vm.discoveryRunning) await props.vm.invoke('start_discovery');
+	emits('discoveryRunning');
+}
 </script>
 
 <template>
@@ -53,9 +58,18 @@ function openFilePicker() {
 		<div class="circle circle--animated circle-tertiary" />
 	</div>
 
+	<div 
+		v-if="props.vm.outboundPayload === undefined && props.vm.clipboardContent && 'Text' in props.vm.clipboardContent" 
+		class="chip mt-2 bg-green-50 rounded-lg p-1.5 inline-block mr-auto transition duration-150 ease-in-out hover:bg-gray-100 active:bg-green-100"
+		@click="sendClipboard"
+		>
+		<p class="text-sm">
+			📋: {{ props.vm.clipboardContent.Text.length > 20 ? props.vm.clipboardContent.Text.substring(0, 20) + '...' : props.vm.clipboardContent.Text }}
+		</p>
+	</div>
 	<div
 		v-if="props.vm.displayedIsEmpty && props.vm.outboundPayload === undefined" class="w-full border
-        rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-auto"
+        rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-2"
 		:class="{'border-green-200 bg-green-100 scale-105': props.vm.isDragHovering}">
 		<svg
 			xmlns="http://www.w3.org/2000/svg" height="24"

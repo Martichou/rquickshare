@@ -17,6 +17,7 @@ export interface TauriVM {
     endpointsInfo: EndpointInfo[];
     toDelete: ToDelete[];
     outboundPayload: OutboundPayload | undefined;
+    clipboardContent: OutboundPayload | undefined;
     unlisten: Array<UnlistenFn>;
     version: string | null;
     autostart: boolean;
