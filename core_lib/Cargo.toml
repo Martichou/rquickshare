@@ -37,7 +37,7 @@ prost = "0.13"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 sha2 = "0.10"
-sys_metrics = "0.2"
+sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
 tokio = { version = "1.40", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
