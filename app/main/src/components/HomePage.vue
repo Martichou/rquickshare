@@ -211,6 +211,7 @@ export default {
 			toDelete: ref<ToDelete[]>([]),
 			outboundPayload: ref<OutboundPayload | undefined>(),
 
+			// eslint-disable-next-line no-undef
 			cleanupInterval: opt<NodeJS.Timeout>(),
 			unlisten: Array<UnlistenFn>(),
 

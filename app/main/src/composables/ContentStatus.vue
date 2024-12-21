@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { TauriVM } from '../vue_lib/helper/ParamsHelper';
+import { PropType } from 'vue';
 
 const props = defineProps({
 	vm: {

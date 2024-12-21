@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TauriVM } from '../vue_lib/helper/ParamsHelper';
+import { PropType } from 'vue';
 
 const props = defineProps({
 	vm: {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DisplayedItem } from '../vue_lib';
 import { utils } from '../vue_lib';
+import { PropType } from 'vue';
 
 defineProps({
 	item: {
@@ -16,7 +17,7 @@ defineProps({
 			<svg
 				v-if="item.ack_bytes" width="62" height="62" viewBox="0 0 250 250"
 				class="circular-progress" :style="utils.getProgress(item)"
-				:class="{'error': ['Cancelled', 'Rejected', 'Disconnected'].includes(item.state)}">
+				:class="{'error': item.state && ['Cancelled', 'Rejected', 'Disconnected'].includes(item.state)}">
 				<circle class="bg" />
 				<circle class="fg" />
 			</svg>
