@@ -1,5 +1,0 @@
-- [ ] Tauri v1 & v2 share more common code (Rust & Template)
-- [ ] macOS support (notification included)
-- [ ] macOS support (bluetooth included)
-- [ ] publish snap on Snap Store
-- [ ] ...
