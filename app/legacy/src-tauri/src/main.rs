@@ -210,6 +210,7 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
     tauri::async_runtime::spawn(async move {
         let state: tauri::State<'_, AppState> = capp_handle.state();
         let mut ble_receiver = state.ble_receiver.resubscribe();
+        let mut last_sent = std::time::Instant::now() - std::time::Duration::from_secs(120);
 
         loop {
             let rinfo = ble_receiver.recv().await;
@@ -219,9 +220,12 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
                     let v = get_visibility(&capp_handle);
                     trace!("Tauri: ble received: {:?}", v);
 
-                    if v == Visibility::Invisible {
+                    if v == Visibility::Invisible
+                        && last_sent.elapsed() >= std::time::Duration::from_secs(120)
+                    {
                         #[cfg(not(target_os = "macos"))]
                         send_temporarily_notification(&capp_handle);
+                        last_sent = std::time::Instant::now();
                     }
                 }
                 Err(e) => {
