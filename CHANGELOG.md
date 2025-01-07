@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.11.3](https://github.com/Martichou/rquickshare/compare/v0.11.2...v0.11.3) (2025-01-07)
+
+
+### Bug Fixes
+
+* compilation on musl due to sys_metrics ([93b20dd](https://github.com/Martichou/rquickshare/commit/93b20dd5e3face5fa2e217ec1b8b2c0a877e3745))
+* do not spam temp notification ([5915f3b](https://github.com/Martichou/rquickshare/commit/5915f3b06d118a7a688d10389bd196a33627826f))
+* handle non-UTF-8 endpoint_name ([#243](https://github.com/Martichou/rquickshare/issues/243)) ([72d6c71](https://github.com/Martichou/rquickshare/commit/72d6c71bd3383b4b192fe1b20a39e5a656999600))
+* Include file_name in PayloadHeader ([#231](https://github.com/Martichou/rquickshare/issues/231)) ([59bc405](https://github.com/Martichou/rquickshare/commit/59bc4053b63fe3f1632d1489a49afd4d7f338fb4))
+* **main:** double system tray icon & quality(?) ([f6ae4b9](https://github.com/Martichou/rquickshare/commit/f6ae4b9d134955bd881cf6e9cf63fd655f66ed35))
+* once_cell 1.20 yanked ([cd237a5](https://github.com/Martichou/rquickshare/commit/cd237a59ce3a4e795d024666687c769814f9192b))
+* store in main Vue app due to upgrade to 2.0.0 of store ([7a9c0e5](https://github.com/Martichou/rquickshare/commit/7a9c0e53cef49c436c3cbd5a6ab4f1007865e8e6))
+* store issues due to 2.0.0 ([91487bb](https://github.com/Martichou/rquickshare/commit/91487bbb2afa3fd3dee4137d565ac53ea501bf10))
+* tauri breaking changes ([7d68734](https://github.com/Martichou/rquickshare/commit/7d687345068731c18d23eaf09ec1b3aa29b8847e))
+
 ## [0.11.2](https://github.com/Martichou/rquickshare/compare/v0.11.1...v0.11.2) (2024-08-21)
 
 
