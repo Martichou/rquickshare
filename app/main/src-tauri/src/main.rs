@@ -12,7 +12,6 @@ use rqs_lib::channel::{ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use store::get_startminimized;
 use tauri::{
-    image::Image,
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
     AppHandle, Emitter, Manager, Window, WindowEvent,
@@ -89,8 +88,9 @@ async fn main() -> Result<(), anyhow::Error> {
                 .separator()
                 .items(&[&show, &quit])
                 .build()?;
+
             let _tray = TrayIconBuilder::new()
-                .icon(Image::from_bytes(include_bytes!("../icons/icon.png")).unwrap())
+                .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show" => {

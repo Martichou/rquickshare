@@ -9,11 +9,11 @@ license = "AGPL-3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0.0", features = [] }
+tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
 anyhow = "1.0"
-fern = { version = "0.6", features = ["colored"] }
+fern = { version = "0.7", features = ["colored"] }
 humantime = "2.1"
 log = "0.4"
 notify-rust = "4.10"
@@ -21,18 +21,18 @@ rqs_lib = { path = "../../../core_lib", features = ["experimental"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sys_metrics = "0.2"
-tauri = { version = "2.0", features = [ "devtools", "tray-icon", "native-tls-vendored", "image-png"] }
-tauri-plugin-autostart = "2.0"
-tauri-plugin-process = "2.0"
-tauri-plugin-notification = "2.0"
-tauri-plugin-single-instance = "2.0"
-tauri-plugin-store = "2.1"
-tauri-plugin-dialog = "2.0"
-tauri-plugin-shell = "2.0"
+tauri = { version = "2.2", features = [ "devtools", "tray-icon", "native-tls-vendored"] }
+tauri-plugin-autostart = "2.2"
+tauri-plugin-process = "2.2"
+tauri-plugin-notification = "2.2"
+tauri-plugin-single-instance = "2.2"
+tauri-plugin-store = "2.2"
+tauri-plugin-dialog = "2.2"
+tauri-plugin-shell = "2.2"
+tauri-plugin-clipboard-manager = "2.2"
 time = { version = "0.3", features = ["formatting"] }
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }
-tauri-plugin-clipboard-manager = "2.0"
 
 [features]
 # by default Tauri runs in production mode
