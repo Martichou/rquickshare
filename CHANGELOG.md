@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/Martichou/rquickshare/compare/v0.11.3...v0.12.0) (2025-01-13)
+
+
+### Features
+
+* improve logo design (by [@ux-git](https://github.com/ux-git)) ([5ff8591](https://github.com/Martichou/rquickshare/commit/5ff8591e6de5b4ca7fd0444041ff64aba0803b19))
+
 ## [0.11.3](https://github.com/Martichou/rquickshare/compare/v0.11.2...v0.11.3) (2025-01-07)
 
 
