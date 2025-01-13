@@ -5,12 +5,12 @@
   "build": {
     "distDir": "../dist",
     "devPath": "http://localhost:1420",
-	"beforeDevCommand": "pnpm vite:dev",
+    "beforeDevCommand": "pnpm vite:dev",
     "beforeBuildCommand": "pnpm vite:build"
   },
   "tauri": {
     "systemTray": {
-      "iconPath": "icons/icon.png",
+      "iconPath": "icons/tray.png",
       "iconAsTemplate": true
     },
     "bundle": {
