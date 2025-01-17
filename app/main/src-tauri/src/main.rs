@@ -11,6 +11,7 @@ use std::sync::{Arc, Mutex};
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use store::get_startminimized;
+#[cfg(target_os = "macos")]
 use tauri::image::Image;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
@@ -93,7 +94,7 @@ async fn main() -> Result<(), anyhow::Error> {
             #[cfg(target_os = "macos")]
             let icon = Image::from_bytes(include_bytes!("../icons/tray.png")).unwrap();
             #[cfg(not(target_os = "macos"))]
-            let icon = app.default_window_icon().unwrap();
+            let icon = app.default_window_icon().unwrap().clone();
 
             let tray = TrayIconBuilder::new()
                 .icon(icon)
