@@ -28,6 +28,12 @@ jobs:
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
+          - os: ubuntu-24.04-arm
+            name: main
+            target_path: app/main
+            dependencies: |
+              sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
+            cache_directory: app/main/src-tauri/target
           - os: macos-latest
             name: main
             target_path: app/main
