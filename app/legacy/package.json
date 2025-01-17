@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@martichou/core_lib": "link:../../core_lib",
-    "@tauri-apps/api": "1.5.6",
+    "@tauri-apps/api": "1.6.0",
     "pinia": "^2.2.1",
     "semver": "^7.6.3",
     "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1",

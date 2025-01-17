@@ -90,8 +90,13 @@ async fn main() -> Result<(), anyhow::Error> {
                 .items(&[&show, &quit])
                 .build()?;
 
+            #[cfg(target_os = "macos")]
+            let icon = Image::from_bytes(include_bytes!("../icons/tray.png")).unwrap();
+            #[cfg(not(target_os = "macos"))]
+            let icon = app.default_window_icon().unwrap();
+
             let tray = TrayIconBuilder::new()
-                .icon(Image::from_bytes(include_bytes!("../icons/tray.png")).unwrap())
+                .icon(icon)
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show" => {
