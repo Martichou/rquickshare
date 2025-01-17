@@ -21,12 +21,14 @@ jobs:
         include:
           - os: ubuntu-latest
           - os: macos-latest
+          - os: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/core_lib/target"
+          prefix-key: "{{ matrix.os }}"
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -58,6 +60,12 @@ jobs:
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
+          - os: ubuntu-24.04-arm
+            name: main
+            target_path: app/main
+            dependencies: |
+              sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
+            cache_directory: app/main/src-tauri/target
           - os: macos-latest
             name: main
             target_path: app/main
@@ -78,6 +86,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
+          prefix-key: "{{ matrix.os }}{{ matrix.name }}"
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
