@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.5](https://github.com/Martichou/rquickshare/compare/v0.11.4...v0.11.5) (2025-01-17)
+
+
+### Bug Fixes
+
+* **main:** build with conditional icon ([c3d6c1a](https://github.com/Martichou/rquickshare/commit/c3d6c1a62de8fe37dfb19f91ec86e1d8bd716dc5))
+* tray icon visible dark/white mode ([#274](https://github.com/Martichou/rquickshare/issues/274)) ([d08bb66](https://github.com/Martichou/rquickshare/commit/d08bb66b2a8c55b21ad85dd2ff0625d0593528c3))
+
 ## [0.11.4](https://github.com/Martichou/rquickshare/compare/v0.11.3...v0.11.4) (2025-01-14)
 
 
