@@ -4,6 +4,8 @@ import AutoImport from 'unplugin-auto-import/vite'
 import { defineConfig } from 'vitest/config'
 import path from 'path'
 
+const host = process.env.TAURI_DEV_HOST;
+
 // See https://vitejs.dev/config/
 export default defineConfig({
 	plugins: [
@@ -23,6 +25,13 @@ export default defineConfig({
 	server: {
 		port: 1420,
 		strictPort: true,
+		host: host || false,
+		hmr: host
+			? {
+				protocol: "ws",
+				host,
+				port: 1421,
+			} : undefined,
 		fs: {
 			allow: [
 				// Optionally, include other directories

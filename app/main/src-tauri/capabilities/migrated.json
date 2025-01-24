@@ -1,6 +1,7 @@
 {
-  "identifier": "migrated",
-  "description": "permissions that were migrated from v1",
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capability for the main window",
   "local": true,
   "windows": [
     "main"
@@ -25,7 +26,6 @@
     "autostart:allow-is-enabled",
     "dialog:allow-open",
     "clipboard-manager:default",
-    "shell:allow-open",
-    "store:default"
+    "shell:allow-open"
   ]
 }

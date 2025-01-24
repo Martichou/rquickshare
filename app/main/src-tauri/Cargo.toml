@@ -21,7 +21,7 @@ rqs_lib = { path = "../../../core_lib", features = ["experimental"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sys_metrics = "0.2"
-tauri = { version = "2.2", features = [ "devtools", "tray-icon", "native-tls-vendored", "image-png"] }
+tauri = { version = "2.2", features = [ "devtools", "tray-icon", "image-png"] }
 tauri-plugin-autostart = "2.2"
 tauri-plugin-process = "2.2"
 tauri-plugin-notification = "2.2"
@@ -46,3 +46,10 @@ custom-protocol = ["tauri/custom-protocol"]
 lto = true
 opt-level = 3
 codegen-units = 1
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "rquickshare_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
