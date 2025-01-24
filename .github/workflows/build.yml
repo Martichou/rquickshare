@@ -66,6 +66,13 @@ jobs:
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
+          - os: ubuntu-24.04-arm
+            name: main-musl
+            target_path: app/main
+            target: aarch64-unknown-linux-musl
+            dependencies: |
+              sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev musl-tools
+            cache_directory: app/main/src-tauri/target
           - os: macos-latest
             name: main
             target_path: app/main
@@ -106,12 +113,17 @@ jobs:
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
 
+      - name: Add ARM64 targets
+        if: matrix.target != ''
+        run: |
+          rustup target add ${{ matrix.target }}
+
       - name: Build Vite + Tauri
         run: |
           rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/
           cd ./${{ matrix.target_path }}
           pnpm install
-          pnpm build:debug
+          pnpm build:debug ${{ matrix.target != '' && format('-- --target {0}', matrix.target) || '' }}
           cd ${{ github.workspace }}
           ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/ ${{ matrix.name }}
 
