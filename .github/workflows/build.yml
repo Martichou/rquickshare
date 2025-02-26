@@ -90,6 +90,8 @@ jobs:
         with:
           node-version: 20
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target || '' }}
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
@@ -113,10 +115,12 @@ jobs:
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
 
-      - name: Add ARM64 targets
-        if: matrix.target != ''
+      - name: Check Rust setup
         run: |
-          rustup target add ${{ matrix.target }}
+          which rustc
+          which cargo
+          rustup show
+          rustup target list --installed
 
       - name: Build Vite + Tauri
         run: |
