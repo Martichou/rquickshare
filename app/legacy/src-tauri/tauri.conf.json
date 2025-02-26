@@ -1,6 +1,6 @@
 {
   "package": {
-    "productName": "RQuickShare"
+    "productName": "rquickshare"
   },
   "build": {
     "distDir": "../dist",
