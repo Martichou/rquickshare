@@ -19,8 +19,8 @@ dbus = { version = "0.9", features = ["vendored"] }
 anyhow = "1.0"
 base64 = "0.22"
 btleplug = "0.11"
-bytes = "1.7"
-directories = "5.0"
+bytes = "1.10"
+directories = "6.0"
 futures = "0.3"
 get_if_addrs = "0.5"
 hex = "0.4"
@@ -34,15 +34,15 @@ num-bigint = "0.4"
 once_cell = "1.20"
 p256 = { version = "0.13", features = ["ecdh"] }
 prost = "0.13"
-rand = "0.8"
+rand = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 sha2 = "0.10"
 sys_metrics = { git = "https://github.com/Martichou/sys_metrics" }
-tokio = { version = "1.40", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
+tokio = { version = "1.43", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util", "signal"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ts-rs = { version = "10.0", features = ["serde-compat", "uuid-impl", "chrono-impl"] }
-uuid = "1.10"
+uuid = "1.15"
 
 [build-dependencies]
 prost-build = "0.13"
