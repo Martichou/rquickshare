@@ -72,6 +72,7 @@ jobs:
             target: aarch64-unknown-linux-musl
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev musl-tools
+              rustup target add aarch64-unknown-linux-musl
             cache_directory: app/main/src-tauri/target
           - os: macos-latest
             name: main
@@ -96,6 +97,7 @@ jobs:
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
           prefix-key: "${{ matrix.os }}${{ matrix.name }}${{ matrix.target }}"
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
