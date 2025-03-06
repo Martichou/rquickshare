@@ -344,7 +344,7 @@ impl InboundRequest {
 
         let server_init = Ukey2ServerInit {
             version: Some(1),
-            random: Some(rand::thread_rng().gen::<[u8; 32]>().to_vec()),
+            random: Some(rand::rng().random::<[u8; 32]>().to_vec()),
             handshake_cipher: Some(Ukey2HandshakeCipher::P256Sha512.into()),
             public_key: Some(pkey.encode_to_vec()),
         };
@@ -1153,7 +1153,7 @@ impl InboundRequest {
         let body_size = frame_data.len();
 
         let payload_header = PayloadHeader {
-            id: Some(rand::thread_rng().gen_range(i64::MIN..i64::MAX)),
+            id: Some(rand::rng().random_range(i64::MIN..i64::MAX)),
             r#type: Some(payload_header::PayloadType::Bytes.into()),
             total_size: Some(body_size as i64),
             is_sensitive: Some(false),

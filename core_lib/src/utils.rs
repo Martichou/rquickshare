@@ -8,8 +8,9 @@ use bytes::Bytes;
 use get_if_addrs::get_if_addrs;
 use hkdf::Hkdf;
 use num_bigint::{BigUint, ToBigInt};
+use p256::elliptic_curve::rand_core::OsRng;
 use p256::{PublicKey, SecretKey};
-use rand::{thread_rng, Rng, RngCore};
+use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use tokio::io::AsyncReadExt;
@@ -54,7 +55,7 @@ impl RemoteDeviceInfo {
         let mut endpoint_info: Vec<u8> = vec![((self.device_type.clone() as u8) << 1) & 0b111];
 
         // 16 bytes: unknown random bytes
-        endpoint_info.extend((0..16).map(|_| rand::thread_rng().gen_range(0..=255)));
+        endpoint_info.extend((0..16).map(|_| rand::rng().random_range(0..=255)));
 
         // Device name in UTF-8 prefixed with 1-byte length
         let mut name_chars = self.name.as_bytes().to_vec();
@@ -92,7 +93,7 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
     // Device types: unknown=0, phone=1, tablet=2, laptop=3
     record.push(device_type << 1);
 
-    let unknown_bytes = rand::thread_rng().gen::<[u8; 16]>();
+    let unknown_bytes = rand::rng().random::<[u8; 16]>();
     record.extend_from_slice(&unknown_bytes);
 
     let device_name = device_name.as_bytes();
@@ -132,7 +133,7 @@ pub async fn stream_read_exact(
 }
 
 pub fn gen_ecdsa_keypair() -> (SecretKey, PublicKey) {
-    let secret_key = SecretKey::random(&mut thread_rng());
+    let secret_key = SecretKey::random(&mut OsRng);
     let public_key = secret_key.public_key();
 
     (secret_key, public_key)
@@ -176,7 +177,7 @@ pub fn to_four_digit_string(bytes: &Vec<u8>) -> String {
 
 pub fn gen_random(size: usize) -> Vec<u8> {
     let mut data = vec![0; size];
-    rand::thread_rng().fill_bytes(&mut data);
+    rand::rng().fill_bytes(&mut data);
 
     data
 }

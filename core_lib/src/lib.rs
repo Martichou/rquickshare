@@ -10,13 +10,16 @@ use channel::ChannelMessage;
 use hdl::BleAdvertiser;
 use hdl::MDnsDiscovery;
 use once_cell::sync::Lazy;
-use rand::{distributions, Rng};
+use rand::distr::Alphanumeric;
+use rand::Rng;
 use tokio::net::TcpListener;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::TaskTracker;
 
-use crate::hdl::{BleListener, MDnsServer};
+#[cfg(feature = "experimental")]
+use crate::hdl::BleListener;
+use crate::hdl::MDnsServer;
 use crate::manager::TcpServer;
 
 pub mod channel;
@@ -109,8 +112,8 @@ impl RQS {
         self.tracker = Some(tracker.clone());
         self.ctoken = Some(ctoken.clone());
 
-        let endpoint_id: Vec<u8> = rand::thread_rng()
-            .sample_iter(distributions::Alphanumeric)
+        let endpoint_id: Vec<u8> = rand::rng()
+            .sample_iter(Alphanumeric)
             .take(4)
             .map(u8::from)
             .collect();
@@ -131,10 +134,13 @@ impl RQS {
         let ctk = ctoken.clone();
         tracker.spawn(async move { server.run(ctk).await });
 
-        // Don't threat BleListener error as fatal, it's a nice to have.
-        if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
-            let ctk = ctoken.clone();
-            tracker.spawn(async move { ble.run(ctk).await });
+        #[cfg(feature = "experimental")]
+        {
+            // Don't threat BleListener error as fatal, it's a nice to have.
+            if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
+                let ctk = ctoken.clone();
+                tracker.spawn(async move { ble.run(ctk).await });
+            }
         }
 
         // Start MDnsServer in own "task"

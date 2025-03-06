@@ -4,9 +4,8 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::utils::RemoteDeviceInfo;
-
 use super::TextPayloadType;
+use crate::utils::RemoteDeviceInfo;
 
 #[derive(Debug)]
 pub struct InternalFileInfo {

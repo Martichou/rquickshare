@@ -679,7 +679,7 @@ impl OutboundRequest {
                         .file_name()
                         .ok_or_else(|| anyhow!("Failed to get file_name for {f}"))?;
                     let fmeta = FileMetadata {
-                        payload_id: Some(rand::thread_rng().gen::<i64>()),
+                        payload_id: Some(rand::rng().random::<i64>()),
                         name: Some(fname.to_os_string().into_string().unwrap()),
                         size: Some(fmetadata.size() as i64),
                         mime_type: Some(ftype),
@@ -1061,7 +1061,7 @@ impl OutboundRequest {
         let body_size = frame_data.len();
 
         let payload_header = PayloadHeader {
-            id: Some(rand::thread_rng().gen_range(i64::MIN..i64::MAX)),
+            id: Some(rand::rng().random_range(i64::MIN..i64::MAX)),
             r#type: Some(payload_header::PayloadType::Bytes.into()),
             total_size: Some(body_size as i64),
             is_sensitive: Some(false),

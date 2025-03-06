@@ -8,7 +8,9 @@ use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
 use crate::utils::RemoteDeviceInfo;
 
+#[cfg(feature = "experimental")]
 mod ble;
+#[cfg(feature = "experimental")]
 pub use ble::*;
 #[cfg(all(feature = "experimental", target_os = "linux"))]
 mod blea;
