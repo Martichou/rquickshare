@@ -9,8 +9,8 @@ pub fn send_to_rs(
 ) -> Result<(), String> {
     info!("send_to_rs: {:?}", &message);
 
-    match state.message_sender.send(message) {
+    match state.rqs_handle.send_message(message) {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!("Coudln't perform: {}", e)),
+        Err(e) => Err(format!("Couldn't perform: {}", e)),
     }
 }

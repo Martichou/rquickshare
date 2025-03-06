@@ -7,8 +7,6 @@ pub fn change_download_path(message: Option<String>, state: tauri::State<'_, App
     info!("change_download_path: {message:?}");
 
     state
-        .rqs
-        .lock()
-        .unwrap()
+        .rqs_handle
         .set_download_path(message.map(PathBuf::from));
 }

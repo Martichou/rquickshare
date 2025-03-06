@@ -1,8 +1,7 @@
 #[macro_use]
 extern crate log;
 
-use rqs_lib::RQS;
-use tokio::sync::broadcast;
+use rqs_lib::{RqsConfig, RQS};
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -17,17 +16,31 @@ async fn main() -> Result<(), anyhow::Error> {
     // Init logger/tracing
     tracing_subscriber::fmt::init();
 
-    // Start the RQuickShare service
+    // Create the RQuickShare service with default configuration
     let mut rqs = RQS::default();
-    rqs.run().await?;
+    let config = RqsConfig::default();
 
-    let discovery_channel = broadcast::channel(10);
-    rqs.discovery(discovery_channel.0)?;
+    // Start the service and get the handle
+    let handle = rqs.start(&config).await?;
+
+    // Start discovery
+    handle.start_discovery()?;
+
+    // Subscribe to events if needed
+    let mut event_receiver = rqs.subscribe();
+    tokio::spawn(async move {
+        while let Ok(event) = event_receiver.recv().await {
+            info!("Received event: {:?}", event);
+        }
+    });
 
     // Wait for CTRL+C and then stop RQS
     let _ = tokio::signal::ctrl_c().await;
     info!("Stopping service.");
-    rqs.stop().await;
+
+    // Shutdown the service
+    handle.shutdown().await;
+    rqs.shutdown().await;
 
     Ok(())
 }

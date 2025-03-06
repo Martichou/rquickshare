@@ -6,10 +6,8 @@
 #[macro_use]
 extern crate log;
 
-use std::sync::{Arc, Mutex};
-
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
-use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
+use rqs_lib::{EndpointInfo, RqsConfig, RqsEvent, RqsHandle, State, Visibility, RQS};
 use store::get_startminimized;
 #[cfg(target_os = "macos")]
 use tauri::image::Image;
@@ -19,7 +17,7 @@ use tauri::{
     AppHandle, Emitter, Manager, Window, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
-use tokio::sync::{broadcast, mpsc, watch};
+use tokio::sync::broadcast;
 
 use crate::logger::set_up_logging;
 use crate::notification::{send_request_notification, send_temporarily_notification};
@@ -33,12 +31,7 @@ mod notification;
 mod store;
 
 pub struct AppState {
-    pub message_sender: broadcast::Sender<ChannelMessage>,
-    pub dch_sender: broadcast::Sender<EndpointInfo>,
-    pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
-    pub sender_file: mpsc::Sender<SendInfo>,
-    pub ble_receiver: broadcast::Receiver<()>,
-    pub rqs: Mutex<RQS>,
+    pub rqs_handle: RqsHandle,
 }
 
 #[tokio::main]
@@ -119,6 +112,13 @@ async fn main() -> Result<(), anyhow::Error> {
             let port_number = get_port(app.app_handle());
             let download_path = get_download_path(app.app_handle());
 
+            // Create RQS configuration
+            let config = RqsConfig {
+                visibility,
+                port_number,
+                download_path,
+            };
+
             let app_handle = app.app_handle().clone();
             // This is not optimal, but until I find a better way to init log
             // (inside file and stdout) before starting the lib, I'll keep it as
@@ -127,22 +127,17 @@ async fn main() -> Result<(), anyhow::Error> {
                 tauri::async_runtime::block_on(async move {
                     trace!("Beginning of RQS start");
                     // Start the RQuickShare service
-                    let mut rqs = RQS::new(visibility, port_number, download_path);
-                    let (sender_file, ble_receiver) = rqs.run().await.unwrap();
+                    let mut rqs = RQS::new(config.clone());
+                    let rqs_handle = rqs.start(&config).await.unwrap();
 
                     // Define state for tauri app
-                    app_handle.manage(AppState {
-                        message_sender: rqs.message_sender.clone(),
-                        dch_sender: broadcast::channel(10).0,
-                        visibility_sender: rqs.visibility_sender.clone(),
-                        sender_file,
-                        ble_receiver,
-                        rqs: Mutex::new(rqs),
-                    });
+                    app_handle.manage(AppState { rqs_handle });
+
+                    // Subscribe to RQS events
+                    spawn_event_handler(app_handle, rqs.subscribe());
                 });
             });
 
-            spawn_receiver_tasks(app.app_handle());
             Ok(())
         })
         .on_window_event(handle_window_event)
@@ -180,97 +175,55 @@ async fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn spawn_receiver_tasks(app_handle: &AppHandle) {
-    let capp_handle = app_handle.clone();
+fn spawn_event_handler(app_handle: AppHandle, mut event_receiver: broadcast::Receiver<RqsEvent>) {
     tauri::async_runtime::spawn(async move {
-        let state: tauri::State<'_, AppState> = capp_handle.state();
-        let mut receiver = state.message_sender.subscribe();
+        // Track the last time we sent a temporary notification
+        let mut last_notification_time =
+            std::time::Instant::now() - std::time::Duration::from_secs(120);
 
         loop {
-            let rinfo = receiver.recv().await;
+            match event_receiver.recv().await {
+                Ok(event) => {
+                    match event {
+                        RqsEvent::Message(message) => {
+                            if message.state.as_ref().unwrap_or(&State::Initial)
+                                == &State::WaitingForUserConsent
+                            {
+                                let name = message
+                                    .meta
+                                    .as_ref()
+                                    .and_then(|meta| meta.source.as_ref())
+                                    .map(|source| source.name.clone())
+                                    .unwrap_or_else(|| "Unknown".to_string());
+                                send_request_notification(name, message.id.clone(), &app_handle);
+                            }
+                            rs2js_channelmessage(message, &app_handle);
+                        }
+                        RqsEvent::DeviceDiscovered(endpoint) => {
+                            rs2js_endpointinfo(endpoint, &app_handle);
+                        }
+                        RqsEvent::VisibilityChanged(visibility) => {
+                            let _ = set_visibility(&app_handle, visibility);
+                        }
+                        RqsEvent::NearbyDeviceSharing => {
+                            // Handle BLE notification if needed
+                            let visibility = get_visibility(&app_handle);
+                            trace!("Tauri: ble received: {:?}", visibility);
 
-            match rinfo {
-                Ok(info) => {
-                    if info.state.as_ref().unwrap_or(&State::Initial)
-                        == &State::WaitingForUserConsent
-                    {
-                        let name = info
-                            .meta
-                            .as_ref()
-                            .and_then(|meta| meta.source.as_ref())
-                            .map(|source| source.name.clone())
-                            .unwrap_or_else(|| "Unknown".to_string());
-                        send_request_notification(name, info.id.clone(), &capp_handle);
-                    }
-                    rs2js_channelmessage(info, &capp_handle);
-                }
-                Err(e) => {
-                    error!("RecvError: message_sender: {e}");
-                }
-            }
-        }
-    });
-
-    let capp_handle = app_handle.clone();
-    tauri::async_runtime::spawn(async move {
-        let state: tauri::State<'_, AppState> = capp_handle.state();
-        let mut dch_receiver = state.dch_sender.subscribe();
-
-        loop {
-            let rinfo = dch_receiver.recv().await;
-
-            match rinfo {
-                Ok(info) => rs2js_endpointinfo(info, &capp_handle),
-                Err(e) => {
-                    error!("RecvError: dch_sender: {e}");
-                }
-            }
-        }
-    });
-
-    let capp_handle = app_handle.clone();
-    tauri::async_runtime::spawn(async move {
-        let state: tauri::State<'_, AppState> = capp_handle.state();
-        let mut visibility_receiver = state.visibility_sender.lock().unwrap().subscribe();
-
-        loop {
-            let rinfo = visibility_receiver.changed().await;
-
-            match rinfo {
-                Ok(_) => {
-                    let v = visibility_receiver.borrow_and_update();
-                    let _ = set_visibility(&capp_handle, *v);
-                }
-                Err(e) => {
-                    error!("RecvError: visibility_receiver: {e}");
-                }
-            }
-        }
-    });
-
-    let capp_handle = app_handle.clone();
-    tauri::async_runtime::spawn(async move {
-        let state: tauri::State<'_, AppState> = capp_handle.state();
-        let mut ble_receiver = state.ble_receiver.resubscribe();
-        let mut last_sent = std::time::Instant::now() - std::time::Duration::from_secs(120);
-
-        loop {
-            let rinfo = ble_receiver.recv().await;
-
-            match rinfo {
-                Ok(_) => {
-                    let v = get_visibility(&capp_handle);
-                    trace!("Tauri: ble received: {:?}", v);
-
-                    if v == Visibility::Invisible
-                        && last_sent.elapsed() >= std::time::Duration::from_secs(120)
-                    {
-                        send_temporarily_notification(&capp_handle);
-                        last_sent = std::time::Instant::now();
+                            // If visibility is invisible and enough time has passed since the last notification
+                            if visibility == Visibility::Invisible
+                                && last_notification_time.elapsed()
+                                    >= std::time::Duration::from_secs(120)
+                            {
+                                send_temporarily_notification(&app_handle);
+                                last_notification_time = std::time::Instant::now();
+                            }
+                        }
                     }
                 }
                 Err(e) => {
-                    error!("RecvError: ble_receiver: {e}");
+                    error!("Error receiving RQS event: {}", e);
+                    break;
                 }
             }
         }
@@ -315,13 +268,12 @@ fn open_main_window(app_handle: &AppHandle) {
 }
 
 fn kill_app(app_handle: &AppHandle) {
-    let state: tauri::State<'_, AppState> = app_handle.state();
+    // Shutdown RQS service
+    let state: tauri::State<AppState> = app_handle.state();
+    let rqs_handle = state.rqs_handle.clone();
 
-    tokio::task::block_in_place(|| {
-        #[allow(clippy::await_holding_lock)]
-        tauri::async_runtime::block_on(async move {
-            let _ = state.rqs.lock().unwrap().stop().await;
-        });
+    tauri::async_runtime::spawn(async move {
+        rqs_handle.shutdown().await;
     });
 
     app_handle.exit(-1);
