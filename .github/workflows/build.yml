@@ -21,12 +21,14 @@ jobs:
         include:
           - os: ubuntu-latest
           - os: macos-latest
+          - os: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/core_lib/target"
+          prefix-key: "${{ matrix.os }}"
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -58,6 +60,23 @@ jobs:
             dependencies: |
               sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
             cache_directory: app/main/src-tauri/target
+          - os: ubuntu-24.04-arm
+            name: main
+            target_path: app/main
+            dependencies: |
+              sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
+            cache_directory: app/main/src-tauri/target
+          - os: ubuntu-24.04-arm
+            name: main-musl
+            target_path: app/main
+            target: aarch64-unknown-linux-musl
+            dependencies: |
+              sudo apt-get install -y libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev musl-tools clang llvm
+              rustup target add aarch64-unknown-linux-musl
+              export CC_aarch64_unknown_linux_musl=clang
+              export AR_aarch64_unknown_linux_musl=llvm-ar
+              export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-Clink-self-contained=yes -Clinker=rust-lld"
+            cache_directory: app/main/src-tauri/target
           - os: macos-latest
             name: main
             target_path: app/main
@@ -75,9 +94,13 @@ jobs:
         with:
           node-version: 20
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target || '' }}
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.cache_directory }}"
+          prefix-key: "${{ matrix.os }}${{ matrix.name }}${{ matrix.target }}"
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -97,12 +120,19 @@ jobs:
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
 
+      - name: Check Rust setup
+        run: |
+          which rustc
+          which cargo
+          rustup show
+          rustup target list --installed
+
       - name: Build Vite + Tauri
         run: |
           rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/
           cd ./${{ matrix.target_path }}
           pnpm install
-          pnpm build:debug
+          pnpm build:debug ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
           cd ${{ github.workspace }}
           ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/ ${{ matrix.name }}
 
