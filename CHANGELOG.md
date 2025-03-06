@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.6](https://github.com/Martichou/rquickshare/compare/v0.11.5...v0.11.6) (2025-03-06)
+
+
+### Bug Fixes
+
+* [#294](https://github.com/Martichou/rquickshare/issues/294) ([d17c714](https://github.com/Martichou/rquickshare/commit/d17c71466656c9a8dfe9a4117b240eff320bdf0a))
+* packageName is lowercase for wayland icon match ([d17c714](https://github.com/Martichou/rquickshare/commit/d17c71466656c9a8dfe9a4117b240eff320bdf0a)), closes [#294](https://github.com/Martichou/rquickshare/issues/294)
+
 ## [0.11.5](https://github.com/Martichou/rquickshare/compare/v0.11.4...v0.11.5) (2025-02-23)
 
 
