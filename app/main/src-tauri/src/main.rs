@@ -273,7 +273,9 @@ fn kill_app(app_handle: &AppHandle) {
     let rqs_handle = state.rqs_handle.clone();
 
     tauri::async_runtime::spawn(async move {
-        rqs_handle.shutdown().await;
+        if let Err(e) = rqs_handle.shutdown().await {
+            error!("Error shutting down RQS: {}", e);
+        }
     });
 
     app_handle.exit(-1);

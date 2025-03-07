@@ -17,7 +17,7 @@ async fn main() -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
 
     // Create the RQuickShare service with default configuration
-    let mut rqs = RQS::default();
+    let rqs = RQS::default();
     let config = RqsConfig::default();
 
     // Start the service and get the handle
@@ -39,7 +39,7 @@ async fn main() -> Result<(), anyhow::Error> {
     info!("Stopping service.");
 
     // Shutdown the service
-    handle.shutdown().await;
+    let _ = handle.shutdown().await;
     rqs.shutdown().await;
 
     Ok(())

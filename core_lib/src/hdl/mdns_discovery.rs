@@ -2,13 +2,12 @@ use std::collections::HashMap;
 
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use serde::{Deserialize, Serialize};
-use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 use crate::utils::{is_not_self_ip, parse_mdns_endpoint_info};
-use crate::DeviceType;
+use crate::{DeviceType, RqsEvent};
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
 #[ts(export)]
@@ -24,11 +23,11 @@ pub struct EndpointInfo {
 
 pub struct MDnsDiscovery {
     daemon: ServiceDaemon,
-    sender: broadcast::Sender<EndpointInfo>,
+    sender: broadcast::Sender<RqsEvent>,
 }
 
 impl MDnsDiscovery {
-    pub fn new(sender: broadcast::Sender<EndpointInfo>) -> Result<Self, anyhow::Error> {
+    pub fn new(sender: broadcast::Sender<RqsEvent>) -> Result<Self, anyhow::Error> {
         let daemon = ServiceDaemon::new()?;
 
         Ok(Self { daemon, sender })
@@ -49,81 +48,67 @@ impl MDnsDiscovery {
                     info!("MDnsDiscovery: tracker cancelled, breaking");
                     break;
                 }
-                r = receiver.recv_async() => {
-                    match r {
-                        Ok(event) => {
-                            match event {
-                                ServiceEvent::ServiceResolved(info) => {
-                                    let port = info.get_port();
+                Ok(event) = receiver.recv_async() => {
+                    match event {
+                        ServiceEvent::ServiceResolved(info) => {
+                            let fullname = info.get_fullname().to_string();
+                            let addresses = info.get_addresses_v4();
+                            if addresses.is_empty() {
+                                continue;
+                            }
 
-                                    let ip_hash = info.get_addresses_v4();
-                                    if ip_hash.is_empty() {
-                                        continue;
-                                    }
+                            let ip = addresses
+                                .iter()
+                                .find(|ip| is_not_self_ip(ip))
+                                .map(|ip| ip.to_string());
 
-                                    let ip = match ip_hash.iter().next() {
-                                        Some(i) => i,
-                                        None => continue,
-                                    };
+                            if ip.is_none() {
+                                continue;
+                            }
 
-                                    // Check that the IP is not a "self IP"
-                                    if !is_not_self_ip(ip) {
-                                        continue;
-                                    }
+                            let port = info.get_port().to_string();
 
-                                    // Decode the "n" text properties
-                                    let n = match info.get_property("n") {
-                                        Some(_n) => _n,
-                                        None => continue,
-                                    };
+                            // Extract the "n" property which contains the encoded endpoint info
+                            let n_property = info.get_properties()
+                                .iter()
+                                .find(|prop| prop.key() == "n")
+                                .map(|prop| prop.val_str());
 
-                                    // Parse the endpoint info
-                                    let (dt, dn) = match parse_mdns_endpoint_info(n.val_str()) {
-                                        Ok(r) => r,
-                                        Err(_) => continue
-                                    };
-
-                                    let ip_port = format!("{ip}:{port}");
-                                    let fullname = info.get_fullname().to_string();
-                                    if TcpStream::connect(&ip_port).await.is_ok() {
-                                        let ei = EndpointInfo {
+                            if let Some(n_value) = n_property {
+                                match parse_mdns_endpoint_info(n_value) {
+                                    Ok((device_type, device_name)) => {
+                                        let endpoint_info = EndpointInfo {
                                             fullname: fullname.clone(),
-                                            id: ip_port,
-                                            name: Some(dn),
-                                            ip: Some(ip.to_string()),
-                                            port: Some(port.to_string()),
-                                            rtype: Some(dt),
+                                            id: format!("{}:{}", ip.as_ref().unwrap(), port),
+                                            name: Some(device_name),
+                                            ip,
+                                            port: Some(port),
+                                            rtype: Some(device_type),
                                             present: Some(true),
                                         };
-                                        info!("ServiceResolved: Resolved a new service: {:?}", ei);
-                                        cache.insert(fullname.clone(), ei.clone());
-                                        let _ = self.sender.send(ei);
-                                    }
-                                }
-                                ServiceEvent::ServiceRemoved(_, fullname) => {
-                                    trace!("ServiceRemoved: checking if should remove {}", fullname);
-                                    // Only remove if it has not been seen in the last cleanup_threshold
-                                    let should_remove = cache.get(&fullname).map(|ei| ei.id.clone());
 
-                                    if let Some(id) = should_remove {
-                                        info!("ServiceRemoved: Remove a previous service: {}", fullname);
-                                        cache.remove(&fullname);
-                                        let _ = self.sender.send(EndpointInfo {
-                                            id,
-                                            ..Default::default()
-                                        });
+                                        cache.insert(fullname.clone(), endpoint_info.clone());
+                                        let _ = self.sender.send(RqsEvent::DeviceDiscovered(endpoint_info));
+                                    },
+                                    Err(e) => {
+                                        error!("Failed to parse endpoint info: {}", e);
                                     }
                                 }
-                                ServiceEvent::SearchStarted(_) | ServiceEvent::SearchStopped(_) => {}
-                                _ => {}
                             }
-                        },
-                        Err(err) => error!("MDnsDiscovery: error: {}", err),
+                        }
+                        ServiceEvent::ServiceRemoved(_, fullname) => {
+                            if let Some(mut endpoint_info) = cache.remove(&fullname) {
+                                endpoint_info.present = Some(false);
+                                let _ = self.sender.send(RqsEvent::DeviceDiscovered(endpoint_info));
+                            }
+                        }
+                        _ => {}
                     }
                 }
             }
         }
 
+        info!("MDnsDiscovery: service stopped");
         Ok(())
     }
 }

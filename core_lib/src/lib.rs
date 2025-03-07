@@ -1,9 +1,11 @@
 #[macro_use]
 extern crate log;
 
+use std::cell::RefCell;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, RwLock};
 
+use anyhow::{anyhow, Result};
 use channel::ChannelMessage;
 #[cfg(all(feature = "experimental", target_os = "linux"))]
 use hdl::BleAdvertiser;
@@ -49,6 +51,11 @@ pub mod location_nearby_connections {
 
 static CUSTOM_DOWNLOAD: Lazy<RwLock<Option<PathBuf>>> = Lazy::new(|| RwLock::new(None));
 
+// Thread-local storage for the discovery token
+thread_local! {
+    static DISCOVERY_TOKEN: RefCell<Option<Arc<CancellationToken>>> = RefCell::new(None);
+}
+
 /// Configuration for the RQuickShare service
 #[derive(Debug, Clone)]
 pub struct RqsConfig {
@@ -83,122 +90,17 @@ pub enum RqsEvent {
     NearbyDeviceSharing,
 }
 
-/// Handle to control the RQuickShare service
-#[derive(Debug, Clone)]
-pub struct RqsHandle {
-    /// Sender for file transfer operations
-    pub sender: mpsc::Sender<SendInfo>,
-    /// Sender for messages to the service
-    message_sender: broadcast::Sender<ChannelMessage>,
-    /// Sender for visibility changes
-    visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
-    /// Sender for discovery events
-    discovery_sender: broadcast::Sender<EndpointInfo>,
-    /// Cancellation token for the service
-    ctoken: CancellationToken,
-    /// Cancellation token for discovery
-    discovery_token: CancellationToken,
-}
-
-impl RqsHandle {
-    /// Start device discovery
-    pub fn start_discovery(&self) -> Result<(), anyhow::Error> {
-        // Cancel any existing discovery first
-        self.discovery_token.cancel();
-
-        // Create a new discovery token
-        let discovery_token = CancellationToken::new();
-
-        // Start discovery with the new token
-        let discovery = MDnsDiscovery::new(self.discovery_sender.clone())?;
-
-        tokio::spawn(async move {
-            if let Err(e) = discovery.run(discovery_token.clone()).await {
-                error!("Discovery error: {}", e);
-            }
-        });
-
-        #[cfg(all(feature = "experimental", target_os = "linux"))]
-        {
-            let discovery_token = discovery_token.clone();
-            tokio::spawn(async move {
-                let blea = match BleAdvertiser::new().await {
-                    Ok(b) => b,
-                    Err(e) => {
-                        error!("Couldn't init BleAdvertiser: {}", e);
-                        return;
-                    }
-                };
-
-                if let Err(e) = blea.run(discovery_token).await {
-                    error!("Couldn't start BleAdvertiser: {}", e);
-                }
-            });
-        }
-
-        Ok(())
-    }
-
-    /// Stop device discovery
-    pub fn stop_discovery(&self) {
-        self.discovery_token.cancel();
-    }
-
-    /// Change visibility setting
-    pub fn change_visibility(&self, visibility: Visibility) {
-        self.visibility_sender
-            .lock()
-            .unwrap()
-            .send_modify(|state| *state = visibility);
-    }
-
-    /// Set custom download path
-    pub fn set_download_path(&self, path: Option<PathBuf>) {
-        debug!("Setting the download path to {:?}", path);
-        let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
-        *guard = path;
-    }
-
-    /// Send a message to the service
-    pub fn send_message(
-        &self,
-        message: ChannelMessage,
-    ) -> Result<(), Box<broadcast::error::SendError<ChannelMessage>>> {
-        self.message_sender
-            .send(message)
-            .map(|_| ())
-            .map_err(Box::new)
-    }
-
-    /// Shutdown the service
-    pub async fn shutdown(self) {
-        // Stop discovery first
-        self.stop_discovery();
-
-        // Cancel the main service
-        self.ctoken.cancel();
-    }
-}
-
 /// The main RQuickShare service
 #[derive(Debug)]
 pub struct RQS {
     /// Task tracker for spawned tasks
     tracker: TaskTracker,
-    /// Cancellation token for the service
+    /// Main cancellation token for the service
     ctoken: CancellationToken,
-    /// Discovery cancellation token
-    discovery_token: CancellationToken,
-    /// Event sender
+    /// Unified event sender for all events
     event_sender: broadcast::Sender<RqsEvent>,
-    /// Visibility sender
+    /// Visibility sender (using watch channel for state synchronization)
     visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
-    /// Message sender
-    message_sender: broadcast::Sender<ChannelMessage>,
-    /// Discovery sender
-    discovery_sender: broadcast::Sender<EndpointInfo>,
-    /// BLE sender
-    ble_sender: broadcast::Sender<()>,
 }
 
 impl Default for RQS {
@@ -216,35 +118,27 @@ impl RQS {
             *guard = Some(path.clone());
         }
 
-        // Create channels
+        // Create unified event channel
         let (event_sender, _) = broadcast::channel(50);
-        let (message_sender, _) = broadcast::channel(50);
-        let (discovery_sender, _) = broadcast::channel(10);
-        let (ble_sender, _) = broadcast::channel(5);
 
         // Create visibility channel with initial value
-        let (visibility_sender, _visibility_receiver) = watch::channel(Visibility::Invisible);
+        let (visibility_sender, _) = watch::channel(Visibility::Invisible);
         let _ = visibility_sender.send(config.visibility);
 
-        // Create task tracker and cancellation tokens
+        // Create task tracker and cancellation token
         let tracker = TaskTracker::new();
         let ctoken = CancellationToken::new();
-        let discovery_token = CancellationToken::new();
 
         Self {
             tracker,
             ctoken,
-            discovery_token,
             event_sender,
             visibility_sender: Arc::new(Mutex::new(visibility_sender)),
-            message_sender,
-            discovery_sender,
-            ble_sender,
         }
     }
 
     /// Start the RQuickShare service
-    pub async fn start(&mut self, config: &RqsConfig) -> Result<RqsHandle, anyhow::Error> {
+    pub async fn start(&self, config: &RqsConfig) -> Result<RqsHandle> {
         // Generate random endpoint ID
         let endpoint_id: Vec<u8> = rand::rng()
             .sample_iter(Alphanumeric)
@@ -259,21 +153,21 @@ impl RQS {
         let binded_addr = tcp_listener.local_addr()?;
         info!("TcpListener on: {}", binded_addr);
 
-        // Create MPSC channel for the TcpServer
-        let (sender, receiver) = mpsc::channel(10);
+        // Create channel for file transfers
+        let (tx, rx) = mpsc::channel(10);
 
         // Create TcpServer
         let mut server = TcpServer::new(
             endpoint_id[..4].try_into()?,
             tcp_listener,
-            self.message_sender.clone(),
-            receiver,
+            self.event_sender.clone(),
+            rx,
         )?;
 
         // Spawn TcpServer task
-        let ctoken = self.ctoken.clone();
+        let server_token = self.ctoken.child_token();
         self.tracker.spawn(async move {
-            if let Err(e) = server.run(ctoken).await {
+            if let Err(e) = server.run(server_token).await {
                 error!("TcpServer error: {}", e);
             }
         });
@@ -281,10 +175,24 @@ impl RQS {
         // Spawn BLE listener task if experimental feature is enabled
         #[cfg(feature = "experimental")]
         {
-            if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
-                let ctoken = self.ctoken.clone();
+            // Create a dedicated channel for BLE notifications
+            let (ble_sender, _) = broadcast::channel::<()>(5);
+
+            // Forward BLE events to the unified event channel
+            let event_sender = self.event_sender.clone();
+            let ble_receiver = ble_sender.subscribe();
+            self.tracker.spawn(async move {
+                let mut receiver = ble_receiver;
+                while (receiver.recv().await).is_ok() {
+                    let _ = event_sender.send(RqsEvent::NearbyDeviceSharing);
+                }
+            });
+
+            // Use the dedicated channel for BLE listener
+            if let Ok(ble) = BleListener::new(ble_sender).await {
+                let ble_token = self.ctoken.child_token();
                 self.tracker.spawn(async move {
-                    if let Err(e) = ble.run(ctoken).await {
+                    if let Err(e) = ble.run(ble_token).await {
                         error!("BleListener error: {}", e);
                     }
                 });
@@ -295,30 +203,25 @@ impl RQS {
         let mut mdns = MDnsServer::new(
             endpoint_id[..4].try_into()?,
             binded_addr.port(),
-            self.ble_sender.subscribe(),
+            self.event_sender.subscribe(),
             self.visibility_sender.clone(),
             self.visibility_sender.lock().unwrap().subscribe(),
         )?;
 
         // Spawn MDnsServer task
-        let ctoken = self.ctoken.clone();
+        let mdns_token = self.ctoken.child_token();
         self.tracker.spawn(async move {
-            if let Err(e) = mdns.run(ctoken).await {
+            if let Err(e) = mdns.run(mdns_token).await {
                 error!("MDnsServer error: {}", e);
             }
         });
 
-        // Set up event forwarding
-        self.setup_event_forwarding();
-
         // Create and return handle
         Ok(RqsHandle {
-            sender,
-            message_sender: self.message_sender.clone(),
+            sender: tx,
+            event_sender: self.event_sender.clone(),
             visibility_sender: self.visibility_sender.clone(),
-            discovery_sender: self.discovery_sender.clone(),
             ctoken: self.ctoken.clone(),
-            discovery_token: self.discovery_token.clone(),
         })
     }
 
@@ -327,59 +230,132 @@ impl RQS {
         self.event_sender.subscribe()
     }
 
-    /// Set up forwarding of events from various channels to the unified event channel
-    fn setup_event_forwarding(&self) {
-        // Forward message events
-        let message_sender = self.message_sender.clone();
-        let event_sender = self.event_sender.clone();
-        self.tracker.spawn(async move {
-            let mut receiver = message_sender.subscribe();
-            while let Ok(message) = receiver.recv().await {
-                let _ = event_sender.send(RqsEvent::Message(message));
-            }
-        });
-
-        // Forward discovery events
-        let discovery_sender = self.discovery_sender.clone();
-        let event_sender = self.event_sender.clone();
-        self.tracker.spawn(async move {
-            let mut receiver = discovery_sender.subscribe();
-            while let Ok(endpoint) = receiver.recv().await {
-                let _ = event_sender.send(RqsEvent::DeviceDiscovered(endpoint));
-            }
-        });
-
-        // Forward visibility events
-        let visibility_sender = self.visibility_sender.clone();
-        let event_sender = self.event_sender.clone();
-        self.tracker.spawn(async move {
-            let mut receiver = visibility_sender.lock().unwrap().subscribe();
-            while (receiver.changed().await).is_ok() {
-                let visibility = *receiver.borrow();
-                let _ = event_sender.send(RqsEvent::VisibilityChanged(visibility));
-            }
-        });
-
-        // Forward BLE events
-        let ble_sender = self.ble_sender.clone();
-        let event_sender = self.event_sender.clone();
-        self.tracker.spawn(async move {
-            let mut receiver = ble_sender.subscribe();
-            while (receiver.recv().await).is_ok() {
-                let _ = event_sender.send(RqsEvent::NearbyDeviceSharing);
-            }
-        });
-    }
-
     /// Shutdown the service
     pub async fn shutdown(&self) {
-        // Cancel discovery token
-        self.discovery_token.cancel();
-
-        // Cancel main token
+        // Cancel the main token (which will cancel all child tokens)
         self.ctoken.cancel();
 
         // Wait for all tasks to complete
         self.tracker.wait().await;
+    }
+}
+
+/// Handle to control the RQuickShare service
+#[derive(Debug, Clone)]
+pub struct RqsHandle {
+    /// Sender for file transfer operations
+    pub sender: mpsc::Sender<SendInfo>,
+    /// Unified event sender
+    event_sender: broadcast::Sender<RqsEvent>,
+    /// Sender for visibility changes
+    visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
+    /// Cancellation token for the service
+    ctoken: CancellationToken,
+}
+
+impl RqsHandle {
+    /// Start device discovery
+    pub fn start_discovery(&self) -> Result<()> {
+        // Create a new discovery token and store it in a shared location
+        let discovery_token = Arc::new(self.ctoken.child_token());
+
+        // Store the token in thread-local storage or another accessible location
+        DISCOVERY_TOKEN.with(|cell| {
+            *cell.borrow_mut() = Some(discovery_token.clone());
+        });
+
+        // Start MDnsDiscovery with the token
+        let discovery = MDnsDiscovery::new(self.event_sender.clone())?;
+        let discovery_token_clone = discovery_token.clone();
+
+        tokio::spawn(async move {
+            if let Err(e) = discovery.run((*discovery_token_clone).clone()).await {
+                error!("Discovery error: {}", e);
+            }
+        });
+
+        // For Linux with experimental features, start BLE advertiser with the same token
+        #[cfg(all(feature = "experimental", target_os = "linux"))]
+        {
+            let adv_token = discovery_token.clone();
+
+            tokio::spawn(async move {
+                let blea = match BleAdvertiser::new().await {
+                    Ok(b) => b,
+                    Err(e) => {
+                        error!("Couldn't init BleAdvertiser: {}", e);
+                        return;
+                    }
+                };
+
+                if let Err(e) = blea.run((*adv_token).clone()).await {
+                    error!("Couldn't start BleAdvertiser: {}", e);
+                }
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Stop discovery by cancelling the discovery token
+    pub fn stop_discovery(&self) {
+        // Retrieve and cancel the discovery token
+        DISCOVERY_TOKEN.with(|cell| {
+            if let Some(token) = cell.borrow().as_ref() {
+                token.cancel();
+                debug!("Discovery cancelled");
+            } else {
+                debug!("No discovery token to cancel");
+            }
+            *cell.borrow_mut() = None;
+        });
+    }
+
+    /// Change visibility setting
+    pub fn change_visibility(&self, visibility: Visibility) -> Result<()> {
+        // Update the visibility state
+        self.visibility_sender
+            .lock()
+            .map_err(|e| anyhow!("Failed to lock visibility sender: {}", e))?
+            .send_modify(|state| *state = visibility);
+
+        // Also send an event through the unified channel
+        self.event_sender
+            .send(RqsEvent::VisibilityChanged(visibility))
+            .map_err(|e| anyhow!("Failed to send visibility event: {}", e))?;
+
+        Ok(())
+    }
+
+    /// Set custom download path
+    pub fn set_download_path(&self, path: Option<PathBuf>) -> Result<()> {
+        debug!("Setting the download path to {:?}", path);
+        let mut guard = CUSTOM_DOWNLOAD
+            .write()
+            .map_err(|e| anyhow!("Failed to acquire write lock: {}", e))?;
+        *guard = path;
+        Ok(())
+    }
+
+    /// Send a message to the service
+    pub fn send_message(&self, message: ChannelMessage) -> Result<()> {
+        self.event_sender
+            .send(RqsEvent::Message(message))
+            .map(|_| ())
+            .map_err(|e| anyhow!("Failed to send message: {}", e))
+    }
+
+    /// Subscribe to events from the service
+    pub fn subscribe(&self) -> broadcast::Receiver<RqsEvent> {
+        self.event_sender.subscribe()
+    }
+
+    /// Shutdown the service
+    pub async fn shutdown(self) -> Result<()> {
+        // Stop discovery first
+        self.stop_discovery();
+        // Cancel the main token
+        self.ctoken.cancel();
+        Ok(())
     }
 }

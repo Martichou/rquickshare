@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::broadcast::Sender;
+use tokio::sync::broadcast::{self, Sender};
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
@@ -9,6 +9,7 @@ use crate::channel::{ChannelDirection, ChannelMessage};
 use crate::errors::AppError;
 use crate::hdl::{InboundRequest, OutboundPayload, OutboundRequest, State};
 use crate::utils::RemoteDeviceInfo;
+use crate::RqsEvent;
 
 const INNER_NAME: &str = "TcpServer";
 
@@ -24,7 +25,7 @@ pub struct SendInfo {
 pub struct TcpServer {
     endpoint_id: [u8; 4],
     tcp_listener: TcpListener,
-    sender: Sender<ChannelMessage>,
+    sender: Sender<RqsEvent>,
     connect_receiver: Receiver<SendInfo>,
 }
 
@@ -32,7 +33,7 @@ impl TcpServer {
     pub fn new(
         endpoint_id: [u8; 4],
         tcp_listener: TcpListener,
-        sender: Sender<ChannelMessage>,
+        sender: Sender<RqsEvent>,
         connect_receiver: Receiver<SendInfo>,
     ) -> Result<Self, anyhow::Error> {
         Ok(Self {
@@ -81,12 +82,12 @@ impl TcpServer {
                                                 }
 
                                                 if ir.state.state != State::Finished {
-                                                    let _ = esender.send(ChannelMessage {
+                                                    let _ = esender.send(RqsEvent::Message(ChannelMessage {
                                                         id: remote_addr.to_string(),
                                                         direction: ChannelDirection::LibToFront,
                                                         state: Some(State::Disconnected),
                                                         ..Default::default()
-                                                    });
+                                                    }));
                                                 }
                                                 error!("{INNER_NAME}: error while handling client: {e} ({:?})", ir.state.state);
                                                 break;
@@ -98,26 +99,52 @@ impl TcpServer {
                         },
                         Err(err) => {
                             error!("{INNER_NAME}: error accepting: {}", err);
-                            break;
                         }
                     }
                 }
             }
         }
 
+        info!("{INNER_NAME}: service stopped");
         Ok(())
     }
 
     /// To be called inside a separate task if we want to handle concurrency
     pub async fn connect(&self, ctk: CancellationToken, si: SendInfo) -> Result<(), anyhow::Error> {
-        debug!("{INNER_NAME}: Connecting to: {}", si.addr);
-        let socket = TcpStream::connect(si.addr.clone()).await?;
+        info!("{INNER_NAME}: connecting to {}", si.addr);
+
+        let socket = match TcpStream::connect(&si.addr).await {
+            Ok(s) => s,
+            Err(e) => {
+                error!("{INNER_NAME}: couldn't connect to {}: {}", si.addr, e);
+                return Err(e.into());
+            }
+        };
+
+        // Create a dedicated channel for this connection
+        let (channel_sender, _) = broadcast::channel::<ChannelMessage>(10);
+
+        // Forward messages from the unified event channel to this connection's channel
+        let event_sender = self.sender.clone();
+        let id = si.id.clone();
+        let channel_sender_clone = channel_sender.clone();
+
+        tokio::spawn(async move {
+            let mut event_receiver = event_sender.subscribe();
+            while let Ok(event) = event_receiver.recv().await {
+                if let RqsEvent::Message(msg) = event {
+                    if msg.id == id {
+                        let _ = channel_sender_clone.send(msg);
+                    }
+                }
+            }
+        });
 
         let mut or = OutboundRequest::new(
             self.endpoint_id,
             socket,
-            si.id,
-            self.sender.clone(),
+            si.id.clone(),
+            channel_sender,
             si.ob,
             RemoteDeviceInfo {
                 device_type: crate::DeviceType::Unknown,
@@ -125,43 +152,62 @@ impl TcpServer {
             },
         );
 
-        // Send connection request
-        or.send_connection_request().await?;
-        // Send UKEY init
-        or.send_ukey2_client_init().await?;
+        let cctk = ctk.clone();
+        let event_sender = self.sender.clone();
+        let addr = si.addr.clone();
 
-        loop {
-            tokio::select! {
-                _ = ctk.cancelled() => {
-                    info!("{INNER_NAME}: tracker cancelled, breaking");
+        tokio::spawn(async move {
+            // Instead of calling run, use the individual methods
+            if let Err(e) = or.send_connection_request().await {
+                handle_error(&or, &event_sender, &addr, e);
+                return;
+            }
+
+            if let Err(e) = or.send_ukey2_client_init().await {
+                handle_error(&or, &event_sender, &addr, e);
+                return;
+            }
+
+            // Main loop to handle the connection
+            loop {
+                if cctk.is_cancelled() {
                     break;
-                },
-                r = or.handle() => {
-                    if let Err(e) = r {
-                        match e.downcast_ref() {
-                            Some(AppError::NotAnError) => break,
-                            None => {
-                                if or.state.state == State::Initial {
-                                    break;
-                                }
+                }
 
-                                if or.state.state != State::Finished && or.state.state != State::Cancelled {
-                                    let _ = self.sender.clone().send(ChannelMessage {
-                                        id: si.addr,
-                                        direction: ChannelDirection::LibToFront,
-                                        state: Some(State::Disconnected),
-                                        ..Default::default()
-                                    });
-                                }
-                                error!("{INNER_NAME}: error while handling client: {e} ({:?})", or.state.state);
-                                break;
-                            }
+                match or.handle().await {
+                    Ok(_) => {}
+                    Err(e) => match e.downcast_ref() {
+                        Some(AppError::NotAnError) => break,
+                        None => {
+                            handle_error(&or, &event_sender, &addr, e);
+                            break;
                         }
-                    }
+                    },
                 }
             }
-        }
+        });
 
         Ok(())
     }
+}
+
+// Helper function to handle errors
+fn handle_error(
+    or: &OutboundRequest,
+    event_sender: &Sender<RqsEvent>,
+    addr: &str,
+    e: anyhow::Error,
+) {
+    if or.state.state != State::Finished && or.state.state != State::Cancelled {
+        let _ = event_sender.send(RqsEvent::Message(ChannelMessage {
+            id: addr.to_string(),
+            direction: ChannelDirection::LibToFront,
+            state: Some(State::Disconnected),
+            ..Default::default()
+        }));
+    }
+    error!(
+        "{INNER_NAME}: error while handling client: {e} ({:?})",
+        or.state.state
+    );
 }
