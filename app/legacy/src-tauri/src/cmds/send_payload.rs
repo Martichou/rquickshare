@@ -10,7 +10,8 @@ pub async fn send_payload(
     info!("send_payload: {:?}", &message);
 
     state
-        .sender_file
+        .rqs_handle
+        .sender
         .send(message)
         .await
         .map_err(|e| format!("couldn't send payload: {e}"))
