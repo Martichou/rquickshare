@@ -1,6 +1,5 @@
 use std::fs::File;
 use std::os::unix::fs::FileExt;
-use std::time::Duration;
 
 use anyhow::anyhow;
 use bytes::Bytes;
@@ -38,34 +37,50 @@ use crate::utils::{
     encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
     stream_read_exact, to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
-use crate::{location_nearby_connections, sharing_nearby};
+use crate::{location_nearby_connections, sharing_nearby, RqsEvent};
 
 type HmacSha256 = Hmac<Sha256>;
 
 const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
-const SANITY_DURATION: Duration = Duration::from_micros(10);
 
 #[derive(Debug)]
 pub struct InboundRequest {
     socket: TcpStream,
     pub state: InnerState,
-    sender: Sender<ChannelMessage>,
-    receiver: Receiver<ChannelMessage>,
+    sender: Sender<RqsEvent>,
+    receiver: Receiver<RqsEvent>,
 }
 
 impl InboundRequest {
-    pub fn new(socket: TcpStream, id: String, sender: Sender<ChannelMessage>) -> Self {
+    pub fn new(socket: TcpStream, id: String, sender: Sender<RqsEvent>) -> Self {
+        // Create a receiver for the unified event channel
         let receiver = sender.subscribe();
 
+        // We'll filter messages in the handle method instead of trying to create a custom filtered receiver
         Self {
             socket,
             state: InnerState {
-                id,
+                id: id.clone(),
                 server_seq: 0,
                 client_seq: 0,
+                encryption_done: false,
                 state: State::Initial,
-                encryption_done: true,
-                ..Default::default()
+                remote_device_info: None,
+                pin_code: None,
+                transfer_metadata: None,
+                transferred_files: Default::default(),
+                cipher_commitment: None,
+                private_key: None,
+                public_key: None,
+                server_init_data: None,
+                client_init_msg_data: None,
+                ukey_client_finish_msg_data: None,
+                decrypt_key: None,
+                recv_hmac_key: None,
+                encrypt_key: None,
+                send_hmac_key: None,
+                text_payload: None,
+                payload_buffers: Default::default(),
             },
             sender,
             receiver,
@@ -73,58 +88,72 @@ impl InboundRequest {
     }
 
     pub async fn handle(&mut self) -> Result<(), anyhow::Error> {
+        // Check for any pending messages from the frontend
+        if let Ok(Some(channel_msg)) = self.wait_for_channel_message().await {
+            if let Some(action) = channel_msg.action {
+                match action {
+                    ChannelAction::AcceptTransfer => {
+                        return self.accept_transfer().await;
+                    }
+                    ChannelAction::RejectTransfer => {
+                        return self
+                            .reject_transfer(Some(
+                                sharing_nearby::connection_response_frame::Status::Reject,
+                            ))
+                            .await;
+                    }
+                    ChannelAction::CancelTransfer => {
+                        // Use an appropriate status value from the actual enum
+                        return self
+                            .reject_transfer(Some(
+                                sharing_nearby::connection_response_frame::Status::Reject,
+                            ))
+                            .await;
+                    }
+                }
+            }
+        }
+
         // Buffer for the 4-byte length
         let mut length_buf = [0u8; 4];
 
         tokio::select! {
             i = self.receiver.recv() => {
-                match i {
-                    Ok(channel_msg) => {
-                        if channel_msg.direction == ChannelDirection::LibToFront {
-                            return Ok(());
-                        }
+                if let Ok(RqsEvent::Message(channel_msg)) = i {
+                    if channel_msg.direction == ChannelDirection::LibToFront {
+                        return Ok(());
+                    }
 
-                        if channel_msg.id != self.state.id {
-                            return Ok(());
-                        }
+                    if channel_msg.id != self.state.id {
+                        return Ok(());
+                    }
 
-                        debug!("inbound: got: {:?}", channel_msg);
-                        match channel_msg.action {
-                            Some(ChannelAction::AcceptTransfer) => {
+                    debug!("inbound: got: {:?}", channel_msg);
+                    if let Some(action) = channel_msg.action {
+                        match action {
+                            ChannelAction::AcceptTransfer => {
                                 self.accept_transfer().await?;
                             },
-                            Some(ChannelAction::RejectTransfer) => {
+                            ChannelAction::RejectTransfer => {
                                 self.update_state(
                                     |e| {
                                         e.state = State::Rejected;
                                     },
                                     true,
                                 ).await;
-
-                                self.reject_transfer(Some(
-                                    sharing_nearby::connection_response_frame::Status::Reject
-                                )).await?;
-                                return Err(anyhow!(crate::errors::AppError::NotAnError));
                             },
-                            Some(ChannelAction::CancelTransfer) => {
+                            ChannelAction::CancelTransfer => {
                                 self.update_state(
                                     |e| {
                                         e.state = State::Cancelled;
                                     },
                                     true,
                                 ).await;
-                                self.disconnection().await?;
-                                return Err(anyhow!(crate::errors::AppError::NotAnError));
-                            },
-                            None => {
-                                trace!("inbound: nothing to do")
-                            },
+                            }
                         }
                     }
-                    Err(e) => {
-                        error!("inbound: channel error: {}", e);
-                    }
                 }
+                return Ok(());
             },
             h = stream_read_exact(&mut self.socket, &mut length_buf) => {
                 h?;
@@ -978,24 +1007,15 @@ impl InboundRequest {
     }
 
     async fn disconnection(&mut self) -> Result<(), anyhow::Error> {
-        let frame = location_nearby_connections::OfflineFrame {
-            version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
-            v1: Some(location_nearby_connections::V1Frame {
-                r#type: Some(
-                    location_nearby_connections::v1_frame::FrameType::Disconnection.into(),
-                ),
-                disconnection: Some(location_nearby_connections::DisconnectionFrame {
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }),
-        };
+        self.update_state(
+            |s| {
+                s.state = State::Disconnected;
+            },
+            true,
+        )
+        .await;
 
-        if self.state.encryption_done {
-            self.encrypt_and_send(&frame).await
-        } else {
-            self.send_frame(frame.encode_to_vec()).await
-        }
+        Ok(())
     }
 
     async fn accept_transfer(&mut self) -> Result<(), anyhow::Error> {
@@ -1327,22 +1347,35 @@ impl InboundRequest {
     {
         f(&mut self.state);
 
-        if !inform {
-            return;
+        if inform {
+            let _ = self.sender.send(RqsEvent::Message(ChannelMessage {
+                id: self.state.id.clone(),
+                direction: ChannelDirection::LibToFront,
+                state: Some(self.state.state.clone()),
+                meta: self.state.transfer_metadata.clone(),
+                ..Default::default()
+            }));
+        }
+    }
+
+    // Add a helper method to check for relevant messages
+    async fn wait_for_channel_message(&mut self) -> Result<Option<ChannelMessage>, anyhow::Error> {
+        let mut timeout = tokio::time::interval(tokio::time::Duration::from_millis(100));
+
+        for _ in 0..50 {
+            // Try for 5 seconds
+            tokio::select! {
+                _ = timeout.tick() => {},
+                result = self.receiver.recv() => {
+                    if let Ok(RqsEvent::Message(msg)) = result {
+                        if msg.direction == ChannelDirection::FrontToLib && msg.id == self.state.id {
+                            return Ok(Some(msg));
+                        }
+                    }
+                }
+            }
         }
 
-        trace!("Sending msg into the channel");
-        let _ = self.sender.send(ChannelMessage {
-            id: self.state.id.clone(),
-            direction: ChannelDirection::LibToFront,
-            rtype: Some(crate::channel::TransferType::Inbound),
-            state: Some(self.state.state.clone()),
-            meta: self.state.transfer_metadata.clone(),
-            ..Default::default()
-        });
-        // Add a small sleep timer to allow the Tokio runtime to have
-        // some spare time to process channel's message. Otherwise it
-        // get spammed by new requests. Currently set to 10 micro secs.
-        tokio::time::sleep(SANITY_DURATION).await;
+        Ok(None)
     }
 }
