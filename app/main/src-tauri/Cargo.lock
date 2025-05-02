@@ -161,7 +161,7 @@ dependencies = [
  "futures-io",
  "futures-lite",
  "parking",
- "polling 3.7.4",
+ "polling",
  "rustix",
  "slab",
  "tracing",
@@ -2164,7 +2164,7 @@ dependencies = [
  "http-body",
  "hyper",
  "pin-project-lite",
- "socket2 0.5.8",
+ "socket2",
  "tokio",
  "tower-service",
  "tracing",
@@ -2350,12 +2350,12 @@ dependencies = [
 
 [[package]]
 name = "if-addrs"
-version = "0.10.2"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cabb0019d51a643781ff15c9c8a3e5dedc365c47211270f4e8f82812fedd8f0a"
+checksum = "69b2eeee38fef3aa9b4cc5f1beea8a2444fc00e7377cafae396de3f5c2065e24"
 dependencies = [
  "libc",
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2787,14 +2787,16 @@ checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
 name = "mdns-sd"
-version = "0.10.4"
-source = "git+https://github.com/Martichou/mdns-sd?branch=unsolicited#c3d6ec2e173ac2cf8306943f70026c37c2ab1dd7"
+version = "0.13.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d275ab1846c627a2c9035b83ec9df611f8451c61bcddbb64a3ab182016e08c0"
 dependencies = [
+ "fastrand",
  "flume",
  "if-addrs",
  "log",
- "polling 2.8.0",
- "socket2 0.4.10",
+ "mio",
+ "socket2",
 ]
 
 [[package]]
@@ -2845,6 +2847,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2886843bf800fba2e3377cff24abf6379b4c4d5c6681eaf9ea5b0d15090450bd"
 dependencies = [
  "libc",
+ "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.52.0",
 ]
@@ -3722,22 +3725,6 @@ dependencies = [
  "fdeflate",
  "flate2",
  "miniz_oxide",
-]
-
-[[package]]
-name = "polling"
-version = "2.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b2d323e8ca7996b3e23126511a523f7e62924d93ecd5ae73b333815b0eb3dce"
-dependencies = [
- "autocfg",
- "bitflags 1.3.2",
- "cfg-if",
- "concurrent-queue",
- "libc",
- "log",
- "pin-project-lite",
- "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -4722,16 +4709,6 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 
 [[package]]
 name = "socket2"
-version = "0.4.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7916fc008ca5542385b89a3d3ce689953c143e9304a9bf8beec1de48994c0d"
-dependencies = [
- "libc",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "socket2"
 version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c970269d99b64e60ec3bd6ad27270092a5394c4e309314b18ae3fe575695fbe8"
@@ -5558,9 +5535,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.43.0"
+version = "1.44.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d61fa4ffa3de412bfea335c6ecff681de2b609ba3c77ef3e00e521813a9ed9e"
+checksum = "e6b88822cbe49de4185e3a4cbf8321dd487cf5fe0c5c65695fef6346371e9c48"
 dependencies = [
  "backtrace",
  "bytes",
@@ -5568,7 +5545,7 @@ dependencies = [
  "mio",
  "pin-project-lite",
  "signal-hook-registry",
- "socket2 0.5.8",
+ "socket2",
  "tokio-macros",
  "tracing",
  "windows-sys 0.52.0",
@@ -5958,9 +5935,9 @@ checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
 
 [[package]]
 name = "uuid"
-version = "1.15.1"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0f540e3240398cce6128b64ba83fdbdd86129c16a3aa1a3a252efd66eb3d587"
+checksum = "458f7a779bf54acc9f347480ac654f68407d3aab21269a6e3c9f922acd9e2da9"
 dependencies = [
  "getrandom 0.3.1",
  "serde",

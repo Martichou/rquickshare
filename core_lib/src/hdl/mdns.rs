@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use mdns_sd::{AddrType, ServiceDaemon, ServiceInfo};
+use mdns_sd::{ServiceDaemon, ServiceInfo};
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Receiver;
 use tokio::sync::watch;
@@ -66,6 +66,7 @@ impl MDnsServer {
     pub async fn run(&mut self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
         info!("{INNER_NAME}: service starting");
 
+        let monitor = self.daemon.monitor()?;
         let mut current_visibility = *self.visibility_receiver.borrow();
         if current_visibility == Visibility::Visible {
             self.daemon.register(self.service_info.clone())?;
@@ -79,19 +80,41 @@ impl MDnsServer {
                     info!("{INNER_NAME}: tracker cancelled, breaking");
                     break;
                 }
+                r = monitor.recv_async() => {
+                    match r {
+                        Ok(_) => continue,
+                        Err(err) => return Err(err.into()),
+                    }
+                },
                 _ = interval.tick() => {
-                    trace!("{INNER_NAME}: tick");
+                    if current_visibility != Visibility::Temporarily {
+                        continue;
+                    }
+
+                    let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
+                    let _ = receiver.recv();
+                    let _ = self.visibility_sender.lock().unwrap().send(Visibility::Invisible);
                 }
                 Ok(event) = self.event_receiver.recv() => {
                     if let RqsEvent::NearbyDeviceSharing = event {
-                        trace!("{INNER_NAME}: ble received");
                         if current_visibility == Visibility::Invisible {
-                            self.visibility_sender.lock().unwrap().send_modify(|state| *state = Visibility::Temporarily);
+                            continue;
                         }
+
+                        debug!("{INNER_NAME}: ble_receiver: got event");
+                        // if visibility == Visibility::Visible || visibility == Visibility::Temporarily {
+                        //     // Android can sometime not see the mDNS service if the service
+                        //     // was running BEFORE Android started the Discovery phase for QuickShare.
+                        //     // So resend a broadcast if there's a android device sending.
+                        //     self.daemon.register_resend(self.service_info.get_fullname())?;
+                        // } else {
+                        //     self.daemon.register(self.service_info.clone())?;
+                        // }
+                        self.daemon.register(self.service_info.clone())?;
                     }
                 }
                 Ok(_) = self.visibility_receiver.changed() => {
-                    let new_visibility = *self.visibility_receiver.borrow();
+                    let new_visibility = *self.visibility_receiver.borrow_and_update();
                     trace!("{INNER_NAME}: visibility changed: {:?}", new_visibility);
 
                     if new_visibility != current_visibility {
@@ -100,20 +123,12 @@ impl MDnsServer {
                                 self.daemon.register(self.service_info.clone())?;
                             }
                             Visibility::Invisible => {
-                                self.daemon.unregister(self.service_info.get_fullname())?;
+                                let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
+                                let _ = receiver.recv();
                             }
                             Visibility::Temporarily => {
                                 self.daemon.register(self.service_info.clone())?;
-
-                                let visibility_sender = self.visibility_sender.clone();
-                                tokio::spawn(async move {
-                                    tokio::time::sleep(Duration::from_secs(60)).await;
-                                    visibility_sender.lock().unwrap().send_modify(|state| {
-                                        if *state == Visibility::Temporarily {
-                                            *state = Visibility::Invisible;
-                                        }
-                                    });
-                                });
+                                interval.reset();
                             }
                         }
 
@@ -123,8 +138,10 @@ impl MDnsServer {
             }
         }
 
-        if current_visibility != Visibility::Invisible {
-            let _ = self.daemon.unregister(self.service_info.get_fullname());
+        // Unregister the mDNS service - we're shutting down
+        let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
+        if let Ok(event) = receiver.recv() {
+            info!("MDnsServer: service unregistered: {:?}", &event);
         }
 
         info!("{INNER_NAME}: service stopped");
@@ -137,7 +154,7 @@ impl MDnsServer {
         device_type: DeviceType,
     ) -> Result<ServiceInfo, anyhow::Error> {
         let name = gen_mdns_name(endpoint_id);
-        let hostname = sys_metrics::host::get_hostname()?;
+        let hostname = format!("{}.local.", sys_metrics::host::get_hostname()?);
         info!("Broadcasting with: {hostname}");
         let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
 
@@ -150,7 +167,7 @@ impl MDnsServer {
             service_port,
             &properties[..],
         )?
-        .enable_addr_auto(AddrType::V4);
+        .enable_addr_auto();
 
         Ok(si)
     }
