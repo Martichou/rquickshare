@@ -1,34 +1,39 @@
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "ts-support")]
 use ts_rs::TS;
 
 use crate::hdl::info::TransferMetadata;
 use crate::hdl::State;
 
-#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub enum ChannelDirection {
     #[default]
     FrontToLib,
     LibToFront,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub enum ChannelAction {
     AcceptTransfer,
     RejectTransfer,
     CancelTransfer,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub enum TransferType {
     Inbound,
     Outbound,
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub struct ChannelMessage {
     pub id: String,
     pub direction: ChannelDirection,

@@ -7,6 +7,7 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::watch;
 use tokio::time::{interval_at, Instant};
 use tokio_util::sync::CancellationToken;
+#[cfg(feature = "ts-support")]
 use ts_rs::TS;
 
 use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
@@ -14,8 +15,9 @@ use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
 const INNER_NAME: &str = "MDnsServer";
 const TICK_INTERVAL: Duration = Duration::from_secs(60);
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support",  ts(export))]
 pub enum Visibility {
     Visible = 0,
     Invisible = 1,

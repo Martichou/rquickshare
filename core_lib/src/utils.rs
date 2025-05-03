@@ -15,12 +15,14 @@ use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpStream;
+#[cfg(feature = "ts-support")]
 use ts_rs::TS;
 
 use crate::CUSTOM_DOWNLOAD;
 
-#[derive(Debug, Clone, Deserialize, PartialEq, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 #[allow(dead_code)]
 pub enum DeviceType {
     Unknown = 0,
@@ -42,8 +44,9 @@ impl DeviceType {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub struct RemoteDeviceInfo {
     pub name: String,
     pub device_type: DeviceType,

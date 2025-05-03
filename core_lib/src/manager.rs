@@ -3,6 +3,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::CancellationToken;
+#[cfg(feature = "ts-support")]
 use ts_rs::TS;
 
 use crate::channel::{ChannelDirection, ChannelMessage};
@@ -12,8 +13,9 @@ use crate::utils::RemoteDeviceInfo;
 
 const INNER_NAME: &str = "TcpServer";
 
-#[derive(Debug, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub struct SendInfo {
     pub id: String,
     pub name: String,

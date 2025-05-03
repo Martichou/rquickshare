@@ -19,6 +19,7 @@ use sha2::{Digest, Sha256, Sha512};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::broadcast::{Receiver, Sender};
+#[cfg(feature = "ts-support")]
 use ts_rs::TS;
 
 use super::info::{InternalFileInfo, TransferMetadata};
@@ -54,8 +55,9 @@ type HmacSha256 = Hmac<Sha256>;
 const SANE_FRAME_LENGTH: i32 = 5 * 1024 * 1024;
 const SANITY_DURATION: Duration = Duration::from_micros(10);
 
-#[derive(Debug, Deserialize, Serialize, TS)]
-#[ts(export)]
+#[derive(Debug, Deserialize, Serialize)]
+#[cfg_attr(feature = "ts-support", derive(TS))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub enum OutboundPayload {
     Files(Vec<String>),
 }
