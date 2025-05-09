@@ -23,10 +23,10 @@ use crate::hdl::MDnsServer;
 use crate::manager::TcpServer;
 
 pub mod channel;
-mod errors;
-mod hdl;
-mod manager;
-mod utils;
+pub mod errors;
+pub mod hdl;
+pub mod manager;
+pub mod utils;
 
 pub use hdl::{EndpointInfo, OutboundPayload, State, Visibility};
 pub use manager::SendInfo;
