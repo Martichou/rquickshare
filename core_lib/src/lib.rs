@@ -256,4 +256,8 @@ impl RQS {
         let mut guard = DEVICE_NAME.write().unwrap();
         *guard = name;
     }
+
+    pub fn get_device_name(&self) -> String {
+        DEVICE_NAME.read().unwrap().clone()
+    }
 }
