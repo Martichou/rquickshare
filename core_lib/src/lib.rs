@@ -78,7 +78,7 @@ impl Default for RQS {
             Visibility::Visible,
             None,
             None,
-            sys_metrics::host::get_hostname().unwrap_or("Unknown device".into()),
+            Some(sys_metrics::host::get_hostname().unwrap_or("Unknown device".into())),
         )
     }
 }
@@ -88,7 +88,7 @@ impl RQS {
         visibility: Visibility,
         port_number: Option<u32>,
         download_path: Option<PathBuf>,
-        device_name: String,
+        device_name: Option<String>,
     ) -> Self {
         {
             let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
@@ -96,7 +96,9 @@ impl RQS {
         }
         {
             let mut guard = DEVICE_NAME.write().unwrap();
-            *guard = device_name.clone();
+            if let Some(device_name) = device_name {
+                *guard = device_name.clone();
+            }
         }
 
         let (message_sender, _) = broadcast::channel(50);
