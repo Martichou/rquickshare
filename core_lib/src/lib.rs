@@ -247,6 +247,10 @@ impl RQS {
         *guard = p;
     }
 
+    /// For this to properly take effect,
+    /// `MdnsServer` would need to be reset which is done by `RQS::stop` followed by `RQS::run`.
+    ///
+    /// So only do this when no data transfer is going on.
     pub fn set_device_name(&self, name: String) {
         debug!("Setting the device name {:?}", name);
         let mut guard = DEVICE_NAME.write().unwrap();
