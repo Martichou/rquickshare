@@ -48,7 +48,7 @@ use crate::utils::{
     encode_point, gen_ecdsa_keypair, gen_random, hkdf_extract_expand, stream_read_exact,
     to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
-use crate::{location_nearby_connections, sharing_nearby};
+use crate::{location_nearby_connections, sharing_nearby, DEVICE_NAME};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -220,6 +220,7 @@ impl OutboundRequest {
     }
 
     pub async fn send_connection_request(&mut self) -> Result<(), anyhow::Error> {
+        let device_name = DEVICE_NAME.read().unwrap().clone();
         let request = location_nearby_connections::OfflineFrame {
             version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
             v1: Some(location_nearby_connections::V1Frame {
@@ -228,10 +229,10 @@ impl OutboundRequest {
                 ),
                 connection_request: Some(location_nearby_connections::ConnectionRequestFrame {
                     endpoint_id: Some(String::from_utf8_lossy(&self.endpoint_id).to_string()),
-                    endpoint_name: Some(sys_metrics::host::get_hostname()?.into()),
+                    endpoint_name: Some(device_name.clone().into()),
                     endpoint_info: Some(
                         RemoteDeviceInfo {
-                            name: sys_metrics::host::get_hostname()?,
+                            name: device_name.clone().into(),
                             device_type: DeviceType::Laptop,
                         }
                         .serialize(),

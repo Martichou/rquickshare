@@ -49,6 +49,8 @@ pub mod location_nearby_connections {
 }
 
 static CUSTOM_DOWNLOAD: Lazy<RwLock<Option<PathBuf>>> = Lazy::new(|| RwLock::new(None));
+static DEVICE_NAME: Lazy<RwLock<String>> =
+    Lazy::new(|| RwLock::new(sys_metrics::host::get_hostname().unwrap_or("Unknown device".into())));
 
 #[derive(Debug)]
 pub struct RQS {
@@ -72,7 +74,12 @@ pub struct RQS {
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new(Visibility::Visible, None, None)
+        Self::new(
+            Visibility::Visible,
+            None,
+            None,
+            sys_metrics::host::get_hostname().unwrap_or("Unknown device".into()),
+        )
     }
 }
 
@@ -81,9 +88,16 @@ impl RQS {
         visibility: Visibility,
         port_number: Option<u32>,
         download_path: Option<PathBuf>,
+        device_name: String,
     ) -> Self {
-        let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
-        *guard = download_path;
+        {
+            let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
+            *guard = download_path;
+        }
+        {
+            let mut guard = DEVICE_NAME.write().unwrap();
+            *guard = device_name.clone();
+        }
 
         let (message_sender, _) = broadcast::channel(50);
         let (ble_sender, _) = broadcast::channel(5);
@@ -229,5 +243,11 @@ impl RQS {
         debug!("Setting the download path to {:?}", p);
         let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
         *guard = p;
+    }
+
+    pub fn set_device_name(&self, name: String) {
+        debug!("Setting the device name {:?}", name);
+        let mut guard = DEVICE_NAME.write().unwrap();
+        *guard = name;
     }
 }

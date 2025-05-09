@@ -11,13 +11,14 @@ use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 use crate::utils::{gen_mdns_endpoint_info, gen_mdns_name, DeviceType};
+use crate::DEVICE_NAME;
 
 const INNER_NAME: &str = "MDnsServer";
 const TICK_INTERVAL: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[cfg_attr(feature = "ts-support", derive(TS))]
-#[cfg_attr(feature = "ts-support",  ts(export))]
+#[cfg_attr(feature = "ts-support", ts(export))]
 pub enum Visibility {
     Visible = 0,
     Invisible = 1,
@@ -138,15 +139,15 @@ impl MDnsServer {
         device_type: DeviceType,
     ) -> Result<ServiceInfo, anyhow::Error> {
         let name = gen_mdns_name(endpoint_id);
-        let hostname = sys_metrics::host::get_hostname()?;
-        info!("Broadcasting with: {hostname}");
-        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
+        let device_name = DEVICE_NAME.read().unwrap().clone();
+        info!("Broadcasting with: {device_name}");
+        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &device_name);
 
         let properties = [("n", endpoint_info)];
         let si = ServiceInfo::new(
             "_FC9F5ED42C8A._tcp.local.",
             &name,
-            &hostname,
+            &device_name,
             "",
             service_port,
             &properties[..],
