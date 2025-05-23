@@ -67,7 +67,7 @@ pub struct RQS {
     // Only used to send the info "a nearby device is sharing"
     ble_sender: broadcast::Sender<()>,
 
-    port_number: Option<u32>,
+    pub port_number: Option<u32>,
 
     pub message_sender: broadcast::Sender<ChannelMessage>,
 }
@@ -137,6 +137,11 @@ impl RQS {
             TcpListener::bind(format!("0.0.0.0:{}", self.port_number.unwrap_or(0))).await?;
         let binded_addr = tcp_listener.local_addr()?;
         info!("TcpListener on: {}", binded_addr);
+
+        // So the random port can be accessed from the user if needed.
+        // This does have a difference in behaviour however when port_number is Some.
+        // .stop() and .run() will reuse the port number instead of generating a new one.
+        self.port_number = Some(binded_addr.port() as u32);
 
         // MPSC for the TcpServer
         let send_channel = mpsc::channel(10);
