@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
 use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
+use tokio::sync::broadcast::error::TryRecvError;
 use tokio::sync::broadcast::{Receiver, Sender};
 use ts_rs::TS;
 
@@ -755,8 +756,9 @@ impl OutboundRequest {
                 let ids: Vec<i64> = self.state.transferred_files.keys().cloned().collect();
                 info!("We are sending: {:?}", ids);
                 let mut ids_iter = ids.into_iter();
+
                 // Loop through all files
-                loop {
+                'send_all_files: loop {
                     let current = match ids_iter.next() {
                         Some(i) => i,
                         None => {
@@ -776,6 +778,44 @@ impl OutboundRequest {
 
                     // Loop until we reached end of file
                     loop {
+                        // Since this task's runtime is blocked with the outer loop,
+                        // OutboundRequest::handle() will not be called again.
+                        // Thus, we need to check for cancellation here.
+                        match self.receiver.try_recv() {
+                            Ok(channel_msg) => {
+                                if channel_msg.direction == ChannelDirection::FrontToLib
+                                    && channel_msg.id == self.state.id
+                                {
+                                    debug!("outbound: got: {:?}", channel_msg);
+                                    match channel_msg.action {
+                                        Some(ChannelAction::CancelTransfer) => {
+                                            self.update_state(
+                                                |e| {
+                                                    e.state = State::Cancelled;
+                                                },
+                                                true,
+                                            )
+                                            .await;
+                                            self.disconnection().await?;
+                                            break 'send_all_files;
+                                        }
+                                        None => {
+                                            trace!("inbound: nothing to do")
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                match e {
+                                    TryRecvError::Empty => {}
+                                    e => {
+                                        error!("inbound: channel error: {}", e)
+                                    }
+                                };
+                            }
+                        };
+
                         // Workaround to limit scope of the immutable borrow on self
                         let (curr_state, buffer, bytes_read) = {
                             let curr_state = match self.state.transferred_files.get(&current) {
