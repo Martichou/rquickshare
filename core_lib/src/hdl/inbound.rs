@@ -563,12 +563,10 @@ impl InboundRequest {
                                     == payload_id
                             {
                                 info!("Transfer finished");
-                                let end_index =
-                                    buffer.iter().position(|&b| b == 16).unwrap_or(buffer.len());
-                                let payload = std::str::from_utf8(&buffer[..end_index])?.to_owned();
 
                                 match self.state.text_payload.clone().unwrap() {
                                     TextPayloadInfo::Url(_) => {
+                                        let payload = std::str::from_utf8(&buffer)?.to_owned();
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
@@ -581,6 +579,7 @@ impl InboundRequest {
                                         .await;
                                     }
                                     TextPayloadInfo::Text(_) => {
+                                        let payload = std::str::from_utf8(&buffer)?.to_owned();
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
@@ -592,7 +591,31 @@ impl InboundRequest {
                                         )
                                         .await;
                                     }
+                                    // FIXME: TextPayloadInfo::Wifi should include the Wifi type as well
+                                    // sharing_nearby::WifiCredentialsMetadata
+                                    // ChannelMessage's structure needs to be redone as well
                                     TextPayloadInfo::Wifi((_, ssid)) => {
+                                        // Payload seems to be within two DLE (0x10) characters
+                                        // At least for WpaPsk, not sure about Wep
+                                        let dle_indices = buffer
+                                            .iter()
+                                            .enumerate()
+                                            .filter(|(_pos, it)| **it == 0x10u8)
+                                            .map(|(pos, _)| pos)
+                                            .collect::<Vec<_>>();
+
+                                        let payload = if dle_indices.len() == 2 {
+                                            std::str::from_utf8(
+                                                &buffer[dle_indices[0] + 1..dle_indices[1]],
+                                            )?
+                                            .to_owned()
+                                        } else {
+                                            // For Open Wi-Fi, the buffer seems to be [16, 0]
+                                            debug!("Couldn't find two DLE (0x10) characters, can't retrieve Wi-Fi payload: {:?}", buffer);
+
+                                            "".into()
+                                        };
+
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
