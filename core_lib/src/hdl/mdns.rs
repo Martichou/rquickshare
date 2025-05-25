@@ -138,16 +138,18 @@ impl MDnsServer {
         service_port: u16,
         device_type: DeviceType,
     ) -> Result<ServiceInfo, anyhow::Error> {
+        // This `name` is going to be random every time RQS service restarts.
+        // If that is not desired, derive host_name, etc. via some other means
         let name = gen_mdns_name(endpoint_id);
         let device_name = DEVICE_NAME.read().unwrap().clone();
-        info!("Broadcasting with: {device_name}");
+        info!("Broadcasting with: device_name={device_name}, host_name={name}");
         let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &device_name);
 
         let properties = [("n", endpoint_info)];
         let si = ServiceInfo::new(
             "_FC9F5ED42C8A._tcp.local.",
             &name,
-            &device_name,
+            &name, // Needs to be ASCII?
             "",
             service_port,
             &properties[..],
