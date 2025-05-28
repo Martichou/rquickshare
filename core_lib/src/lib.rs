@@ -238,6 +238,11 @@ impl RQS {
         }
 
         if let Some(tracker) = &self.tracker {
+            // Inorder for TaskTracker::wait to return, close() must be called
+            // and the count of tasks being watched should be 0 (i.e. they've all closed).
+            //
+            // If not, the TaskTracker may forever wait if task count is 0 when wait() was called
+            tracker.close();
             tracker.wait().await;
         }
 
