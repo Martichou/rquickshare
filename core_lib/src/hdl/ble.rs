@@ -61,19 +61,21 @@ impl BleListener {
                             // proceeding with the service_data.
                             //
                             // ...The filtering is being done only here now.
-                            if !service_data.contains_key(&SERVICE_UUID_SHARING) {
-                                continue;
-                            }
+                            if let Some(service_data) = service_data.get(&SERVICE_UUID_SHARING) {
+                                let now = SystemTime::now();
+                                // Quick Share seems to emit LE advert every 10 seconds...
+                                // Doesn't really seem much of a spam, so we wait for 10s now
+                                // just in case some implementation is sending it under that
+                                // time period
+                                if now.duration_since(last_alert)? <= Duration::from_secs(10) {
+                                    // debug!("{INNER_NAME}: Received LE advert but last alert was {}s ago", now.duration_since(last_alert)?.as_secs());
+                                    continue;
+                                }
 
-                            let now = SystemTime::now();
-                            // Don't spam, max once per 30s
-                            if now.duration_since(last_alert)? <= Duration::from_secs(30) {
-                                continue;
+                                debug!("{INNER_NAME}: A device ({id}) is sharing ({}) nearby", hex::encode(service_data));
+                                self.sender.send(())?;
+                                last_alert = now;
                             }
-
-                            debug!("{INNER_NAME}: A device ({id}) is sharing ({service_data:X?}) nearby");
-                            self.sender.send(())?;
-                            last_alert = now;
                         },
                         // Not interesting for us
                         _ => {
