@@ -36,13 +36,16 @@ impl BleListener {
 
         let mut events = self.adapter.events().await?;
         // Filter on the NearyShare/QuickShare services UUID
-        self.adapter
-            .start_scan(ScanFilter {
-                services: vec![SERVICE_UUID_SHARING],
-            })
-            .await?;
 
-        let mut last_alert = SystemTime::UNIX_EPOCH;
+        // Not using the ScanFilter here to filter out advertisements
+        // not matching the Nearby Share service UUID, it seems to
+        // exclude Nearby Share advertisements despite its UUID being
+        // in the filter.
+        //
+        // Perhaps broken?
+        self.adapter.start_scan(ScanFilter::default()).await?;
+
+        let mut last_alert: SystemTime = SystemTime::UNIX_EPOCH;
 
         loop {
             tokio::select! {
@@ -56,6 +59,8 @@ impl BleListener {
                             // Sanity check as per: https://github.com/Martichou/rquickshare/issues/74
                             // Seems like the filtering is not enough, so we'll add a check before
                             // proceeding with the service_data.
+                            //
+                            // ...The filtering is being done only here now.
                             if !service_data.contains_key(&SERVICE_UUID_SHARING) {
                                 continue;
                             }
@@ -66,7 +71,7 @@ impl BleListener {
                                 continue;
                             }
 
-                            debug!("{INNER_NAME}: A device ({id}) is sharing ({service_data:?}) nearby");
+                            debug!("{INNER_NAME}: A device ({id}) is sharing ({service_data:X?}) nearby");
                             self.sender.send(())?;
                             last_alert = now;
                         },

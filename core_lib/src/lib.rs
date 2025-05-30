@@ -157,8 +157,10 @@ impl RQS {
 
         #[cfg(feature = "experimental")]
         {
-            // Don't threat BleListener error as fatal, it's a nice to have.
-            if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
+            if let Ok(ble) = BleListener::new(self.ble_sender.clone())
+                .await
+                .inspect_err(|err| warn!("BleListener: {}", err))
+            {
                 let ctk = ctoken.clone();
                 tracker.spawn(async move { ble.run(ctk).await });
             }
