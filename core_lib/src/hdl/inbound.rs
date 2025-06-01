@@ -2,7 +2,7 @@ use std::fs::File;
 use std::os::unix::fs::FileExt;
 use std::time::Duration;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use bytes::Bytes;
 use hmac::{Hmac, Mac};
 use libaes::{Cipher, AES_256_KEY_LEN};
@@ -33,6 +33,7 @@ use crate::securemessage::{
     EcP256PublicKey, EncScheme, GenericPublicKey, Header, HeaderAndBody, PublicKeyType,
     SecureMessage, SigScheme,
 };
+use crate::sharing_nearby::wifi_credentials_metadata::SecurityType;
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::utils::{
     encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
@@ -591,29 +592,50 @@ impl InboundRequest {
                                         )
                                         .await;
                                     }
-                                    // FIXME: TextPayloadInfo::Wifi should include the Wifi type as well
-                                    // sharing_nearby::WifiCredentialsMetadata
-                                    // ChannelMessage's structure needs to be redone as well
-                                    TextPayloadInfo::Wifi((_, ssid)) => {
-                                        // Payload seems to be within two DLE (0x10) characters
-                                        // At least for WpaPsk, not sure about Wep
-                                        let dle_indices = buffer
-                                            .iter()
-                                            .enumerate()
-                                            .filter(|(_pos, it)| **it == 0x10u8)
-                                            .map(|(pos, _)| pos)
-                                            .collect::<Vec<_>>();
+                                    // FIXME: ChannelMessage's structure needs to be redone as well
+                                    // It needs to have TextPayloadInfo instead of TextPayloadType
+                                    TextPayloadInfo::Wifi((_, ssid, security_type)) => {
+                                        // ~~Payload seems to be within two DLE (0x10) characters
+                                        // At least for WpaPsk, not sure about Wep~~
+                                        //
+                                        // Nope, that's wrong, my Wi-Fi password just happened to have 16 characters
+                                        // which tripped up the previous logic.
+                                        //
+                                        // So, the password seems to start with 0x0A followed by a byte indicating
+                                        // the password or payload length. And, the payload ends with 0x10 0x??
+                                        // The last byte is sometimes 00 and other times 01
+                                        fn parse_password_payload(
+                                            buffer: &mut Vec<u8>,
+                                        ) -> anyhow::Result<String>
+                                        {
+                                            if buffer.len() < 4 {
+                                                anyhow::bail!("Buffer too short ({buffer:?})");
+                                            }
 
-                                        let payload = if dle_indices.len() == 2 {
-                                            std::str::from_utf8(
-                                                &buffer[dle_indices[0] + 1..dle_indices[1]],
-                                            )?
-                                            .to_owned()
-                                        } else {
-                                            // For Open Wi-Fi, the buffer seems to be [16, 0]
-                                            debug!("Couldn't find two DLE (0x10) characters, can't retrieve Wi-Fi payload: {:?}", buffer);
+                                            if buffer[(buffer.len() - 1) - 1] != 0x10 {
+                                                anyhow::bail!("Buffer ({buffer:?}) doesn't ends with 0x10 0x?? as expected");
+                                            }
 
-                                            "".into()
+                                            let len = *buffer
+                                                .get(1)
+                                                .expect("Validated for minimum length of 4")
+                                                as usize;
+
+                                            let payload_buffer = buffer.get(2..2 + len).with_context(||anyhow!( "Buffer too short ({buffer:?}) can't retrieve payload of length {len}"))?;
+
+                                            Ok(String::from_utf8(payload_buffer.to_owned())?)
+                                        }
+
+                                        let payload = match security_type {
+                                            kind @ SecurityType::UnknownSecurityType => {
+                                                kind.as_str_name().into()
+                                            }
+                                            SecurityType::Open => "".into(),
+                                            SecurityType::WpaPsk | SecurityType::Wep => {
+                                                parse_password_payload(buffer)
+                                                    .inspect_err(|err| error!("{err:#}"))
+                                                    .unwrap_or_default()
+                                            }
                                         };
 
                                         self.update_state(
@@ -983,6 +1005,7 @@ impl InboundRequest {
                     e.text_payload = Some(TextPayloadInfo::Wifi((
                         meta.payload_id(),
                         meta.ssid().to_owned(),
+                        meta.security_type(),
                     )));
                     e.transfer_metadata = Some(metadata);
                 },

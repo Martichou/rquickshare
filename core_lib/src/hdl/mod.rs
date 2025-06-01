@@ -7,6 +7,7 @@ use ts_rs::TS;
 
 use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
+use crate::sharing_nearby::wifi_credentials_metadata::SecurityType;
 use crate::utils::RemoteDeviceInfo;
 
 #[cfg(feature = "experimental")]
@@ -91,7 +92,7 @@ pub struct InnerState {
 pub enum TextPayloadInfo {
     Url(i64),
     Text(i64),
-    Wifi((i64, String)),
+    Wifi((i64, String, SecurityType)), // id, ssid, security type
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -107,7 +108,7 @@ impl TextPayloadInfo {
         match self {
             TextPayloadInfo::Url(value)
             | TextPayloadInfo::Text(value)
-            | TextPayloadInfo::Wifi((value, _)) => value.to_owned(),
+            | TextPayloadInfo::Wifi((value, _, _)) => value.to_owned(),
         }
     }
 }
