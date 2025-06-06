@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use info::{InternalFileInfo, TransferMetadata};
 use p256::{PublicKey, SecretKey};
 
-use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
 use crate::sharing_nearby::wifi_credentials_metadata::SecurityType;
 use crate::utils::RemoteDeviceInfo;
@@ -17,7 +17,7 @@ mod blea;
 pub use blea::*;
 mod inbound;
 pub use inbound::*;
-pub(crate) mod info;
+pub mod info;
 mod mdns_discovery;
 pub use mdns_discovery::*;
 mod mdns;
@@ -27,7 +27,7 @@ pub use outbound::*;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Default, PartialEq)]
-pub enum State {
+pub enum TransferState {
     #[default]
     Initial,
     ReceivedConnectionRequest,
@@ -57,7 +57,7 @@ pub struct InnerState {
     pub encryption_done: bool,
 
     // Subject to be used-facing for progress, ...
-    pub state: State,
+    pub state: TransferState,
     pub remote_device_info: Option<RemoteDeviceInfo>,
     pub pin_code: Option<String>,
     pub transfer_metadata: Option<TransferMetadata>,

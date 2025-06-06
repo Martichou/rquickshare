@@ -10,8 +10,8 @@ use channel::ChannelMessage;
 use hdl::BleAdvertiser;
 use hdl::MDnsDiscovery;
 use once_cell::sync::Lazy;
-use rand::distr::Alphanumeric;
 use rand::Rng;
+use rand::distr::Alphanumeric;
 use tokio::net::TcpListener;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio_util::sync::CancellationToken;
@@ -28,7 +28,7 @@ pub mod hdl;
 pub mod manager;
 pub mod utils;
 
-pub use hdl::{EndpointInfo, OutboundPayload, State, Visibility};
+pub use hdl::{EndpointInfo, OutboundPayload, TransferState, Visibility};
 pub use manager::SendInfo;
 pub use utils::DeviceType;
 

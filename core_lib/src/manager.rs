@@ -3,9 +3,9 @@ use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::CancellationToken;
 
-use crate::channel::{ChannelDirection, ChannelMessage};
+use crate::channel::{self, ChannelMessage, MessageClient, TransferKind};
 use crate::errors::AppError;
-use crate::hdl::{InboundRequest, OutboundPayload, OutboundRequest, State};
+use crate::hdl::{InboundRequest, OutboundPayload, OutboundRequest, TransferState};
 use crate::utils::RemoteDeviceInfo;
 
 const INNER_NAME: &str = "TcpServer";
@@ -73,16 +73,18 @@ impl TcpServer {
                                         Err(e) => match e.downcast_ref() {
                                             Some(AppError::NotAnError) => break,
                                             None => {
-                                                if ir.state.state == State::Initial {
+                                                if ir.state.state == TransferState::Initial {
                                                     break;
                                                 }
 
-                                                if ir.state.state != State::Finished {
+                                                if ir.state.state != TransferState::Finished {
                                                     let _ = esender.send(ChannelMessage {
                                                         id: remote_addr.to_string(),
-                                                        direction: ChannelDirection::LibToFront,
-                                                        state: Some(State::Disconnected),
-                                                        ..Default::default()
+                                                        msg: channel::Message::Client(MessageClient {
+                                                            kind: TransferKind::Inbound,
+                                                            state: Some(TransferState::Disconnected),
+                                                            metadata: Default::default()
+                                                        }),
                                                     });
                                                 }
                                                 error!("{INNER_NAME}: error while handling client: {e} ({:?})", ir.state.state);
@@ -138,16 +140,18 @@ impl TcpServer {
                         match e.downcast_ref() {
                             Some(AppError::NotAnError) => break,
                             None => {
-                                if or.state.state == State::Initial {
+                                if or.state.state == TransferState::Initial {
                                     break;
                                 }
 
-                                if or.state.state != State::Finished && or.state.state != State::Cancelled {
+                                if or.state.state != TransferState::Finished && or.state.state != TransferState::Cancelled {
                                     let _ = self.sender.clone().send(ChannelMessage {
                                         id: si.addr,
-                                        direction: ChannelDirection::LibToFront,
-                                        state: Some(State::Disconnected),
-                                        ..Default::default()
+                                        msg: channel::Message::Client(MessageClient {
+                                            kind: TransferKind::Outbound,
+                                            state: Some(TransferState::Disconnected),
+                                            metadata: Default::default()
+                                        }),
                                     });
                                 }
                                 error!("{INNER_NAME}: error while handling client: {e} ({:?})", or.state.state);

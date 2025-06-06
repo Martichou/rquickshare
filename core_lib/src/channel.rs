@@ -1,36 +1,43 @@
-use crate::hdl::info::TransferMetadata;
-use crate::hdl::State;
+use crate::{TransferState, hdl::info::TransferMetadata};
 
-#[derive(Debug, Clone, Default, PartialEq)]
-pub enum ChannelDirection {
-    #[default]
-    FrontToLib,
-    LibToFront,
+#[derive(Debug, Clone, PartialEq)]
+pub enum TransferAction {
+    ConsentAccept,
+    ConsentDecline,
+    TransferCancel,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ChannelAction {
-    AcceptTransfer,
-    RejectTransfer,
-    CancelTransfer,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum TransferType {
+pub enum TransferKind {
     Inbound,
     Outbound,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
+pub struct MessageClient {
+    pub kind: TransferKind,
+    pub state: Option<TransferState>,
+    pub metadata: Option<TransferMetadata>,
+}
+
+// TODO: This should be separate structs
+#[derive(Debug, Clone)]
+pub enum Message {
+    Lib { action: TransferAction },
+    Client(MessageClient),
+}
+
+impl Message {
+    pub fn as_client(&self) -> Option<&MessageClient> {
+        match self {
+            Message::Client(message_client) => Some(message_client),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ChannelMessage {
     pub id: String,
-    pub direction: ChannelDirection,
-
-    // Only present when channelDirection is frontToLib
-    pub action: Option<ChannelAction>,
-
-    // Only present when channelDirection is libToFront
-    pub rtype: Option<TransferType>,
-    pub state: Option<State>,
-    pub meta: Option<TransferMetadata>,
+    pub msg: Message,
 }
