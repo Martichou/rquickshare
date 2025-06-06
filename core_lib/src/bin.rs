@@ -3,19 +3,21 @@ extern crate log;
 
 use rqs_lib::RQS;
 use tokio::sync::broadcast;
+use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     // Define log level
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var(
-            "RUST_LOG",
-            "TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR",
-        );
-    }
 
     // Init logger/tracing
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_env_filter(if std::env::var("RUST_LOG").is_ok() {
+            EnvFilter::builder().from_env_lossy()
+        } else {
+            EnvFilter::builder()
+                .parse_lossy("TRACE,mdns_sd=ERROR,polling=ERROR,neli=ERROR,bluez_async=ERROR")
+        })
+        .init();
 
     // Start the RQuickShare service
     let mut rqs = RQS::default();
