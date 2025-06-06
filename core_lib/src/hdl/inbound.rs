@@ -662,9 +662,8 @@ impl InboundRequest {
                                 self.disconnection().await?;
                                 return Err(anyhow!(crate::errors::AppError::NotAnError));
                             } else {
-                                let innner_frame =
-                                    sharing_nearby::Frame::decode(buffer.as_slice())?;
-                                self.process_transfer_setup(&innner_frame).await?;
+                                let inner_frame = sharing_nearby::Frame::decode(buffer.as_slice())?;
+                                self.process_transfer_setup(&inner_frame).await?;
                             }
                         }
                     }

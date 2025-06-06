@@ -505,8 +505,8 @@ impl OutboundRequest {
                         if (chunk.flags() & 1) == 1 {
                             debug!("Chunk flags & 1 == 1 ?? End of data ??");
 
-                            let innner_frame = sharing_nearby::Frame::decode(buffer.as_slice())?;
-                            self.process_transfer_setup(&innner_frame).await?;
+                            let inner_frame = sharing_nearby::Frame::decode(buffer.as_slice())?;
+                            self.process_transfer_setup(&inner_frame).await?;
                         }
                     }
                     payload_header::PayloadType::File => {

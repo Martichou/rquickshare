@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use bluer::adv::Advertisement;
 use bluer::UuidExt;
+use bluer::adv::Advertisement;
 use bytes::Bytes;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
@@ -38,7 +38,7 @@ impl BleAdvertiser {
         let service_uuid = Uuid::from_u16(0xFE2C);
         let handle = self
             .adapter
-            .advertise(self.get_advertisment(service_uuid, SERVICE_DATA))
+            .advertise(self.get_advertisement(service_uuid, SERVICE_DATA))
             .await?;
         ctk.cancelled().await;
         info!("{INNER_NAME}: tracker cancelled, returning");
@@ -47,7 +47,7 @@ impl BleAdvertiser {
         Ok(())
     }
 
-    fn get_advertisment(&self, service_uuid: Uuid, adv_data: Bytes) -> Advertisement {
+    fn get_advertisement(&self, service_uuid: Uuid, adv_data: Bytes) -> Advertisement {
         Advertisement {
             advertisement_type: bluer::adv::Type::Broadcast,
             service_data: [(service_uuid, adv_data.into())].into(),
