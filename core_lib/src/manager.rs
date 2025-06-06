@@ -1,10 +1,7 @@
-use serde::{Deserialize, Serialize};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Receiver;
 use tokio_util::sync::CancellationToken;
-#[cfg(feature = "ts-support")]
-use ts_rs::TS;
 
 use crate::channel::{ChannelDirection, ChannelMessage};
 use crate::errors::AppError;
@@ -13,9 +10,7 @@ use crate::utils::RemoteDeviceInfo;
 
 const INNER_NAME: &str = "TcpServer";
 
-#[derive(Debug, Deserialize, Serialize)]
-#[cfg_attr(feature = "ts-support", derive(TS))]
-#[cfg_attr(feature = "ts-support", ts(export))]
+#[derive(Debug, Clone)]
 pub struct SendInfo {
     pub id: String,
     pub name: String,

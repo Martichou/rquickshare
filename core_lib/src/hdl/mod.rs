@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
 use p256::{PublicKey, SecretKey};
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "ts-support")]
-use ts_rs::TS;
 
 use self::info::{InternalFileInfo, TransferMetadata};
 use crate::securegcm::ukey2_client_init::CipherCommitment;
@@ -29,9 +26,7 @@ mod outbound;
 pub use outbound::*;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
-#[cfg_attr(feature = "ts-support", derive(TS))]
-#[cfg_attr(feature = "ts-support", ts(export))]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub enum State {
     #[default]
     Initial,
@@ -95,8 +90,7 @@ pub enum TextPayloadInfo {
     Wifi((i64, String, SecurityType)), // id, ssid, security type
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "ts-support", derive(TS))]
+#[derive(Debug, Clone)]
 pub enum TextPayloadType {
     Url,
     Text,

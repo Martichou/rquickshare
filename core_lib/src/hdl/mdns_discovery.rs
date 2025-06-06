@@ -1,19 +1,14 @@
 use std::collections::HashMap;
 
 use mdns_sd::{ServiceDaemon, ServiceEvent};
-use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
 use tokio_util::sync::CancellationToken;
-#[cfg(feature = "ts-support")]
-use ts_rs::TS;
 
 use crate::utils::{is_not_self_ip, parse_mdns_endpoint_info};
 use crate::DeviceType;
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[cfg_attr(feature = "ts-support", derive(TS))]
-#[cfg_attr(feature = "ts-support", ts(export))]
+#[derive(Debug, Clone, Default)]
 pub struct EndpointInfo {
     pub fullname: String,
     pub id: String,

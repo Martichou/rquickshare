@@ -1,10 +1,6 @@
 use std::fs::File;
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
-#[cfg(feature = "ts-support")]
-use ts_rs::TS;
-
 use super::TextPayloadType;
 use crate::utils::RemoteDeviceInfo;
 
@@ -17,9 +13,7 @@ pub struct InternalFileInfo {
     pub file: Option<File>,
 }
 
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[cfg_attr(feature = "ts-support", derive(TS))]
-#[cfg_attr(feature = "ts-support", ts(export))]
+#[derive(Debug, Clone, Default)]
 pub struct TransferMetadata {
     pub id: String,
     pub source: Option<RemoteDeviceInfo>,
