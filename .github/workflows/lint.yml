@@ -2,7 +2,7 @@ name: Code quality - linting
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
 
 # cancel ongoing jobs:
@@ -50,10 +50,10 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: |
           cd ${{ matrix.directory }}
           pnpm install

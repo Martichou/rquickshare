@@ -2,7 +2,7 @@ name: Build-(Core & Tauri)
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
 
 # cancel ongoing jobs:
@@ -70,10 +70,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -102,7 +102,7 @@ jobs:
           rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/
           cd ./${{ matrix.target_path }}
           pnpm install
-          pnpm build:debug
+          pnpm build
           cd ${{ github.workspace }}
           ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/ ${{ matrix.name }}
 
