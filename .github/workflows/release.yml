@@ -16,12 +16,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
-            name: legacy
-            target_path: app/legacy
-            dependencies: |
-              sudo apt-get install -y libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.0-dev
-            cache_directory: app/legacy/src-tauri/target
           - os: ubuntu-24.04
             name: main
             target_path: app/main
@@ -76,22 +70,12 @@ jobs:
           cd ${{ github.workspace }}
           ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/ ${{ matrix.name }}
 
-      - uses: snapcore/action-build@v1
-        if: matrix.target_path == 'app/legacy'
-        id: build-snap
-      - run: sudo snap install --dangerous ${{ steps.build-snap.outputs.snap }}
-        if: matrix.target_path == 'app/legacy'
-      - name: Set Snap File Path
-        if: matrix.target_path == 'app/legacy'
-        run: echo "SNAP_FILE=${{ steps.build-snap.outputs.snap }}" >> $GITHUB_ENV
-
       - name: Add files to release
         if: github.event_name != 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
           files: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/*/r-quick-share-${{ matrix.name }}*
-            ${{ env.SNAP_FILE }}
           fail_on_unmatched_files: true
 
       - name: Upload artifacts
@@ -101,4 +85,3 @@ jobs:
           name: artifact-debug-rquickshare-${{ matrix.os }}
           path: |
             ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/release/bundle/*/r-quick-share-${{ matrix.name }}*
-            ${{ env.SNAP_FILE }}
