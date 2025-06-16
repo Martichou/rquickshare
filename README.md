@@ -22,8 +22,8 @@ You simply have to download the latest release.
 **Important notes:**
 - The minimum GLIBC version supported is included in the pkg name.
   - You can check yours with `ldd --version`.
-- RQuickShare is distributed with two version (main & legacy):
-  - Legacy is for compatibility with older Ubuntu versions.
+- RQuickShare was distributed with two version (main & legacy) up until v0.11.5:
+  - Legacy is for compatibility with older Ubuntu versions: [here](https://github.com/Martichou/rquickshare/releases/tag/v0.11.5).
   - Main is for future support of newer versions of Ubuntu.
 
 #### macOS
@@ -75,14 +75,6 @@ You can then either double click on it, or run it from the cmd line:
 
 ```bash
 ./r-quick-share_${VERSION}.AppImage
-```
-
-#### Snap
-
-The snap is not yet on the store, but you can install it with the following (you may need sudo):
-
-```bash
-snap install --dangerous r-quick-share_${VERSION}.snap
 ```
 
 ---

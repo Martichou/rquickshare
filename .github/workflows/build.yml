@@ -46,12 +46,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-20.04
-            name: legacy
-            target_path: app/legacy
-            dependencies: |
-              sudo apt-get install -y libjavascriptcoregtk-4.0-dev libwebkit2gtk-4.0-dev
-            cache_directory: app/legacy/src-tauri/target
           - os: ubuntu-24.04
             name: main
             target_path: app/main

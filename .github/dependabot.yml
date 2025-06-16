@@ -5,18 +5,6 @@
 
 version: 2
 updates:
-  # npm packages
-  - package-ecosystem: 'npm'
-    directory: '/app/legacy'
-    schedule:
-      interval: 'monthly'
-    commit-message:
-      prefix: 'deps(legacy-npm): '
-    groups:
-      dependencies:
-        patterns:
-          - '*'
-
   - package-ecosystem: 'npm'
     directory: '/app/main'
     schedule:
@@ -35,17 +23,6 @@ updates:
       interval: 'monthly'
     commit-message:
       prefix: 'deps(core_lib): '
-    groups:
-      dependencies:
-        patterns:
-          - '*'
-
-  - package-ecosystem: 'cargo'
-    directory: '/app/legacy/src-tauri'
-    schedule:
-      interval: 'monthly'
-    commit-message:
-      prefix: 'deps(legacy-rust): '
     groups:
       dependencies:
         patterns:

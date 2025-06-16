@@ -1,7 +1,7 @@
 The project is divided into two parts:
 
 - **core_lib:** This is a Rust library that encompasses all the logic necessary for discovering, connecting to, and transferring files to QuickShare-compatible clients.
-- **app/legacy:** A Tauri application that utilizes core_lib to handle incoming requests and initiate outgoing ones.
+- **app/main:** A Tauri application that utilizes core_lib to handle incoming requests and initiate outgoing ones.
 
 How to build
 --------------------------
@@ -10,7 +10,7 @@ How to build
 
 Building the core_lib is straightforward because it is a basic Rust project.
 
-Install `protobuf-compiler` system package, and then simply run `cargo build` or `cargo build --release` from `core_lib` folder. 
+Install `protobuf-compiler` system package, and then simply run `cargo build` or `cargo build --release` from `core_lib` folder.
 
 ### app/main
 
@@ -36,9 +36,9 @@ pnpm dev
 pnpm build
 ```
 
-For more detailed information on building the app/legacy and understanding any potential limitations, it’s advised to consult the [Tauri documentation](https://v2.tauri.app/start).
+For more detailed information on building the app/main and understanding any potential limitations, it’s advised to consult the [Tauri documentation](https://v2.tauri.app/start).
 
-### app/legacy
+### app/main
 
 Everything is the same as the app/main one, except the output of the build :)
 
@@ -48,4 +48,4 @@ Everything is the same as the app/main one, except the output of the build :)
 pnpm build
 ```
 
-For more detailed information on building the app/legacy and understanding any potential limitations, it’s advised to consult the [Tauri documentation](https://tauri.app/v1/guides/building/linux).
+For more detailed information on building the app/main and understanding any potential limitations, it’s advised to consult the [Tauri documentation](https://tauri.app/v1/guides/building/linux).
