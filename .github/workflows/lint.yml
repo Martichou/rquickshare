@@ -14,24 +14,18 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ensure_vue_lib_same:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          diff -qr app/legacy/src/vue_lib app/main/src/vue_lib
-
   style_rust:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - directory: ./core_lib
-          - directory: ./app/legacy/src-tauri
           - directory: ./app/main/src-tauri
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt
       - run: |
           cd ${{ matrix.directory }}
           cargo fmt --all --check
@@ -41,7 +35,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - directory: ./app/legacy
           - directory: ./app/main
     steps:
       - uses: actions/checkout@v4
@@ -66,16 +59,15 @@ jobs:
           - directory: core_lib
             clippy_args: "--all-features --all"
             os: ubuntu-latest
-          - directory: app/legacy/src-tauri
-            clippy_args: "--no-default-features"
-            os: ubuntu-20.04
           - directory: app/main/src-tauri
             clippy_args: "--no-default-features"
             os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
           cache-directories: "${{ github.workspace }}/${{ matrix.directory }}/target"
