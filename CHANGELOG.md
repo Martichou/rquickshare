@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.12.0](https://github.com/Martichou/rquickshare/compare/v0.11.5...v0.12.0) (2025-06-16)
+
+
+### Features
+
+* **BREAKING:** remove legacy variant ([378d8ae](https://github.com/Martichou/rquickshare/commit/378d8ae969941bee4bf60ad34ac9cf8bb7005eb7))
+
+
+### Bug Fixes
+
+* [#294](https://github.com/Martichou/rquickshare/issues/294) ([d17c714](https://github.com/Martichou/rquickshare/commit/d17c71466656c9a8dfe9a4117b240eff320bdf0a))
+* packageName is lowercase for wayland icon match ([d17c714](https://github.com/Martichou/rquickshare/commit/d17c71466656c9a8dfe9a4117b240eff320bdf0a)), closes [#294](https://github.com/Martichou/rquickshare/issues/294)
+
 ## [0.11.5](https://github.com/Martichou/rquickshare/compare/v0.11.4...v0.11.5) (2025-02-23)
 
 
