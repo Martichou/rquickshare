@@ -75,6 +75,14 @@ pub fn get_download_path(app_handle: &AppHandle) -> Option<PathBuf> {
         .and_then(|json| json.as_str().map(PathBuf::from))
 }
 
+pub fn get_device_name(app_handle: &AppHandle) -> Option<String> {
+    let store = _get_store(app_handle);
+
+    store
+        .get("devicename")
+        .and_then(|json| json.as_str().map(String::from))
+}
+
 pub fn get_logging_level(app_handle: &AppHandle) -> Option<String> {
     let store = _get_store(app_handle);
 

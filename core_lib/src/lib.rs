@@ -68,11 +68,15 @@ pub struct RQS {
     port_number: Option<u32>,
 
     pub message_sender: broadcast::Sender<ChannelMessage>,
+
+    // Used to trigger a change in device name
+    pub device_name_sender: Arc<Mutex<watch::Sender<Option<String>>>>,
+    device_name_receiver: watch::Receiver<Option<String>>,
 }
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new(Visibility::Visible, None, None)
+        Self::new(Visibility::Visible, None, None, None)
     }
 }
 
@@ -81,6 +85,7 @@ impl RQS {
         visibility: Visibility,
         port_number: Option<u32>,
         download_path: Option<PathBuf>,
+        device_name: Option<String>,
     ) -> Self {
         let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
         *guard = download_path;
@@ -92,6 +97,10 @@ impl RQS {
         let (visibility_sender, visibility_receiver) = watch::channel(Visibility::Invisible);
         let _ = visibility_sender.send(visibility);
 
+        // Define default device name as per the args inside the new()
+        let (device_name_sender, device_name_receiver) = watch::channel(None);
+        let _ = device_name_sender.send(device_name);
+
         Self {
             tracker: None,
             ctoken: None,
@@ -101,6 +110,8 @@ impl RQS {
             ble_sender,
             port_number,
             message_sender,
+            device_name_sender: Arc::new(Mutex::new(device_name_sender)),
+            device_name_receiver,
         }
     }
 
@@ -150,6 +161,7 @@ impl RQS {
             self.ble_sender.subscribe(),
             self.visibility_sender.clone(),
             self.visibility_receiver.clone(),
+            self.device_name_receiver.clone(),
         )?;
         let ctk = ctoken.clone();
         tracker.spawn(async move { mdns.run(ctk).await });
@@ -229,5 +241,14 @@ impl RQS {
         debug!("Setting the download path to {:?}", p);
         let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
         *guard = p;
+    }
+
+    // Setting None here will resume the default settings
+    pub fn set_device_name(&self, n: Option<String>) {
+        debug!("Setting the device name to {:?}", n);
+        self.device_name_sender
+            .lock()
+            .unwrap()
+            .send_modify(|state| *state = n);
     }
 }

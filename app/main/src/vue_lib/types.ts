@@ -37,6 +37,7 @@ export const numberToVisibility: { [key: number]: Visibility } = {
 };
 
 export const autostartKey = "autostart";
+export const deviceNameKey = "devicename";
 export const realcloseKey = "realclose";
 export const startminimizedKey = "startminimized";
 export const visibilityKey = "visibility";
