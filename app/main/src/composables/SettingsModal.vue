@@ -65,6 +65,12 @@ function openDownloadPicker() {
 						</span>
 					</label>
 				</div>
+				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
+					<label class="cursor-pointer flex flex-col items-start">
+						<span class="">Change device name</span>
+						<input :value="vm.deviceName" @input="event => utils.setDeviceName(vm, event.target.value)">
+					</label>
+				</div>
 			</div>
 		</div>
 	</div>

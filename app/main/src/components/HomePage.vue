@@ -224,6 +224,7 @@ export default {
 			downloadPath: ref<string | undefined>(),
 
 			hostname: ref<string>(),
+			deviceName: ref<string>(),
 
 			settingsOpen: ref<boolean>(false),
 
@@ -234,6 +235,8 @@ export default {
 	mounted: function () {
 		nextTick(async () => {
 			this.hostname = await invoke('get_hostname');
+			await this.getDeviceName(this);
+
 			this.version = await getVersion();
 
 			await this.getVisibility(this);

@@ -25,6 +25,7 @@ export interface TauriVM {
     visibility: Visibility;
     downloadPath: string | undefined;
     hostname: string | undefined;
+    deviceName: string | undefined;
     settingsOpen: boolean;
     new_version: string | null;
     enable: () => Promise<void>;

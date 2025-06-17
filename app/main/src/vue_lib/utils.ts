@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, DisplayedItem, deviceNameKey, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -180,6 +180,29 @@ async function getDownloadPath(vm: TauriVM) {
 	vm.downloadPath = await vm.store.get(downloadPathKey) ?? undefined;
 }
 
+function normalizeDeviceName(name: string) {
+	if (name === undefined || name === null) {
+		return undefined;
+	}
+	name = name.trim();
+	if (name === '') {
+		return undefined;
+	}
+	return name;
+}
+
+async function setDeviceName(vm: TauriVM, name: string) {
+	name = normalizeDeviceName(name);
+	await vm.invoke('change_device_name', { message: name });
+	await name === undefined ? vm.store.delete(deviceNameKey) : vm.store.set(deviceNameKey, name);
+	await vm.store.save();
+	vm.deviceName = name;
+}
+
+async function getDeviceName(vm: TauriVM) {
+	vm.deviceName = await vm.store.get(deviceNameKey) ?? undefined;
+}
+
 async function getLatestVersion(vm: TauriVM) {
 	try {
 		const response = await fetch('https://api.github.com/repos/martichou/rquickshare/releases/latest');
@@ -216,6 +239,8 @@ export const utils = {
 	getProgress,
 	setDownloadPath,
 	getDownloadPath,
+	setDeviceName,
+	getDeviceName,
 	getLatestVersion,
 	setStartMinimized,
 	getStartMinimized

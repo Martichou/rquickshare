@@ -24,7 +24,7 @@ const emit = defineEmits(['openSettings']);
 				Device name
 			</h4>
 			<h2 class="text-2xl font-medium">
-				{{ vm.hostname }}
+				{{ vm.deviceName ?? vm.hostname }}
 			</h2>
 		</div>
 		<div class="flex justify-center items-center gap-4">

@@ -1,5 +1,7 @@
 mod change_download_path;
 pub use change_download_path::*;
+mod change_device_name;
+pub use change_device_name::*;
 mod change_visibility;
 pub use change_visibility::*;
 mod discovery;
