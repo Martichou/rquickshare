@@ -611,10 +611,7 @@ impl InboundRequest {
                                                 anyhow::bail!("WiFi payload buffer ({buffer:?}) doesn't ends with 0x10 0x?? as expected");
                                             }
 
-                                            let len = *buffer
-                                                .get(1)
-                                                .expect("Validated for minimum length of 4")
-                                                as usize;
+                                            let len = buffer[1] as usize;
 
                                             let payload_buffer = buffer
                                                 .get(2..2 + len)
