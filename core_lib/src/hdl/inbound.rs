@@ -592,18 +592,11 @@ impl InboundRequest {
                                         )
                                         .await;
                                     }
-                                    // FIXME: ChannelMessage's structure needs to be redone as well
-                                    // It needs to have TextPayloadInfo instead of TextPayloadType
                                     TextPayloadInfo::Wifi((_, ssid, security_type)) => {
-                                        // ~~Payload seems to be within two DLE (0x10) characters
-                                        // At least for WpaPsk, not sure about Wep~~
-                                        //
-                                        // Nope, that's wrong, my Wi-Fi password just happened to have 16 characters
-                                        // which tripped up the previous logic.
-                                        //
-                                        // So, the password seems to start with 0x0A followed by a byte indicating
-                                        // the password or payload length. And, the payload ends with 0x10 0x??
-                                        // The last byte is sometimes 00 and other times 01
+                                        // The password seems to start with a 0x0A byte followed by
+                                        // a byte indicating the password length. The payload ends
+                                        // with two bytes 0x10 0x??, the last unknown byte here is
+                                        // sometimes 0x00 and other times 0x01.
                                         fn parse_password_payload(
                                             buffer: &mut Vec<u8>,
                                         ) -> anyhow::Result<String>
