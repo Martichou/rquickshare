@@ -2,7 +2,7 @@ use std::fs::File;
 use std::os::unix::fs::FileExt;
 use std::time::Duration;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use bytes::Bytes;
 use hmac::{Hmac, Mac};
 use libaes::{Cipher, AES_256_KEY_LEN};
@@ -33,6 +33,7 @@ use crate::securemessage::{
     EcP256PublicKey, EncScheme, GenericPublicKey, Header, HeaderAndBody, PublicKeyType,
     SecureMessage, SigScheme,
 };
+use crate::sharing_nearby::wifi_credentials_metadata::SecurityType;
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::utils::{
     encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
@@ -563,12 +564,10 @@ impl InboundRequest {
                                     == payload_id
                             {
                                 info!("Transfer finished");
-                                let end_index =
-                                    buffer.iter().position(|&b| b == 16).unwrap_or(buffer.len());
-                                let payload = std::str::from_utf8(&buffer[..end_index])?.to_owned();
 
                                 match self.state.text_payload.clone().unwrap() {
                                     TextPayloadInfo::Url(_) => {
+                                        let payload = std::str::from_utf8(&buffer)?.to_owned();
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
@@ -581,6 +580,7 @@ impl InboundRequest {
                                         .await;
                                     }
                                     TextPayloadInfo::Text(_) => {
+                                        let payload = std::str::from_utf8(&buffer)?.to_owned();
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
@@ -592,7 +592,48 @@ impl InboundRequest {
                                         )
                                         .await;
                                     }
-                                    TextPayloadInfo::Wifi((_, ssid)) => {
+                                    TextPayloadInfo::Wifi((_, ssid, security_type)) => {
+                                        // The password seems to start with a 0x0A byte followed by
+                                        // a byte indicating the password length. The payload ends
+                                        // with two bytes 0x10 0x??, the last unknown byte here is
+                                        // sometimes 0x00 and other times 0x01.
+                                        fn parse_password_payload(
+                                            buffer: &mut Vec<u8>,
+                                        ) -> anyhow::Result<String>
+                                        {
+                                            if buffer.len() < 4 {
+                                                anyhow::bail!(
+                                                    "WiFi payload buffer is too short ({buffer:?})"
+                                                );
+                                            }
+
+                                            if buffer[(buffer.len() - 1) - 1] != 0x10 {
+                                                anyhow::bail!("WiFi payload buffer ({buffer:?}) doesn't ends with 0x10 0x?? as expected");
+                                            }
+
+                                            let len = buffer[1] as usize;
+
+                                            let payload_buffer = buffer
+                                                .get(2..2 + len)
+                                                .with_context(
+                                                    || anyhow!("WiFi payload buffer is too short ({buffer:?}). Can't retrieve payload of length {len}")
+                                                )?;
+
+                                            Ok(String::from_utf8(payload_buffer.to_owned())?)
+                                        }
+
+                                        let payload = match security_type {
+                                            kind @ SecurityType::UnknownSecurityType => {
+                                                kind.as_str_name().into()
+                                            }
+                                            SecurityType::Open => "".into(),
+                                            SecurityType::WpaPsk | SecurityType::Wep => {
+                                                parse_password_payload(buffer)
+                                                    .inspect_err(|err| error!("{err:#}"))
+                                                    .unwrap_or_default()
+                                            }
+                                        };
+
                                         self.update_state(
                                             |e| {
                                                 if let Some(tmd) = e.transfer_metadata.as_mut() {
@@ -960,6 +1001,7 @@ impl InboundRequest {
                     e.text_payload = Some(TextPayloadInfo::Wifi((
                         meta.payload_id(),
                         meta.ssid().to_owned(),
+                        meta.security_type(),
                     )));
                     e.transfer_metadata = Some(metadata);
                 },
