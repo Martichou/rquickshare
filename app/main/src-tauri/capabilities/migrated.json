@@ -15,7 +15,6 @@
     "core:tray:default",
     "store:default",
     "dialog:default",
-    "notification:default",
     "store:allow-get",
     "store:allow-has",
     "store:allow-set",

@@ -1,70 +1,73 @@
+#[cfg(target_os = "macos")]
+use mac_notification_sys::*;
+
 #[cfg(target_os = "linux")]
 use notify_rust::Notification;
-#[cfg(target_os = "linux")]
+
+use crate::cmds;
 use rqs_lib::{
     channel::{ChannelAction, ChannelDirection, ChannelMessage},
     Visibility,
 };
-use tauri::AppHandle;
-#[cfg(target_os = "linux")]
-use tauri::Manager;
-#[cfg(not(target_os = "linux"))]
-use tauri_plugin_notification::NotificationExt;
+use tauri::{AppHandle, Manager};
 
-#[cfg(target_os = "linux")]
-use crate::cmds;
-
-pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
-    // Is not used in macos, get rid of warning
+#[cfg(target_os = "macos")]
+fn send_confirmation_notification<F: FnOnce(Option<bool>) -> ()>(
+    title: &str,
+    body: String,
+    ok_label: &str,
+    close_label: &str,
+    id: Option<u32>,
+    on_action: F,
+) {
     let _ = id;
+    let bundle = get_bundle_identifier_or_default("dev.mandre.rquickshare");
 
-    let body = format!("{name} want to initiate a transfer");
+    if let Err(e) = set_application(&bundle) {
+        warn!("Cannot set application: {}", e);
+    };
 
-    #[cfg(not(target_os = "linux"))]
-    let _ = app_handle
-        .notification()
-        .builder()
-        .title("RQuickShare")
+    let mut opts = Notification::new();
+
+    opts.main_button(MainButton::SingleAction(ok_label));
+    opts.close_button(close_label);
+
+    match send_notification(title, None, body.as_str(), Some(&opts)) {
+        Err(e) => error!("Couldn't show notification: {}", e),
+
+        Ok(NotificationResponse::ActionButton(_)) => on_action(Some(true)),
+        Ok(NotificationResponse::CloseButton(_)) => on_action(Some(false)),
+        _ => on_action(None),
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn send_confirmation_notification<F: FnOnce(Option<bool>) -> ()>(
+    title: &str,
+    body: String,
+    ok_label: &str,
+    close_label: &str,
+    id: Option<u32>,
+    on_action: F,
+) {
+    let mut notification = Notification::new()
+        .summary(title)
         .body(&body)
-        .show();
+        .action("ok", ok_label)
+        .action("close", close_label);
 
-    #[cfg(target_os = "linux")]
-    match Notification::new()
-        .summary("RQuickShare")
-        .body(&body)
-        .action("accept", "Accept")
-        .action("reject", "Reject")
-        .show()
-    {
+    if let Some(id) = id {
+        notification.id(id);
+    }
+
+    match notification.show() {
         Ok(n) => {
-            let capp_handle = app_handle.clone();
             // TODO - Meh, untracked, unwaited tasks...
-            #[cfg(target_os = "linux")]
             tokio::task::spawn(async move {
                 n.wait_for_action(|action| match action {
-                    "accept" => {
-                        let _ = cmds::send_to_rs(
-                            ChannelMessage {
-                                id,
-                                direction: ChannelDirection::FrontToLib,
-                                action: Some(ChannelAction::AcceptTransfer),
-                                ..Default::default()
-                            },
-                            capp_handle.state(),
-                        );
-                    }
-                    "reject" => {
-                        let _ = cmds::send_to_rs(
-                            ChannelMessage {
-                                id,
-                                direction: ChannelDirection::FrontToLib,
-                                action: Some(ChannelAction::RejectTransfer),
-                                ..Default::default()
-                            },
-                            capp_handle.state(),
-                        );
-                    }
-                    _ => (),
+                    "ok" => on_action(Some(true)),
+                    "close" => on_action(Some(false)),
+                    _ => on_action(None),
                 });
             });
         }
@@ -74,42 +77,54 @@ pub fn send_request_notification(name: String, id: String, app_handle: &AppHandl
     }
 }
 
+pub fn send_request_notification(name: String, id: String, app_handle: &AppHandle) {
+    send_confirmation_notification(
+        "RQuickShare",
+        format!("{name} want to initiate a transfer"),
+        "Accept",
+        "Reject",
+        None,
+        |confirmed| match confirmed {
+            Some(true) => {
+                let _ = cmds::send_to_rs(
+                    ChannelMessage {
+                        id,
+                        direction: ChannelDirection::FrontToLib,
+                        action: Some(ChannelAction::AcceptTransfer),
+                        ..Default::default()
+                    },
+                    app_handle.state(),
+                );
+            }
+            Some(false) => {
+                let _ = cmds::send_to_rs(
+                    ChannelMessage {
+                        id,
+                        direction: ChannelDirection::FrontToLib,
+                        action: Some(ChannelAction::RejectTransfer),
+                        ..Default::default()
+                    },
+                    app_handle.state(),
+                );
+            }
+            _ => (),
+        },
+    );
+}
+
 pub fn send_temporarily_notification(app_handle: &AppHandle) {
-    let body = "RQuickShare is temporarily hidden".to_string();
-
-    #[cfg(not(target_os = "linux"))]
-    let _ = app_handle
-        .notification()
-        .builder()
-        .title("RQuickShare")
-        .body(&body)
-        .show();
-
-    #[cfg(target_os = "linux")]
-    match Notification::new()
-        .summary("RQuickShare")
-        .body(&body)
-        .action("visible", "Be visible (1m)")
-        .action("ignore", "Ignore")
-        .id(1919)
-        .show()
-    {
-        Ok(n) => {
-            let capp_handle = app_handle.clone();
-            // TODO - Meh, untracked, unwaited tasks...
-            #[cfg(target_os = "linux")]
-            tokio::task::spawn(async move {
-                n.wait_for_action(|action| match action {
-                    "visible" => {
-                        cmds::change_visibility(Visibility::Temporarily, capp_handle.state());
-                    }
-                    "ignore" => {}
-                    _ => (),
-                });
-            });
-        }
-        Err(e) => {
-            error!("Couldn't show notification: {}", e);
-        }
-    }
+    send_confirmation_notification(
+        "RQuickShare",
+        "RQuickShare is temporarily hidden".to_string(),
+        "Be visible (1m)",
+        "Ignore",
+        #[cfg(target_os = "linux")]
+        Some(1919),
+        #[cfg(not(target_os = "linux"))]
+        None,
+        |confirmed| match confirmed {
+            Some(true) => cmds::change_visibility(Visibility::Temporarily, app_handle.state()),
+            _ => (),
+        },
+    );
 }

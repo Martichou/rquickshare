@@ -54,7 +54,6 @@ async fn main() -> Result<(), anyhow::Error> {
             MacosLauncher::LaunchAgent,
             None,
         ))
-        .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             trace!("tauri_plugin_single_instance: instance already running");
             open_main_window(app);
