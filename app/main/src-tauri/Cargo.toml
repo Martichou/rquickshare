@@ -17,6 +17,7 @@ fern = { version = "0.7", features = ["colored"] }
 humantime = "2.1"
 log = "0.4"
 notify-rust = "4.10"
+mac-notification-sys = "0.6.4"
 rqs_lib = { path = "../../../core_lib", features = ["experimental"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
@@ -24,7 +25,6 @@ sys_metrics = "0.2"
 tauri = { version = "2.2", features = [ "devtools", "tray-icon", "native-tls-vendored", "image-png"] }
 tauri-plugin-autostart = "2.2"
 tauri-plugin-process = "2.2"
-tauri-plugin-notification = "2.2"
 tauri-plugin-single-instance = "2.2"
 tauri-plugin-store = "2.2"
 tauri-plugin-dialog = "2.2"

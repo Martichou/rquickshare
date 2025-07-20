@@ -22,7 +22,6 @@
     "@tauri-apps/plugin-autostart": "^2.0.0",
     "@tauri-apps/plugin-clipboard-manager": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.1",
-    "@tauri-apps/plugin-notification": "^2.0.0",
     "@tauri-apps/plugin-shell": "^2.0.1",
     "@tauri-apps/plugin-store": "^2.1.0",
     "pinia": "^2.2.6",

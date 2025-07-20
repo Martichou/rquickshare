@@ -150,7 +150,6 @@ import { invoke } from '@tauri-apps/api/core'
 import { getVersion } from '@tauri-apps/api/app';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { getStore } from "@tauri-apps/plugin-store";
-import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { disable, enable } from '@tauri-apps/plugin-autostart';
 import { open as tauriDialog } from '@tauri-apps/plugin-dialog';
 import { open } from '@tauri-apps/plugin-shell';
@@ -247,13 +246,6 @@ export default {
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
 			await this.getDownloadPath(this);
-
-			// Check permission for notification
-			let permissionGranted = await isPermissionGranted();
-			if (!permissionGranted) {
-				const permission = await requestPermission();
-				permissionGranted = permission === 'granted';
-			}
 
 			this.unlisten.push(
 				await listen('rs2js_channelmessage', async (event) => {
