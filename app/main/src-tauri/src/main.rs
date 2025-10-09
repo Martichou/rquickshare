@@ -85,10 +85,16 @@ async fn main() -> Result<(), anyhow::Error> {
                 .build(app)?;
             let show = MenuItemBuilder::with_id("show", "Show").build(app)?;
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let change_visibility = MenuItemBuilder::with_id("changeVisibility", "Toggle visibility").build(app)?;
+            let set_temporary_visible = MenuItemBuilder::with_id("setTemporaryVisible", "Set temporary visible").build(app)?;
             let menu = MenuBuilder::new(app)
                 .item(&name)
                 .separator()
-                .items(&[&show, &quit])
+                .item(&show)
+                .separator()
+                .items(&[&change_visibility, &set_temporary_visible])
+                .separator()
+                .item(&quit)
                 .build()?;
 
             #[cfg(target_os = "macos")]
@@ -107,6 +113,19 @@ async fn main() -> Result<(), anyhow::Error> {
                     "quit" => {
                         trace!("tray_quit");
                         kill_app(app.app_handle());
+                    }
+                    "changeVisibility" => {
+                        trace!("tray_changeVisibility");
+                        let new_visibility = match get_visibility(app.app_handle()) {
+                            Visibility::Visible => Visibility::Invisible,
+                            Visibility::Invisible => Visibility::Visible,
+                            Visibility::Temporarily => Visibility::Invisible,
+                        };
+                        cmds::change_visibility(new_visibility, app.state());
+                    }
+                    "setTemporaryVisible" => {
+                        trace!("tray_setTemporaryVisible");
+                        cmds::change_visibility(Visibility::Temporarily, app.state());
                     }
                     _ => (),
                 })
