@@ -92,7 +92,7 @@ yay -S r-quick-share
 
 ### Nix
 
-Available here: [NixOS](https://search.nixos.org/packages?channel=24.05&show=rquickshare&from=0&size=50&sort=relevance&type=packages&query=rquickshare)
+Available here: [NixOS](https://search.nixos.org/packages?show=rquickshare&type=packages&query=rquickshare)
 
 A nix-shell will temporarily modify your $PATH environment variable. This can be used to try a piece of software before deciding to permanently install it.
 
