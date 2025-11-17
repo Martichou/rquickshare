@@ -354,22 +354,36 @@ export default {
 		displayedItems(): Array<DisplayedItem> {
 			return this._displayedItems(this);
 		}
-	},
-
-	methods: {
-		writeToClipboard: async function(text: string) {
-			try {
-				await writeText(text);
-				this.toastStore.addToast("Copied to clipboard", ToastType.Success);
-			} catch (e) {
-				this.toastStore.addToast("Unknown error while copying text", ToastType.Error);
-				console.error("Error copying text", e);
-			}
 		},
-		openUrl: async function(url: string) {
-			try {
-				await open(url);
-			} catch (e) {
+
+		methods: {
+			writeToClipboard: async function(text: string) {
+				const reportSuccess = () => this.toastStore.addToast("Copied to clipboard", ToastType.Success);
+
+				try {
+					await writeText(text);
+					reportSuccess();
+					return;
+				} catch (e) {
+					console.warn("Failed to copy text through Tauri clipboard plugin, trying browser API fallback", e);
+				}
+
+				if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+					try {
+						await navigator.clipboard.writeText(text);
+						reportSuccess();
+						return;
+					} catch (e) {
+						console.error("Fallback clipboard copy failed", e);
+					}
+				}
+
+				this.toastStore.addToast("Unknown error while copying text", ToastType.Error);
+			},
+			openUrl: async function(url: string) {
+				try {
+					await open(url);
+				} catch (e) {
 				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
 				console.error("Error opening URL", e);
 			}
