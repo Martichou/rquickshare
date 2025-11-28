@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, AutoAcceptTimeout, autoAcceptTimeoutKey, blockedDevicesKey, BlockedDevice, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, trustedDevicesKey, TrustedDevice, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -198,6 +198,124 @@ async function getLatestVersion(vm: TauriVM) {
 	}
 }
 
+async function setAutoAcceptTimeout(vm: TauriVM, timeout: AutoAcceptTimeout) {
+	await vm.store.set(autoAcceptTimeoutKey, timeout);
+	await vm.store.save();
+	vm.autoAcceptTimeout = timeout;
+}
+
+async function getAutoAcceptTimeout(vm: TauriVM) {
+	vm.autoAcceptTimeout = (await vm.store.get(autoAcceptTimeoutKey) as AutoAcceptTimeout | null) ?? 5;
+}
+
+// Trusted devices management
+async function getTrustedDevices(vm: TauriVM) {
+	const allDevices = (await vm.store.get(trustedDevicesKey) as TrustedDevice[] | null) ?? [];
+	const timeoutMs = vm.autoAcceptTimeout * 60 * 1000;
+	const now = Date.now();
+
+	// Filter out expired devices
+	const validDevices = allDevices.filter(d => (now - d.lastTransfer) < timeoutMs);
+
+	// If any were removed, save the cleaned list
+	if (validDevices.length !== allDevices.length) {
+		vm.trustedDevices = validDevices;
+		await saveTrustedDevices(vm);
+	} else {
+		vm.trustedDevices = validDevices;
+	}
+}
+
+async function saveTrustedDevices(vm: TauriVM) {
+	await vm.store.set(trustedDevicesKey, vm.trustedDevices);
+	await vm.store.save();
+}
+
+async function addTrustedDevice(vm: TauriVM, name: string, deviceType: string) {
+	const existing = vm.trustedDevices.findIndex(d => d.name === name);
+	const device: TrustedDevice = { name, deviceType, lastTransfer: Date.now() };
+
+	if (existing !== -1) {
+		vm.trustedDevices.splice(existing, 1, device);
+	} else {
+		vm.trustedDevices.push(device);
+	}
+	await saveTrustedDevices(vm);
+}
+
+async function removeTrustedDevice(vm: TauriVM, name: string) {
+	const idx = vm.trustedDevices.findIndex(d => d.name === name);
+	if (idx !== -1) {
+		vm.trustedDevices.splice(idx, 1);
+		await saveTrustedDevices(vm);
+	}
+}
+
+async function updateTrustedDeviceTimestamp(vm: TauriVM, name: string) {
+	const device = vm.trustedDevices.find(d => d.name === name);
+	if (device) {
+		device.lastTransfer = Date.now();
+		await saveTrustedDevices(vm);
+	}
+}
+
+function isTrustedAndValid(vm: TauriVM, name: string): boolean {
+	const device = vm.trustedDevices.find(d => d.name === name);
+	if (!device) return false;
+
+	const timeoutMs = vm.autoAcceptTimeout * 60 * 1000;
+	return (Date.now() - device.lastTransfer) < timeoutMs;
+}
+
+function shouldShowTrustPrompt(vm: TauriVM, name: string): boolean {
+	// Don't show if device is blocked
+	if (vm.blockedDevices.some(d => d.name === name)) return false;
+
+	// Don't show if device is trusted and within timeout
+	if (isTrustedAndValid(vm, name)) return false;
+
+	return true;
+}
+
+// Blocked devices management
+async function getBlockedDevices(vm: TauriVM) {
+	vm.blockedDevices = (await vm.store.get(blockedDevicesKey) as BlockedDevice[] | null) ?? [];
+}
+
+async function saveBlockedDevices(vm: TauriVM) {
+	await vm.store.set(blockedDevicesKey, vm.blockedDevices);
+	await vm.store.save();
+}
+
+async function addBlockedDevice(vm: TauriVM, name: string, deviceType: string) {
+	const existing = vm.blockedDevices.findIndex(d => d.name === name);
+	if (existing === -1) {
+		vm.blockedDevices.push({ name, deviceType, blockedAt: Date.now() });
+		await saveBlockedDevices(vm);
+	}
+}
+
+async function removeBlockedDevice(vm: TauriVM, name: string) {
+	const idx = vm.blockedDevices.findIndex(d => d.name === name);
+	if (idx !== -1) {
+		vm.blockedDevices.splice(idx, 1);
+		await saveBlockedDevices(vm);
+	}
+}
+
+function isDeviceBlocked(vm: TauriVM, name: string): boolean {
+	return vm.blockedDevices.some(d => d.name === name);
+}
+
+// Pending trust request management
+function setPendingTrustRequest(vm: TauriVM, id: string, name: string, deviceType: string) {
+	vm.pendingTrustRequest = { id, name, deviceType };
+}
+
+function clearPendingTrustRequest(vm: TauriVM) {
+	vm.pendingTrustRequest = null;
+}
+
 // Default export
 export const utils = {
 	_displayedItems,
@@ -218,6 +336,23 @@ export const utils = {
 	getDownloadPath,
 	getLatestVersion,
 	setStartMinimized,
-	getStartMinimized
+	getStartMinimized,
+	setAutoAcceptTimeout,
+	getAutoAcceptTimeout,
+	// Trusted devices
+	getTrustedDevices,
+	addTrustedDevice,
+	removeTrustedDevice,
+	updateTrustedDeviceTimestamp,
+	isTrustedAndValid,
+	shouldShowTrustPrompt,
+	// Blocked devices
+	getBlockedDevices,
+	addBlockedDevice,
+	removeBlockedDevice,
+	isDeviceBlocked,
+	// Pending trust request
+	setPendingTrustRequest,
+	clearPendingTrustRequest,
 };
 export type UtilsType = typeof utils;

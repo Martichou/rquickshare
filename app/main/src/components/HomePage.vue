@@ -11,6 +11,11 @@
 			<div class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
 				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
 
+				<TrustDeviceCallout
+					:vm="vm"
+					@trust="handleTrustAccept"
+					@block="handleTrustBlock" />
+
 				<div
 					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
 					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(vm, item.id)">
@@ -27,7 +32,7 @@
 							<p class="mt-4">
 								Wants to share {{ item.files?.join(', ') ?? item.text_description ?? 'some file(s).' }}
 							</p>
-							<div class="flex flex-row justify-end gap-4 mt-1">
+							<div class="flex flex-row justify-end gap-2 mt-1 flex-wrap">
 								<p
 									@click.stop="sendCmd(vm, item.id, 'AcceptTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
@@ -161,13 +166,14 @@ import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
-import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils } from '../vue_lib';
+import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils, AutoAcceptTimeout, TrustedDevice, BlockedDevice, PendingTrustRequest } from '../vue_lib';
 
 import SettingsModal from '../composables/SettingsModal.vue';
 import Heading from '../composables/Heading.vue';
 import SideMenu from '../composables/SideMenu.vue';
 import ContentStatus from '../composables/ContentStatus.vue';
 import ItemSide from '../composables/ItemSide.vue';
+import TrustDeviceCallout from '../composables/TrustDeviceCallout.vue';
 
 export default {
 	name: "HomePage",
@@ -178,7 +184,8 @@ export default {
 		Heading,
 		SideMenu,
 		ContentStatus,
-		ItemSide
+		ItemSide,
+		TrustDeviceCallout
 	},
 
 	async setup() {
@@ -228,6 +235,11 @@ export default {
 			settingsOpen: ref<boolean>(false),
 
 			new_version: opt<string>(),
+
+			autoAcceptTimeout: ref<AutoAcceptTimeout>(5),
+			trustedDevices: ref<TrustedDevice[]>([]),
+			blockedDevices: ref<BlockedDevice[]>([]),
+			pendingTrustRequest: ref<PendingTrustRequest | null>(null),
 		};
 	},
 
@@ -247,6 +259,9 @@ export default {
 			await this.getRealclose(this);
 			await this.getStartMinimized(this);
 			await this.getDownloadPath(this);
+			await this.getAutoAcceptTimeout(this);
+			await this.getTrustedDevices(this);
+			await this.getBlockedDevices(this);
 
 			// Check permission for notification
 			let permissionGranted = await isPermissionGranted();
@@ -267,7 +282,46 @@ export default {
 						});
 					}
 
-					// TODO - Automatically open || copy to clipboard + toast
+					// Handle incoming transfer request
+					if (cm.state === "WaitingForUserConsent") {
+						const deviceName = cm.meta?.source?.name;
+						const deviceType = cm.meta?.source?.device_type ?? 'Unknown';
+
+						if (deviceName) {
+							// Check if device is blocked - silently ignore
+							if (this.isDeviceBlocked(this, deviceName)) {
+								// Device is blocked, do nothing (user must manually accept/decline)
+							}
+							// Check if device is trusted and within timeout - auto-accept
+							else if (this.isTrustedAndValid(this, deviceName)) {
+								await this.updateTrustedDeviceTimestamp(this, deviceName);
+								await this.sendCmd(this, cm.id, 'AcceptTransfer');
+							}
+							// Show trust prompt for new/expired devices
+							else if (this.shouldShowTrustPrompt(this, deviceName)) {
+								this.setPendingTrustRequest(this, cm.id, deviceName, deviceType);
+							}
+						}
+					}
+
+					// Update trusted device timestamp on successful transfer
+					if (cm.state === "Finished") {
+						const deviceName = cm.meta?.source?.name;
+						if (deviceName && this.isTrustedAndValid(this, deviceName)) {
+							await this.updateTrustedDeviceTimestamp(this, deviceName);
+						}
+						// Clear pending trust request if it matches
+						if (this.pendingTrustRequest?.id === cm.id) {
+							this.clearPendingTrustRequest(this);
+						}
+					}
+
+					// Clear pending trust request on terminal states
+					if (['Rejected', 'Cancelled', 'Disconnected'].includes(cm.state ?? '')) {
+						if (this.pendingTrustRequest?.id === cm.id) {
+							this.clearPendingTrustRequest(this);
+						}
+					}
 
 					if (idx !== -1) {
 						const prev = this.requests.at(idx);
@@ -373,6 +427,15 @@ export default {
 				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
 				console.error("Error opening URL", e);
 			}
+		},
+		handleTrustAccept: async function() {
+			if (!this.pendingTrustRequest) return;
+			const requestId = this.pendingTrustRequest.id;
+			this.clearPendingTrustRequest(this);
+			await this.sendCmd(this, requestId, 'AcceptTransfer');
+		},
+		handleTrustBlock: async function() {
+			this.clearPendingTrustRequest(this);
 		},
 	},
 }

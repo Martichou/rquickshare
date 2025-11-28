@@ -91,3 +91,45 @@ pub fn get_startminimized(app_handle: &AppHandle) -> bool {
         .and_then(|json| json.as_bool())
         .unwrap_or_default()
 }
+
+pub fn is_device_trusted_and_valid(app_handle: &AppHandle, device_name: &str) -> bool {
+    let store = _get_store(app_handle);
+
+    // Get timeout in minutes (default 5 minutes)
+    let timeout_minutes = store
+        .get("auto_accept_timeout")
+        .and_then(|json| json.as_u64())
+        .unwrap_or(5);
+
+    let timeout_ms = timeout_minutes * 60 * 1000;
+
+    // Get trusted devices array
+    let trusted_devices = match store.get("trusted_devices") {
+        Some(json) => json,
+        None => return false,
+    };
+
+    let devices = match trusted_devices.as_array() {
+        Some(arr) => arr,
+        None => return false,
+    };
+
+    // Find device by name and check if within timeout
+    for device in devices {
+        let name = device.get("name").and_then(|v| v.as_str());
+        let last_transfer = device.get("lastTransfer").and_then(|v| v.as_u64());
+
+        if let (Some(name), Some(last_transfer)) = (name, last_transfer) {
+            if name == device_name {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_millis() as u64)
+                    .unwrap_or(0);
+
+                return (now - last_transfer) < timeout_ms;
+            }
+        }
+    }
+
+    false
+}

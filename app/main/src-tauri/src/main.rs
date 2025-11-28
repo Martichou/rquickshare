@@ -24,7 +24,8 @@ use tokio::sync::{broadcast, mpsc, watch};
 use crate::logger::set_up_logging;
 use crate::notification::{send_request_notification, send_temporarily_notification};
 use crate::store::{
-    get_download_path, get_port, get_realclose, get_visibility, init_default, set_visibility,
+    get_download_path, get_port, get_realclose, get_visibility, init_default,
+    is_device_trusted_and_valid, set_visibility,
 };
 
 mod cmds;
@@ -200,7 +201,11 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
                             .and_then(|meta| meta.source.as_ref())
                             .map(|source| source.name.clone())
                             .unwrap_or_else(|| "Unknown".to_string());
-                        send_request_notification(name, info.id.clone(), &capp_handle);
+
+                        // Only show notification if device is not trusted (will be auto-accepted)
+                        if !is_device_trusted_and_valid(&capp_handle, &name) {
+                            send_request_notification(name, info.id.clone(), &capp_handle);
+                        }
                     }
                     rs2js_channelmessage(info, &capp_handle);
                 }

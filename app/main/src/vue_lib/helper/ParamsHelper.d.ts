@@ -1,7 +1,7 @@
 import { Store } from '@tauri-apps/plugin-store';
 import { UnlistenFn } from '@tauri-apps/api/event';
 
-import { ToDelete } from '../types';
+import { AutoAcceptTimeout, BlockedDevice, PendingTrustRequest, ToDelete, TrustedDevice } from '../types';
 
 import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
@@ -27,6 +27,10 @@ export interface TauriVM {
     hostname: string | undefined;
     settingsOpen: boolean;
     new_version: string | null;
+    autoAcceptTimeout: AutoAcceptTimeout;
+    trustedDevices: TrustedDevice[];
+    blockedDevices: BlockedDevice[];
+    pendingTrustRequest: PendingTrustRequest | null;
     enable: () => Promise<void>;
     disable: () => Promise<void>;
     invoke: (cmd: string, args?: InvokeArgs) => Promise<unknown>

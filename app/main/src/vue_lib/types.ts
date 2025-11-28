@@ -41,6 +41,36 @@ export const realcloseKey = "realclose";
 export const startminimizedKey = "startminimized";
 export const visibilityKey = "visibility";
 export const downloadPathKey = "download_path";
+export const autoAcceptTimeoutKey = "auto_accept_timeout";
+export const trustedDevicesKey = "trusted_devices";
+export const blockedDevicesKey = "blocked_devices";
+
+export type AutoAcceptTimeout = 1 | 5 | 10 | 60;
+
+export const autoAcceptTimeoutOptions: { value: AutoAcceptTimeout; label: string }[] = [
+	{ value: 1, label: '1 minute' },
+	{ value: 5, label: '5 minutes' },
+	{ value: 10, label: '10 minutes' },
+	{ value: 60, label: '1 hour' },
+];
+
+export interface TrustedDevice {
+	name: string;
+	deviceType: string;
+	lastTransfer: number;
+}
+
+export interface BlockedDevice {
+	name: string;
+	deviceType: string;
+	blockedAt: number;
+}
+
+export interface PendingTrustRequest {
+	id: string;
+	name: string;
+	deviceType: string;
+}
 export const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
 	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 
