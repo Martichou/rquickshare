@@ -49,6 +49,16 @@ pub mod location_nearby_connections {
 }
 
 static CUSTOM_DOWNLOAD: Lazy<RwLock<Option<PathBuf>>> = Lazy::new(|| RwLock::new(None));
+static CUSTOM_DEVICE_NAME: Lazy<RwLock<Option<String>>> = Lazy::new(|| RwLock::new(None));
+
+/// Returns the device name (custom or system hostname)
+pub fn get_device_name() -> String {
+    CUSTOM_DEVICE_NAME
+        .read()
+        .ok()
+        .and_then(|guard| guard.clone())
+        .unwrap_or_else(|| sys_metrics::host::get_hostname().unwrap_or_else(|_| String::from("Unknown")))
+}
 
 #[derive(Debug)]
 pub struct RQS {
@@ -62,6 +72,10 @@ pub struct RQS {
     pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     visibility_receiver: watch::Receiver<Visibility>,
 
+    // Used to trigger a change in the device name for mDNS
+    device_name_sender: watch::Sender<String>,
+    device_name_receiver: watch::Receiver<String>,
+
     // Only used to send the info "a nearby device is sharing"
     ble_sender: broadcast::Sender<()>,
 
@@ -72,7 +86,7 @@ pub struct RQS {
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new(Visibility::Visible, None, None)
+        Self::new(Visibility::Visible, None, None, None)
     }
 }
 
@@ -81,9 +95,13 @@ impl RQS {
         visibility: Visibility,
         port_number: Option<u32>,
         download_path: Option<PathBuf>,
+        device_name: Option<String>,
     ) -> Self {
         let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
         *guard = download_path;
+
+        let mut name_guard = CUSTOM_DEVICE_NAME.write().unwrap();
+        *name_guard = device_name.clone();
 
         let (message_sender, _) = broadcast::channel(50);
         let (ble_sender, _) = broadcast::channel(5);
@@ -92,12 +110,19 @@ impl RQS {
         let (visibility_sender, visibility_receiver) = watch::channel(Visibility::Invisible);
         let _ = visibility_sender.send(visibility);
 
+        // Define device name channel
+        let initial_device_name = device_name
+            .unwrap_or_else(|| sys_metrics::host::get_hostname().unwrap_or_else(|_| String::from("Unknown")));
+        let (device_name_sender, device_name_receiver) = watch::channel(initial_device_name);
+
         Self {
             tracker: None,
             ctoken: None,
             discovery_ctk: None,
             visibility_sender: Arc::new(Mutex::new(visibility_sender)),
             visibility_receiver,
+            device_name_sender,
+            device_name_receiver,
             ble_sender,
             port_number,
             message_sender,
@@ -150,6 +175,7 @@ impl RQS {
             self.ble_sender.subscribe(),
             self.visibility_sender.clone(),
             self.visibility_receiver.clone(),
+            self.device_name_receiver.clone(),
         )?;
         let ctk = ctoken.clone();
         tracker.spawn(async move { mdns.run(ctk).await });
@@ -207,6 +233,19 @@ impl RQS {
             .lock()
             .unwrap()
             .send_modify(|state| *state = nv);
+    }
+
+    pub fn set_device_name(&self, name: Option<String>) {
+        let device_name = name.clone()
+            .unwrap_or_else(|| sys_metrics::host::get_hostname().unwrap_or_else(|_| String::from("Unknown")));
+
+        // Update the global static
+        if let Ok(mut guard) = CUSTOM_DEVICE_NAME.write() {
+            *guard = name;
+        }
+
+        // Notify mDNS server to update
+        self.device_name_sender.send_modify(|n| *n = device_name);
     }
 
     pub async fn stop(&mut self) {

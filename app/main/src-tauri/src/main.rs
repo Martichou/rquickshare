@@ -24,7 +24,8 @@ use tokio::sync::{broadcast, mpsc, watch};
 use crate::logger::set_up_logging;
 use crate::notification::{send_request_notification, send_temporarily_notification};
 use crate::store::{
-    get_download_path, get_port, get_realclose, get_visibility, init_default, set_visibility,
+    get_device_name, get_download_path, get_port, get_realclose, get_visibility, init_default,
+    set_visibility,
 };
 
 mod cmds;
@@ -69,6 +70,8 @@ async fn main() -> Result<(), anyhow::Error> {
             cmds::get_hostname,
             cmds::send_payload,
             cmds::send_to_rs,
+            cmds::set_device_name,
+            cmds::validate_device_name_cmd,
         ])
         .setup(|app| {
             // Setting up logging inside file for the app
@@ -118,6 +121,7 @@ async fn main() -> Result<(), anyhow::Error> {
             let visibility = get_visibility(app.app_handle());
             let port_number = get_port(app.app_handle());
             let download_path = get_download_path(app.app_handle());
+            let device_name = get_device_name(app.app_handle());
 
             let app_handle = app.app_handle().clone();
             // This is not optimal, but until I find a better way to init log
@@ -127,7 +131,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 tauri::async_runtime::block_on(async move {
                     trace!("Beginning of RQS start");
                     // Start the RQuickShare service
-                    let mut rqs = RQS::new(visibility, port_number, download_path);
+                    let mut rqs = RQS::new(visibility, port_number, download_path, device_name);
                     let (sender_file, ble_receiver) = rqs.run().await.unwrap();
 
                     // Define state for tauri app

@@ -91,3 +91,22 @@ pub fn get_startminimized(app_handle: &AppHandle) -> bool {
         .and_then(|json| json.as_bool())
         .unwrap_or_default()
 }
+
+pub fn get_device_name(app_handle: &AppHandle) -> Option<String> {
+    let store = _get_store(app_handle);
+
+    store
+        .get("device_name")
+        .and_then(|json| json.as_str().map(String::from))
+}
+
+pub fn set_device_name(app_handle: &AppHandle, name: Option<String>) {
+    let store = _get_store(app_handle);
+
+    match name {
+        Some(n) => store.set("device_name", n),
+        None => {
+            let _ = store.delete("device_name");
+        }
+    }
+}

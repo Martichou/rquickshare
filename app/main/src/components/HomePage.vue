@@ -3,7 +3,7 @@
 		<ToastNotification />
 		<SettingsModal :vm="vm" @close="settingsOpen = false" />
 
-		<Heading :vm="vm" :open-url="openUrl" @open-settings="settingsOpen = true" />
+		<Heading :vm="vm" :open-url="openUrl" @open-settings="settingsOpen = true" @hostname-updated="refreshHostname" />
 
 		<div class="flex-1 flex flex-row">
 			<SideMenu :vm="vm" @invert-visibility="invertVisibility(vm)" @clear-sending="clearSending(vm)" />
@@ -373,6 +373,10 @@ export default {
 				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
 				console.error("Error opening URL", e);
 			}
+		},
+		refreshHostname: async function() {
+			this.hostname = await invoke('get_hostname');
+			this.toastStore.addToast("Device name updated", ToastType.Success);
 		},
 	},
 }

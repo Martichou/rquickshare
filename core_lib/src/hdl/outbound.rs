@@ -218,6 +218,7 @@ impl OutboundRequest {
     }
 
     pub async fn send_connection_request(&mut self) -> Result<(), anyhow::Error> {
+        let device_name = crate::get_device_name();
         let request = location_nearby_connections::OfflineFrame {
             version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
             v1: Some(location_nearby_connections::V1Frame {
@@ -226,10 +227,10 @@ impl OutboundRequest {
                 ),
                 connection_request: Some(location_nearby_connections::ConnectionRequestFrame {
                     endpoint_id: Some(String::from_utf8_lossy(&self.endpoint_id).to_string()),
-                    endpoint_name: Some(sys_metrics::host::get_hostname()?.into()),
+                    endpoint_name: Some(device_name.clone().into_bytes()),
                     endpoint_info: Some(
                         RemoteDeviceInfo {
-                            name: sys_metrics::host::get_hostname()?,
+                            name: device_name,
                             device_type: DeviceType::Laptop,
                         }
                         .serialize(),

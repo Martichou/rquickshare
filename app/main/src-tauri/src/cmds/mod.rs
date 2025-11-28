@@ -10,3 +10,5 @@ mod send_payload;
 pub use send_payload::*;
 mod send_to_rs;
 pub use send_to_rs::*;
+mod set_device_name;
+pub use set_device_name::*;

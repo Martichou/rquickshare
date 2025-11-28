@@ -36,10 +36,13 @@ impl Visibility {
 
 pub struct MDnsServer {
     daemon: ServiceDaemon,
+    endpoint_id: [u8; 4],
+    service_port: u16,
     service_info: ServiceInfo,
     ble_receiver: Receiver<()>,
     visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
     visibility_receiver: watch::Receiver<Visibility>,
+    device_name_receiver: watch::Receiver<String>,
 }
 
 impl MDnsServer {
@@ -49,22 +52,26 @@ impl MDnsServer {
         ble_receiver: Receiver<()>,
         visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
         visibility_receiver: watch::Receiver<Visibility>,
+        device_name_receiver: watch::Receiver<String>,
     ) -> Result<Self, anyhow::Error> {
-        let service_info = Self::build_service(endpoint_id, service_port, DeviceType::Laptop)?;
+        let device_name = device_name_receiver.borrow().clone();
+        let service_info = Self::build_service(endpoint_id, service_port, DeviceType::Laptop, &device_name)?;
 
         Ok(Self {
             daemon: ServiceDaemon::new()?,
+            endpoint_id,
+            service_port,
             service_info,
             ble_receiver,
             visibility_sender,
             visibility_receiver,
+            device_name_receiver,
         })
     }
 
     pub async fn run(&mut self, ctk: CancellationToken) -> Result<(), anyhow::Error> {
         info!("{INNER_NAME}: service starting");
         let monitor = self.daemon.monitor()?;
-        let ble_receiver = &mut self.ble_receiver;
         let mut visibility = *self.visibility_receiver.borrow();
         let mut interval = interval_at(Instant::now() + TICK_INTERVAL, TICK_INTERVAL);
 
@@ -94,7 +101,23 @@ impl MDnsServer {
                         interval.reset();
                     }
                 }
-                _ = ble_receiver.recv() => {
+                _ = self.device_name_receiver.changed() => {
+                    let new_name = self.device_name_receiver.borrow_and_update().clone();
+                    debug!("{INNER_NAME}: device name changed to: {new_name}");
+
+                    // Unregister old service
+                    let receiver = self.daemon.unregister(self.service_info.get_fullname())?;
+                    let _ = receiver.recv();
+
+                    // Rebuild service with new name
+                    self.rebuild_service()?;
+
+                    // Re-register if visible
+                    if visibility == Visibility::Visible || visibility == Visibility::Temporarily {
+                        self.daemon.register(self.service_info.clone())?;
+                    }
+                }
+                _ = self.ble_receiver.recv() => {
                     if visibility == Visibility::Invisible {
                         continue;
                     }
@@ -134,11 +157,14 @@ impl MDnsServer {
         endpoint_id: [u8; 4],
         service_port: u16,
         device_type: DeviceType,
+        device_name: &str,
     ) -> Result<ServiceInfo, anyhow::Error> {
         let name = gen_mdns_name(endpoint_id);
+        // Use system hostname for mDNS (must be DNS-compatible)
+        // The device_name goes in endpoint_info which is what Quick Share displays
         let hostname = sys_metrics::host::get_hostname()?;
-        info!("Broadcasting with: {hostname}");
-        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
+        info!("Broadcasting as '{device_name}' (mDNS hostname: {hostname})");
+        let endpoint_info = gen_mdns_endpoint_info(device_type as u8, device_name);
 
         let properties = [("n", endpoint_info)];
         let si = ServiceInfo::new(
@@ -152,5 +178,16 @@ impl MDnsServer {
         .enable_addr_auto(AddrType::V4);
 
         Ok(si)
+    }
+
+    fn rebuild_service(&mut self) -> Result<(), anyhow::Error> {
+        let device_name = self.device_name_receiver.borrow().clone();
+        self.service_info = Self::build_service(
+            self.endpoint_id,
+            self.service_port,
+            DeviceType::Laptop,
+            &device_name,
+        )?;
+        Ok(())
     }
 }
