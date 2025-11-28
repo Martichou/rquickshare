@@ -21,7 +21,10 @@ function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 		})
 	});
 
-	vm.requests.filter((el) => stateToDisplay.includes(el.state ?? 'Initial')).forEach((el) => {
+	const filteredRequests = vm.requests.filter((el) => stateToDisplay.includes(el.state ?? 'Initial'));
+
+	for (let i = filteredRequests.length - 1; i >= 0; i--) {
+		const el = filteredRequests[i];
 		const idx = ndisplayed.findIndex((nel) => el.id == nel.id);
 		const elem: DisplayedItem = {
 			id: el.id,
@@ -45,7 +48,7 @@ function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 		} else {
 			ndisplayed.push(elem)
 		}
-	});
+	}
 
 	return ndisplayed;
 }
