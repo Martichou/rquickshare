@@ -2,3 +2,4 @@ target/
 Cargo.lock
 *.snap
 gen
+.idea

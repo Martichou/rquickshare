@@ -6,16 +6,16 @@
 #[macro_use]
 extern crate log;
 
+use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use rqs_lib::channel::{ChannelDirection, ChannelMessage};
 use rqs_lib::{EndpointInfo, SendInfo, State, Visibility, RQS};
 use store::get_startminimized;
-#[cfg(target_os = "macos")]
 use tauri::image::Image;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
-    tray::TrayIconBuilder,
+    tray::{TrayIconBuilder, TrayIconId},
     AppHandle, Emitter, Manager, Window, WindowEvent,
 };
 use tauri_plugin_autostart::MacosLauncher;
@@ -39,7 +39,10 @@ pub struct AppState {
     pub sender_file: mpsc::Sender<SendInfo>,
     pub ble_receiver: broadcast::Receiver<()>,
     pub rqs: Mutex<RQS>,
+    pub pending_transfers: Arc<Mutex<HashSet<String>>>,
 }
+
+const TRAY_ID: &str = "main_tray";
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -96,7 +99,7 @@ async fn main() -> Result<(), anyhow::Error> {
             #[cfg(not(target_os = "macos"))]
             let icon = app.default_window_icon().unwrap().clone();
 
-            let tray = TrayIconBuilder::new()
+            let tray = TrayIconBuilder::with_id(TRAY_ID)
                 .icon(icon)
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
@@ -138,6 +141,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         sender_file,
                         ble_receiver,
                         rqs: Mutex::new(rqs),
+                        pending_transfers: Arc::new(Mutex::new(HashSet::new())),
                     });
                 });
             });
@@ -180,6 +184,35 @@ async fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
+fn update_tray_icon(app_handle: &AppHandle, has_pending: bool) {
+    let tray_id = TrayIconId::new(TRAY_ID);
+    if let Some(tray) = app_handle.tray_by_id(&tray_id) {
+        let icon = if has_pending {
+            Image::from_bytes(include_bytes!("../icons/tray_notification.png")).ok()
+        } else {
+            #[cfg(target_os = "macos")]
+            {
+                Image::from_bytes(include_bytes!("../icons/tray.png")).ok()
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+                app_handle.default_window_icon().cloned()
+            }
+        };
+
+        if let Some(icon) = icon {
+            let _ = tray.set_icon(Some(icon));
+        }
+    }
+}
+
+fn is_terminal_state(state: &State) -> bool {
+    matches!(
+        state,
+        State::Disconnected | State::Rejected | State::Cancelled | State::Finished
+    )
+}
+
 fn spawn_receiver_tasks(app_handle: &AppHandle) {
     let capp_handle = app_handle.clone();
     tauri::async_runtime::spawn(async move {
@@ -191,9 +224,21 @@ fn spawn_receiver_tasks(app_handle: &AppHandle) {
 
             match rinfo {
                 Ok(info) => {
-                    if info.state.as_ref().unwrap_or(&State::Initial)
-                        == &State::WaitingForUserConsent
+                    let current_state = info.state.as_ref().unwrap_or(&State::Initial);
+
+                    // Handle pending transfers tracking for tray notification
                     {
+                        let mut pending = state.pending_transfers.lock().unwrap();
+                        if current_state == &State::WaitingForUserConsent {
+                            pending.insert(info.id.clone());
+                            update_tray_icon(&capp_handle, true);
+                        } else if is_terminal_state(current_state) {
+                            pending.remove(&info.id);
+                            update_tray_icon(&capp_handle, !pending.is_empty());
+                        }
+                    }
+
+                    if current_state == &State::WaitingForUserConsent {
                         let name = info
                             .meta
                             .as_ref()
