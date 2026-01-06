@@ -45,12 +45,12 @@ The files should (in theory) install those dependencies by themselves, but if th
 
 ##### Install rquickshare
 ```bash
-sudo dpkg -i r-quick-share_${VERSION}.deb
+sudo apt install ./r-quick-share_${VERSION}.deb
 ```
 
 #### Debian
 ```bash
-sudo dpkg -i r-quick-share_${VERSION}.deb
+sudo apt install ./r-quick-share_${VERSION}.deb
 ```
 
 #### RPM
