@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full overflow-hidden">
+	<div class="flex flex-col w-full h-full bg-green-50 dark:bg-slate-900 max-w-full max-h-full overflow-hidden">
 		<ToastNotification />
 		<SettingsModal :vm="vm" @close="settingsOpen = false" />
 
@@ -8,11 +8,11 @@
 		<div class="flex-1 flex flex-row">
 			<SideMenu :vm="vm" @invert-visibility="invertVisibility(vm)" @clear-sending="clearSending(vm)" />
 
-			<div class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
+			<div class="flex-1 flex flex-col bg-white dark:bg-slate-800 w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
 				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
 
 				<div
-					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
+					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100 dark:bg-slate-700"
 					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(vm, item.id)">
 					<!-- Loader and image of the device type & pin_code -->
 					<ItemSide :item="item" />
@@ -161,7 +161,7 @@ import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
-import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils } from '../vue_lib';
+import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils, Theme } from '../vue_lib';
 
 import SettingsModal from '../composables/SettingsModal.vue';
 import Heading from '../composables/Heading.vue';
@@ -221,6 +221,7 @@ export default {
 			realclose: ref<boolean>(false),
 			startminimized: ref<boolean>(false),
 			visibility: ref<Visibility>('Visible'),
+			theme: ref<Theme>('System'),
 			downloadPath: ref<string | undefined>(),
 
 			hostname: ref<string>(),
@@ -237,6 +238,7 @@ export default {
 			this.version = await getVersion();
 
 			await this.getVisibility(this);
+			await this.getTheme(this);
 
 			if (!await this.store.has(autostartKey)) {
 				await this.setAutoStart(this, true);

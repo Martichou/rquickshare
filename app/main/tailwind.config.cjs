@@ -3,6 +3,7 @@
 const resolve = require('path').resolve
 
 module.exports = {
+	darkMode: 'class',
 	content: [
 		resolve(__dirname, 'index.html'),
 		resolve(__dirname, 'src/**/*.{vue,ts}'),

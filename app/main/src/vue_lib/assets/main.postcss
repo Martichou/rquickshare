@@ -24,6 +24,11 @@ body,
 	transform: translateZ(0);
 	will-change: transform;
 	-webkit-perspective: 1000;
+	@apply text-black dark:text-gray-100 dark:bg-slate-900;
+}
+
+html.dark {
+	color-scheme: dark;
 }
 
 .status-indicator {
@@ -66,7 +71,7 @@ body,
 
 .status-indicator .circle-main {
     z-index: 3;
-    background: #000
+    @apply bg-black dark:bg-white;
 }
 
 .status-indicator .circle-main.circle--animated {
@@ -75,7 +80,7 @@ body,
 
 .status-indicator .circle-secondary {
     z-index: 2;
-    background: rgba(0, 0, 0, .1)
+    @apply bg-black bg-opacity-10 dark:bg-white dark:bg-opacity-10;
 }
 
 .status-indicator .circle-secondary.circle--animated {
@@ -84,7 +89,7 @@ body,
 
 .status-indicator .circle-tertiary {
     z-index: 1;
-    background: rgba(0, 0, 0, .6);
+    @apply bg-black bg-opacity-60 dark:bg-white dark:bg-opacity-60;
     opacity: 1
 }
 
@@ -97,15 +102,15 @@ body,
 }
 
 .status-indicator--success .circle-main {
-	@apply bg-black
+	@apply bg-black dark:bg-white
 }
 
 .status-indicator--success .circle-secondary {
-	@apply bg-black bg-opacity-10
+	@apply bg-black bg-opacity-10 dark:bg-white dark:bg-opacity-10
 }
 
 .status-indicator--success .circle-tertiary {
-	@apply bg-black bg-opacity-40
+	@apply bg-black bg-opacity-40 dark:bg-white dark:bg-opacity-40
 }
 
 @keyframes pulsate-tertiary {
@@ -156,7 +161,7 @@ body,
 }
 
 .btn {
-	@apply h-12 min-h-12 cursor-pointer rounded-xl font-medium px-4 inline-flex justify-center items-center gap-2 hover:bg-gray-500 hover:bg-opacity-10
+	@apply h-12 min-h-12 cursor-pointer rounded-xl font-medium px-4 inline-flex justify-center items-center gap-2 hover:bg-gray-500 hover:bg-opacity-10 dark:bg-white dark:bg-opacity-5 dark:hover:bg-opacity-10 transition-colors
 }
 
 .checkbox {
@@ -173,6 +178,7 @@ body,
     border-width: 1px;
     border-color: var(--fallback-bc, oklch(var(--bc) / var(--tw-border-opacity)));
     --tw-border-opacity: .2;
+    @apply dark:border-gray-500;
 }
 
 .checkbox:checked, .checkbox[checked=true], .checkbox[aria-checked=true] {
@@ -205,7 +211,7 @@ body,
 }
 
 .circular-progress circle.bg {
-  	stroke: #ddd;
+  	@apply stroke-gray-300 dark:stroke-gray-600;
 }
 
 .circular-progress circle.fg {
@@ -214,7 +220,7 @@ body,
 	stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
 	transition: stroke-dasharray 0.3s linear 0s;
 
-	@apply stroke-black
+	@apply stroke-black dark:stroke-white
 }
 
 .error circle.bg, .error circle.fg {

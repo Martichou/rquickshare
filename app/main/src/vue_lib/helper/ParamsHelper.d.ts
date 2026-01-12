@@ -7,6 +7,7 @@ import { EndpointInfo } from '@martichou/core_lib/bindings/EndpointInfo';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { OutboundPayload } from '@martichou/core_lib/bindings/OutboundPayload';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
+import { Theme } from '../types';
 
 export interface TauriVM {
 	store: Store;
@@ -23,6 +24,7 @@ export interface TauriVM {
     realclose: boolean;
     startminimized: boolean;
     visibility: Visibility;
+    theme: Theme;
     downloadPath: string | undefined;
     hostname: string | undefined;
     settingsOpen: boolean;

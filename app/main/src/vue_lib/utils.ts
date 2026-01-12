@@ -1,6 +1,6 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, themeKey, Theme, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
@@ -90,6 +90,27 @@ async function setStartMinimized(vm: TauriVM, startminimized: boolean) {
 
 async function getStartMinimized(vm: TauriVM) {
 	vm.startminimized = await vm.store.get(startminimizedKey) ?? false;
+}
+
+function updateThemeClass(theme: Theme) {
+	const isDark = theme === 'Dark' || (theme === 'System' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	if (isDark) {
+		document.documentElement.classList.add('dark');
+	} else {
+		document.documentElement.classList.remove('dark');
+	}
+}
+
+async function setTheme(vm: TauriVM, theme: Theme) {
+	await vm.store.set(themeKey, theme);
+	await vm.store.save();
+	vm.theme = theme;
+	updateThemeClass(theme);
+}
+
+async function getTheme(vm: TauriVM) {
+	vm.theme = (await vm.store.get(themeKey)) as Theme ?? 'System';
+	updateThemeClass(vm.theme);
 }
 
 async function setVisibility(vm: TauriVM, visibility: Visibility) {
@@ -218,6 +239,9 @@ export const utils = {
 	getDownloadPath,
 	getLatestVersion,
 	setStartMinimized,
-	getStartMinimized
+	getStartMinimized,
+	setTheme,
+	getTheme,
+	updateThemeClass
 };
 export type UtilsType = typeof utils;

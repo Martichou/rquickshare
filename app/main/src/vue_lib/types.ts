@@ -2,6 +2,8 @@ import { State } from '@martichou/core_lib/bindings/State';
 import { DeviceType } from '@martichou/core_lib/bindings/DeviceType';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
+export type Theme = 'Light' | 'Dark' | 'System';
+
 export interface ToDelete {
 	id: string,
 	triggered: number
@@ -41,6 +43,7 @@ export const realcloseKey = "realclose";
 export const startminimizedKey = "startminimized";
 export const visibilityKey = "visibility";
 export const downloadPathKey = "download_path";
+export const themeKey = "theme";
 export const stateToDisplay: Array<Partial<State>> = ["ReceivedPairedKeyResult", "WaitingForUserConsent", "ReceivingFiles", "Disconnected",
 	"Finished", "SentIntroduction", "SendingFiles", "Cancelled", "Rejected"]
 

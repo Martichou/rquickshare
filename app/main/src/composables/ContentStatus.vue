@@ -56,11 +56,11 @@ function openFilePicker() {
 
 	<div
 		v-if="props.vm.displayedIsEmpty && props.vm.outboundPayload === undefined" class="w-full border
-        rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-auto"
-		:class="{'border-green-200 bg-green-100 scale-105': props.vm.isDragHovering}">
+        rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-auto dark:border-slate-600"
+		:class="{'border-green-200 dark:border-green-700 bg-green-100 dark:bg-slate-700 scale-105': props.vm.isDragHovering}">
 		<svg
 			xmlns="http://www.w3.org/2000/svg" height="24"
-			viewBox="0 -960 960 960" width="24" class="w-8 h-8">
+			viewBox="0 -960 960 960" width="24" class="w-8 h-8 fill-current">
 			<!-- eslint-disable-next-line -->
             <path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
 		</svg>
@@ -68,7 +68,7 @@ function openFilePicker() {
 			Drop files to send
 		</h4>
 		<div class="btn mt-2 active:scale-95 transition duration-150 ease-in-out" @click="openFilePicker()">
-			<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24">
+			<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
 				<path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
 			</svg>
 			<span class="ml-2">Select</span>
