@@ -19,7 +19,7 @@ dbus = { version = "0.9", features = ["vendored"] }
 anyhow = "1.0"
 base64 = "0.22"
 btleplug = { version = "0.11", optional = true }
-bytes = "1.10"
+bytes = "1.11"
 directories = "6.0"
 futures = "0.3"
 get_if_addrs = "0.5"
