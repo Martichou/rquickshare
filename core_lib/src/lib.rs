@@ -154,6 +154,25 @@ impl RQS {
         let ctk = ctoken.clone();
         tracker.spawn(async move { mdns.run(ctk).await });
 
+        #[cfg(all(feature = "experimental", target_os = "linux"))]
+        {
+            let visibility_rx = self.visibility_receiver.clone();
+            let ctk = ctoken.clone();
+            tracker.spawn(async move {
+                let blea = match BleAdvertiser::new(visibility_rx).await {
+                    Ok(b) => b,
+                    Err(e) => {
+                        error!("Couldn't init BleAdvertiser: {}", e);
+                        return;
+                    }
+                };
+
+                if let Err(e) = blea.run(ctk).await {
+                    error!("Couldn't start BleAdvertiser: {}", e);
+                }
+            });
+        }
+
         tracker.close();
 
         Ok((send_channel.0, self.ble_sender.subscribe()))
@@ -170,24 +189,6 @@ impl RQS {
 
         let ctk = CancellationToken::new();
         self.discovery_ctk = Some(ctk.clone());
-
-        #[cfg(all(feature = "experimental", target_os = "linux"))]
-        {
-            let ctk_blea = ctk.clone();
-            tracker.spawn(async move {
-                let blea = match BleAdvertiser::new().await {
-                    Ok(b) => b,
-                    Err(e) => {
-                        error!("Couldn't init BleAdvertiser: {}", e);
-                        return;
-                    }
-                };
-
-                if let Err(e) = blea.run(ctk_blea).await {
-                    error!("Couldn't start BleAdvertiser: {}", e);
-                }
-            });
-        }
 
         let discovery = MDnsDiscovery::new(sender)?;
         tracker.spawn(async move { discovery.run(ctk.clone()).await });
