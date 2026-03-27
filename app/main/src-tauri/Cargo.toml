@@ -9,7 +9,7 @@ license = "AGPL-3.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0", features = [] }
+tauri-build = { version = "2.0.4", features = [] }
 
 [dependencies]
 anyhow = "1.0"
@@ -21,7 +21,7 @@ rqs_lib = { path = "../../../core_lib", features = ["experimental"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sys_metrics = "0.2"
-tauri = { version = "2.2", features = [ "devtools", "tray-icon", "native-tls-vendored", "image-png"] }
+tauri = { version = "2.2.0", features = [ "devtools", "tray-icon", "native-tls-vendored", "image-png"] }
 tauri-plugin-autostart = "2.2"
 tauri-plugin-process = "2.2"
 tauri-plugin-notification = "2.2"
