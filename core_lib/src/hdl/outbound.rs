@@ -849,6 +849,7 @@ impl OutboundRequest {
 										offset: Some(curr_state.bytes_transferred),
 										flags: Some(0),
 										body: Some(buffer[..bytes_read].to_vec()),
+                                        ..Default::default()
 									}),
 									payload_header: Some(payload_header.clone()),
 									..Default::default()
@@ -893,6 +894,7 @@ impl OutboundRequest {
 											offset: Some(curr_state.total_size),
 											flags: Some(1), // lastChunk
 											body: Some(vec![]),
+                                            ..Default::default()
 										}),
 										payload_header: Some(payload_header),
 										..Default::default()
@@ -1074,6 +1076,7 @@ impl OutboundRequest {
                 offset: Some(0),
                 flags: Some(0),
                 body: Some(frame_data),
+                ..Default::default()
             }),
             payload_header: Some(payload_header.clone()),
             ..Default::default()
@@ -1100,6 +1103,7 @@ impl OutboundRequest {
                 offset: Some(body_size as i64),
                 flags: Some(1), // lastChunk
                 body: Some(vec![]),
+                ..Default::default()
             }),
             payload_header: Some(payload_header),
             ..Default::default()
@@ -1172,7 +1176,7 @@ impl OutboundRequest {
             version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
             v1: Some(location_nearby_connections::V1Frame {
                 r#type: Some(location_nearby_connections::v1_frame::FrameType::KeepAlive.into()),
-                keep_alive: Some(KeepAliveFrame { ack: Some(ack) }),
+                keep_alive: Some(KeepAliveFrame { ack: Some(ack), ..Default::default() }),
                 ..Default::default()
             }),
         };
