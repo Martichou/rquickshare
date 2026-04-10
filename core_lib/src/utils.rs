@@ -13,8 +13,6 @@ use p256::{PublicKey, SecretKey};
 use rand::{Rng, RngCore};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
-use tokio::io::AsyncReadExt;
-use tokio::net::TcpStream;
 use ts_rs::TS;
 
 use crate::CUSTOM_DOWNLOAD;
@@ -120,16 +118,6 @@ pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String
     let device_name = String::from_utf8(device_name_bytes.to_vec())?;
 
     Ok((DeviceType::from_raw_value(device_type), device_name))
-}
-
-pub async fn stream_read_exact(
-    socket: &mut TcpStream,
-    buf: &mut [u8],
-) -> Result<(), anyhow::Error> {
-    match socket.read_exact(buf).await {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e.into()),
-    }
 }
 
 pub fn gen_ecdsa_keypair() -> (SecretKey, PublicKey) {

@@ -17,6 +17,7 @@ dbus = { version = "0.9", features = ["vendored"] }
 
 [dependencies]
 anyhow = "1.0"
+async-trait = "0.1.89"
 base64 = "0.22"
 btleplug = { version = "0.11", optional = true }
 bytes = "1.10"

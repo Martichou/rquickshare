@@ -23,6 +23,7 @@ use crate::hdl::MDnsServer;
 use crate::manager::TcpServer;
 
 pub mod channel;
+pub mod transport;
 mod errors;
 mod hdl;
 mod manager;

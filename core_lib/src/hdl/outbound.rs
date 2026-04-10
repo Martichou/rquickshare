@@ -16,8 +16,6 @@ use prost::Message;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256, Sha512};
-use tokio::io::AsyncWriteExt;
-use tokio::net::TcpStream;
 use tokio::sync::broadcast::{Receiver, Sender};
 use ts_rs::TS;
 
@@ -44,10 +42,11 @@ use crate::sharing_nearby::{
     file_metadata, paired_key_result_frame, FileMetadata, IntroductionFrame,
 };
 use crate::utils::{
-    encode_point, gen_ecdsa_keypair, gen_random, hkdf_extract_expand, stream_read_exact,
+    encode_point, gen_ecdsa_keypair, gen_random, hkdf_extract_expand,
     to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
 use crate::{location_nearby_connections, sharing_nearby};
+use crate::transport::TransportMedium;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -63,7 +62,7 @@ pub enum OutboundPayload {
 #[derive(Debug)]
 pub struct OutboundRequest {
     endpoint_id: [u8; 4],
-    socket: TcpStream,
+    pub transport: Box<dyn TransportMedium + Send + Sync + Unpin>,
     pub state: InnerState,
     sender: Sender<ChannelMessage>,
     receiver: Receiver<ChannelMessage>,
@@ -73,7 +72,7 @@ pub struct OutboundRequest {
 impl OutboundRequest {
     pub fn new(
         endpoint_id: [u8; 4],
-        socket: TcpStream,
+        transport: Box<dyn TransportMedium + Send + Sync + Unpin>,
         id: String,
         sender: Sender<ChannelMessage>,
         payload: OutboundPayload,
@@ -84,7 +83,7 @@ impl OutboundRequest {
 
         Self {
             endpoint_id,
-            socket,
+            transport,
             state: InnerState {
                 id,
                 server_seq: 0,
@@ -106,9 +105,6 @@ impl OutboundRequest {
     }
 
     pub async fn handle(&mut self) -> Result<(), anyhow::Error> {
-        // Buffer for the 4-byte length
-        let mut length_buf = [0u8; 4];
-
         tokio::select! {
             i = self.receiver.recv() => {
                 match i {
@@ -144,27 +140,24 @@ impl OutboundRequest {
                     }
                 }
             },
-            h = stream_read_exact(&mut self.socket, &mut length_buf) => {
-                h?;
-
-                self._handle(length_buf).await?
+            h = self.transport.recv_frame_header() => {
+                let length = h?;
+                self._handle(length).await?
             }
         }
 
         Ok(())
     }
 
-    pub async fn _handle(&mut self, length_buf: [u8; 4]) -> Result<(), anyhow::Error> {
-        let msg_length = u32::from_be_bytes(length_buf) as usize;
+    pub async fn _handle(&mut self, msg_length: usize) -> Result<(), anyhow::Error> {
         // Ensure the message length is not unreasonably big to avoid allocation attacks
         if msg_length > SANE_FRAME_LENGTH as usize {
             error!("Message length too big");
             return Err(anyhow!("value"));
         }
 
-        // Allocate buffer for the actual message and read it
-        let mut frame_data = vec![0u8; msg_length];
-        stream_read_exact(&mut self.socket, &mut frame_data).await?;
+        // Read actual message
+        let frame_data = self.transport.recv_frame_payload(msg_length).await?;
 
         let current_state = &self.state;
         // Now determine what will be the request type based on current state
@@ -240,8 +233,8 @@ impl OutboundRequest {
                 ..Default::default()
             }),
         };
-
-        self.send_frame(request.encode_to_vec()).await?;
+        
+        self.transport.send_frame(&request.encode_to_vec()).await?;
 
         Ok(())
     }
@@ -289,7 +282,7 @@ impl OutboundRequest {
             ),
         };
 
-        self.send_frame(frame.encode_to_vec()).await?;
+        self.transport.send_frame(&frame.encode_to_vec()).await?;
 
         self.update_state(
             |e| {
@@ -345,8 +338,8 @@ impl OutboundRequest {
         };
 
         self.finalize_key_exchange(server_public_key).await?;
-        self.send_frame(self.state.ukey_client_finish_msg_data.clone().unwrap())
-            .await?;
+
+        self.transport.send_frame(&self.state.ukey_client_finish_msg_data.clone().unwrap()).await?;
 
         let frame = location_nearby_connections::OfflineFrame {
             version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
@@ -364,8 +357,8 @@ impl OutboundRequest {
                 ..Default::default()
             }),
         };
-
-        self.send_frame(frame.encode_to_vec()).await?;
+        
+        self.transport.send_frame(&frame.encode_to_vec()).await?;
 
         Ok(())
     }
@@ -961,7 +954,7 @@ impl OutboundRequest {
         if self.state.encryption_done {
             self.encrypt_and_send(&frame).await
         } else {
-            self.send_frame(frame.encode_to_vec()).await
+            self.transport.send_frame(&frame.encode_to_vec()).await
         }
     }
 
@@ -1052,7 +1045,8 @@ impl OutboundRequest {
             message_data: Some(alert.encode_to_vec()),
         };
 
-        self.send_frame(data.encode_to_vec()).await
+        self.transport.send_frame(&data.encode_to_vec()).await?;
+        Ok(())
     }
 
     async fn send_encrypted_frame(
@@ -1166,7 +1160,7 @@ impl OutboundRequest {
             signature: result.into_bytes().to_vec(),
         };
 
-        self.send_frame(smsg.encode_to_vec()).await?;
+        self.transport.send_frame(&smsg.encode_to_vec()).await?;
 
         Ok(())
     }
@@ -1184,29 +1178,8 @@ impl OutboundRequest {
         if self.state.encryption_done {
             self.encrypt_and_send(&ack_frame).await
         } else {
-            self.send_frame(ack_frame.encode_to_vec()).await
+            self.transport.send_frame(&ack_frame.encode_to_vec()).await
         }
-    }
-
-    async fn send_frame(&mut self, data: Vec<u8>) -> Result<(), anyhow::Error> {
-        let length = data.len();
-
-        // Prepare length prefix in big-endian format
-        let length_bytes = [
-            (length >> 24) as u8,
-            (length >> 16) as u8,
-            (length >> 8) as u8,
-            length as u8,
-        ];
-
-        let mut prefixed_length = Vec::with_capacity(length + 4);
-        prefixed_length.extend_from_slice(&length_bytes);
-        prefixed_length.extend_from_slice(&data);
-
-        self.socket.write_all(&prefixed_length).await?;
-        self.socket.flush().await?;
-
-        Ok(())
     }
 
     async fn get_server_seq_inc(&mut self) -> i32 {
