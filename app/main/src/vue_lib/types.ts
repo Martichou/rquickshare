@@ -12,6 +12,7 @@ export interface DisplayedItem {
 	name: string,
 	deviceType: DeviceType,
 	endpoint: boolean,
+	error?: string,
 
 	state?: State,
 	pin_code?: string,

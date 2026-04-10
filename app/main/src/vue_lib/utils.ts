@@ -28,6 +28,7 @@ function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 			name: el.meta?.source?.name ?? 'Unknown',
 			deviceType: el.meta?.source?.device_type ?? 'Unknown',
 			endpoint: false,
+			error: el.error ?? undefined,
 
 			state: el.state ?? undefined,
 			pin_code: el.meta?.pin_code ?? undefined,

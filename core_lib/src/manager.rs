@@ -86,7 +86,7 @@ impl TcpServer {
                                                         direction: ChannelDirection::LibToFront,
                                                         state: Some(State::Disconnected),
                                                         ..Default::default()
-                                                    });
+                                                    }.with_error(&e));
                                                 }
                                                 error!("{INNER_NAME}: error while handling client: {e} ({:?})", ir.state.state);
                                                 break;

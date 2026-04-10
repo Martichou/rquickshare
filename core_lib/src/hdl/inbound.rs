@@ -1004,7 +1004,9 @@ impl InboundRequest {
         for id in ids {
             let mfi = self.state.transferred_files.get_mut(&id).unwrap();
 
-            let file = File::create(&mfi.file_url)?;
+            let file = File::create(&mfi.file_url).map_err(|e| {
+                anyhow::anyhow!("failed to create file at {}: {}", mfi.file_url.display(), e)
+            })?;
             info!("Created file: {:?}", &file);
             mfi.file = Some(file);
         }

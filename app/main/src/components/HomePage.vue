@@ -136,6 +136,17 @@
 								</p>
 							</div>
 						</div>
+						<div v-if="item.error">
+							<p class="mt-2 text-red-600 font-bold">
+								Error
+							</p>
+							<p class="text-sm text-red-500 italic">
+								{{ item.error.data.message }}
+							</p>
+							<div v-if="isDebug">
+								<pre>{{ item.error.data.debug }}</pre>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -196,6 +207,7 @@ export default {
 			enable,
 			disable,
 			dialogOpen,
+			isDebug: import.meta.env.DEV,
 			...utils
 		};
 	},
