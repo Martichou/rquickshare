@@ -9,6 +9,7 @@ use crate::channel::{ChannelDirection, ChannelMessage};
 use crate::errors::AppError;
 use crate::hdl::{InboundRequest, OutboundPayload, OutboundRequest, State};
 use crate::utils::RemoteDeviceInfo;
+use crate::transport::TcpLanTransport;
 
 const INNER_NAME: &str = "TcpServer";
 
@@ -63,12 +64,13 @@ impl TcpServer {
                 r = self.tcp_listener.accept() => {
                     match r {
                         Ok((socket, remote_addr)) => {
+                            let transport = Box::new(TcpLanTransport { socket });
                             trace!("{INNER_NAME}: new client: {remote_addr}");
                             let esender = self.sender.clone();
                             let csender = self.sender.clone();
 
                             tokio::spawn(async move {
-                                let mut ir = InboundRequest::new(socket, remote_addr.to_string(), csender);
+                                let mut ir = InboundRequest::new(transport, remote_addr.to_string(), csender);
 
                                 loop {
                                     match ir.handle().await {
@@ -112,10 +114,11 @@ impl TcpServer {
     pub async fn connect(&self, ctk: CancellationToken, si: SendInfo) -> Result<(), anyhow::Error> {
         debug!("{INNER_NAME}: Connecting to: {}", si.addr);
         let socket = TcpStream::connect(si.addr.clone()).await?;
+        let transport = Box::new(TcpLanTransport { socket });
 
         let mut or = OutboundRequest::new(
             self.endpoint_id,
-            socket,
+            transport,
             si.id,
             self.sender.clone(),
             si.ob,

@@ -23,6 +23,7 @@ use crate::hdl::MDnsServer;
 use crate::manager::TcpServer;
 
 pub mod channel;
+pub mod transport;
 mod errors;
 mod hdl;
 mod manager;
@@ -229,5 +230,42 @@ impl RQS {
         debug!("Setting the download path to {:?}", p);
         let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
         *guard = p;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use prost::Message; 
+    
+
+    use crate::location_nearby_connections::BandwidthUpgradeNegotiationFrame;
+    use crate::location_nearby_connections::bandwidth_upgrade_negotiation_frame::upgrade_path_info::Medium;
+    use crate::location_nearby_connections::bandwidth_upgrade_negotiation_frame::EventType;
+    use crate::location_nearby_connections::bandwidth_upgrade_negotiation_frame::UpgradePathInfo;
+
+    #[test] 
+    fn test_bandwidth_upgrade_roundtrip() {
+
+        let path_info = UpgradePathInfo {
+            medium: Some(Medium::WifiHotspot.into()), 
+            ..Default::default()
+        };
+
+        let original_frame = BandwidthUpgradeNegotiationFrame {
+            event_type: Some(EventType::UpgradePathAvailable.into()),
+            upgrade_path_info: Some(path_info),
+            ..Default::default()
+        };
+
+        let mut buffer = Vec::new();
+        original_frame.encode(&mut buffer).unwrap(); 
+        
+        let decoded_frame = BandwidthUpgradeNegotiationFrame::decode(&buffer[..]).unwrap();
+
+        assert_eq!(
+            original_frame.event_type, 
+            decoded_frame.event_type,
+            "The event type was corrupted during Protobuf encoding/decoding!"
+        );
     }
 }

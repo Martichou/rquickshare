@@ -12,8 +12,6 @@ use p256::{EncodedPoint, PublicKey};
 use prost::Message;
 use rand::Rng;
 use sha2::{Digest, Sha256, Sha512};
-use tokio::io::AsyncWriteExt;
-use tokio::net::TcpStream;
 use tokio::sync::broadcast::{Receiver, Sender};
 
 use super::{InnerState, State};
@@ -35,10 +33,10 @@ use crate::securemessage::{
 };
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::utils::{
-    encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
-    stream_read_exact, to_four_digit_string, DeviceType, RemoteDeviceInfo,
+    encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand, to_four_digit_string, DeviceType, RemoteDeviceInfo,
 };
 use crate::{location_nearby_connections, sharing_nearby};
+use crate::transport::TransportMedium;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -47,18 +45,18 @@ const SANITY_DURATION: Duration = Duration::from_micros(10);
 
 #[derive(Debug)]
 pub struct InboundRequest {
-    socket: TcpStream,
+    pub transport: Box<dyn TransportMedium + Send + Sync + Unpin>,
     pub state: InnerState,
     sender: Sender<ChannelMessage>,
     receiver: Receiver<ChannelMessage>,
 }
 
 impl InboundRequest {
-    pub fn new(socket: TcpStream, id: String, sender: Sender<ChannelMessage>) -> Self {
+    pub fn new(transport: Box<dyn TransportMedium + Send + Sync + Unpin>, id: String, sender: Sender<ChannelMessage>) -> Self {
         let receiver = sender.subscribe();
 
         Self {
-            socket,
+            transport,
             state: InnerState {
                 id,
                 server_seq: 0,
@@ -73,9 +71,6 @@ impl InboundRequest {
     }
 
     pub async fn handle(&mut self) -> Result<(), anyhow::Error> {
-        // Buffer for the 4-byte length
-        let mut length_buf = [0u8; 4];
-
         tokio::select! {
             i = self.receiver.recv() => {
                 match i {
@@ -126,28 +121,25 @@ impl InboundRequest {
                     }
                 }
             },
-            h = stream_read_exact(&mut self.socket, &mut length_buf) => {
-                h?;
-
-                self._handle(length_buf).await?
+            h = self.transport.recv_frame_header() => {
+                let length = h?;
+                self._handle(length).await?
             }
         }
 
         Ok(())
     }
 
-    pub async fn _handle(&mut self, length_buf: [u8; 4]) -> Result<(), anyhow::Error> {
-        let msg_length = u32::from_be_bytes(length_buf) as usize;
+    pub async fn _handle(&mut self, msg_length: usize) -> Result<(), anyhow::Error> {
         // Ensure the message length is not unreasonably big to avoid allocation attacks
         if msg_length > SANE_FRAME_LENGTH as usize {
             error!("Message length too big");
             return Err(anyhow!("value"));
         }
 
-        // Allocate buffer for the actual message and read it
-        let mut frame_data = vec![0u8; msg_length];
-        stream_read_exact(&mut self.socket, &mut frame_data).await?;
-
+        // Read actual message
+        let frame_data = self.transport.recv_frame_payload(msg_length).await?;
+        
         let current_state = &self.state;
         // Now determine what will be the request type based on current state
         match current_state.state {
@@ -364,8 +356,8 @@ impl InboundRequest {
             false,
         )
         .await;
-
-        self.send_frame(server_init_data).await?;
+        
+        self.transport.send_frame(&server_init_data).await?;
 
         Ok(())
     }
@@ -444,7 +436,7 @@ impl InboundRequest {
 			})
 		};
 
-        self.send_frame(response.encode_to_vec()).await?;
+        self.transport.send_frame(&response.encode_to_vec()).await?;
 
         let paired_encryption = sharing_nearby::Frame {
             version: Some(sharing_nearby::frame::Version::V1.into()),
@@ -994,7 +986,7 @@ impl InboundRequest {
         if self.state.encryption_done {
             self.encrypt_and_send(&frame).await
         } else {
-            self.send_frame(frame.encode_to_vec()).await
+            self.transport.send_frame(&frame.encode_to_vec()).await
         }
     }
 
@@ -1142,7 +1134,7 @@ impl InboundRequest {
             message_data: Some(alert.encode_to_vec()),
         };
 
-        self.send_frame(data.encode_to_vec()).await
+        self.transport.send_frame(&data.encode_to_vec()).await
     }
 
     async fn send_encrypted_frame(
@@ -1166,6 +1158,7 @@ impl InboundRequest {
                 offset: Some(0),
                 flags: Some(0),
                 body: Some(frame_data),
+                ..Default::default()
             }),
             payload_header: Some(payload_header.clone()),
             ..Default::default()
@@ -1192,6 +1185,7 @@ impl InboundRequest {
                 offset: Some(body_size as i64),
                 flags: Some(1), // lastChunk
                 body: Some(vec![]),
+                ..Default::default()
             }),
             payload_header: Some(payload_header),
             ..Default::default()
@@ -1254,7 +1248,7 @@ impl InboundRequest {
             signature: result.into_bytes().to_vec(),
         };
 
-        self.send_frame(smsg.encode_to_vec()).await?;
+        self.transport.send_frame(&smsg.encode_to_vec()).await?;
 
         Ok(())
     }
@@ -1264,7 +1258,7 @@ impl InboundRequest {
             version: Some(location_nearby_connections::offline_frame::Version::V1.into()),
             v1: Some(location_nearby_connections::V1Frame {
                 r#type: Some(location_nearby_connections::v1_frame::FrameType::KeepAlive.into()),
-                keep_alive: Some(KeepAliveFrame { ack: Some(ack) }),
+                keep_alive: Some(KeepAliveFrame { ack: Some(ack), ..Default::default() }),
                 ..Default::default()
             }),
         };
@@ -1272,30 +1266,10 @@ impl InboundRequest {
         if self.state.encryption_done {
             self.encrypt_and_send(&ack_frame).await
         } else {
-            self.send_frame(ack_frame.encode_to_vec()).await
+            self.transport.send_frame(&ack_frame.encode_to_vec()).await
         }
     }
 
-    async fn send_frame(&mut self, data: Vec<u8>) -> Result<(), anyhow::Error> {
-        let length = data.len();
-
-        // Prepare length prefix in big-endian format
-        let length_bytes = [
-            (length >> 24) as u8,
-            (length >> 16) as u8,
-            (length >> 8) as u8,
-            length as u8,
-        ];
-
-        let mut prefixed_length = Vec::with_capacity(length + 4);
-        prefixed_length.extend_from_slice(&length_bytes);
-        prefixed_length.extend_from_slice(&data);
-
-        self.socket.write_all(&prefixed_length).await?;
-        self.socket.flush().await?;
-
-        Ok(())
-    }
 
     async fn get_server_seq_inc(&mut self) -> i32 {
         self.update_state(
