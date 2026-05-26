@@ -1,5 +1,6 @@
 import { State } from '@martichou/core_lib/bindings/State';
 import { DeviceType } from '@martichou/core_lib/bindings/DeviceType';
+import { TransferType } from '@martichou/core_lib/bindings/TransferType';
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 
 export interface ToDelete {
@@ -12,6 +13,7 @@ export interface DisplayedItem {
 	name: string,
 	deviceType: DeviceType,
 	endpoint: boolean,
+	rtype?: TransferType,
 
 	state?: State,
 	pin_code?: string,

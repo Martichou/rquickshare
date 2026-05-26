@@ -4262,6 +4262,7 @@ dependencies = [
  "anyhow",
  "fern",
  "humantime",
+ "image",
  "log",
  "notify-rust",
  "rqs_lib",

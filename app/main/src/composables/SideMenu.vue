@@ -52,20 +52,34 @@ const pluralize = (n: number, s: string) => n === 1 ? s : `${s}s`;
 	</div>
 	<div class="w-72 p-6 flex flex-col justify-between" v-else>
 		<div>
-			<p class="mt-4 mb-2">
-				Sharing {{ props.vm.outboundPayload.Files.length }} {{ pluralize(props.vm.outboundPayload.Files.length, "file") }}
-			</p>
-			<div class="bg-white w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
-				<svg
-					xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
-					class="w-8 h-8">
-					<!-- eslint-disable-next-line -->
-                    <path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
-				</svg>
-			</div>
-			<p v-for="f in props.vm.outboundPayload.Files" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
-				{{ f.split('/').pop() }}
-			</p>
+			<template v-if="props.vm.outboundPayload && 'Files' in props.vm.outboundPayload">
+				<p class="mt-4 mb-2">
+					Sharing {{ props.vm.outboundPayload.Files.length }} {{ pluralize(props.vm.outboundPayload.Files.length, "file") }}
+				</p>
+				<div class="bg-white w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
+					<svg
+						xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"
+						class="w-8 h-8">
+						<!-- eslint-disable-next-line -->
+	                    <path d="M240-80q-33 0-56.5-23.5T160-160v-640q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H240Zm280-520v-200H240v640h480v-440H520ZM240-800v200-200 640-640Z" />
+					</svg>
+				</div>
+				<p v-for="f in props.vm.outboundPayload.Files" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
+					{{ f.split('/').pop() }}
+				</p>
+			</template>
+
+			<template v-else-if="props.vm.outboundPayload && 'Text' in props.vm.outboundPayload">
+				<p class="mt-4 mb-2">Sharing clipboard</p>
+				<div class="bg-white w-32 h-32 rounded-2xl mb-2 flex justify-center items-center">
+					<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="w-8 h-8">
+						<path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/>
+					</svg>
+				</div>
+				<p class="text-sm text-gray-500 overflow-hidden whitespace-nowrap text-ellipsis">
+					{{ props.vm.outboundPayload.Text }}
+				</p>
+			</template>
 
 			<p class="text-xs mt-3">
 				Make sure both devices are unlocked, close together, and have bluetooth turned on. Device you're sharing with need

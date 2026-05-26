@@ -60,6 +60,19 @@
 							</div>
 						</div>
 
+						<div v-else-if="item.state === 'Finished' && item.rtype === 'Outbound'">
+							<p class="mt-2">
+								Sent successfully
+							</p>
+							<div class="flex flex-row justify-end gap-4 mt-1">
+								<p
+									@click.stop="removeRequest(vm, item.id)"
+									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
+									Clear
+								</p>
+							</div>
+						</div>
+
 						<div v-else-if="item.state === 'Finished'">
 							<p class="mt-2">
 								Received <span v-if="item.text_type">text</span>
@@ -267,7 +280,14 @@ export default {
 						});
 					}
 
-					// TODO - Automatically open || copy to clipboard + toast
+					// Auto-reset sidebar and remove card when an outbound transfer completes
+					if (cm.state === "Finished" && cm.rtype === "Outbound") {
+						this.toastStore.addToast("Sent successfully", ToastType.Success);
+						const finIdx = this.requests.findIndex((el) => el.id === cm.id);
+						if (finIdx !== -1) this.requests.splice(finIdx, 1);
+						await this.clearSending(this);
+						return;
+					}
 
 					if (idx !== -1) {
 						const prev = this.requests.at(idx);

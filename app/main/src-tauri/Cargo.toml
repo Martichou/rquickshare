@@ -30,6 +30,7 @@ tauri-plugin-store = "2.2"
 tauri-plugin-dialog = "2.2"
 tauri-plugin-shell = "2.2"
 tauri-plugin-clipboard-manager = "2.2"
+image = { version = "0.25", default-features = false, features = ["png"] }
 time = { version = "0.3", features = ["formatting"] }
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "net", "sync", "time", "io-util"] }
 tokio-util = { version = "0.7", features = ["rt"] }

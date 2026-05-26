@@ -83,6 +83,9 @@ pub struct InnerState {
     // pub text_is_url: bool,
     // pub wifi_ssid: Option<String>,
     pub payload_buffers: HashMap<i64, Vec<u8>>,
+
+    // Used to carry the text payload_id from introduction to consent phase (egress)
+    pub text_payload_id_to_send: Option<i64>,
 }
 
 #[derive(Debug, Clone)]

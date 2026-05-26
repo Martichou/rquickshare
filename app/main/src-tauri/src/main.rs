@@ -69,6 +69,7 @@ async fn main() -> Result<(), anyhow::Error> {
             cmds::get_hostname,
             cmds::send_payload,
             cmds::send_to_rs,
+            cmds::save_clipboard_image,
         ])
         .setup(|app| {
             // Setting up logging inside file for the app
