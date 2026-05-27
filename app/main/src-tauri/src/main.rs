@@ -36,6 +36,7 @@ pub struct AppState {
     pub message_sender: broadcast::Sender<ChannelMessage>,
     pub dch_sender: broadcast::Sender<EndpointInfo>,
     pub visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
+    pub foreground_sender: watch::Sender<bool>,
     pub sender_file: mpsc::Sender<SendInfo>,
     pub ble_receiver: broadcast::Receiver<()>,
     pub rqs: Mutex<RQS>,
@@ -135,6 +136,7 @@ async fn main() -> Result<(), anyhow::Error> {
                         message_sender: rqs.message_sender.clone(),
                         dch_sender: broadcast::channel(10).0,
                         visibility_sender: rqs.visibility_sender.clone(),
+                        foreground_sender: rqs.foreground_sender.clone(),
                         sender_file,
                         ble_receiver,
                         rqs: Mutex::new(rqs),
@@ -160,6 +162,9 @@ async fn main() -> Result<(), anyhow::Error> {
                         .unwrap();
                     #[cfg(target_os = "macos")]
                     app_handle.hide().unwrap();
+
+                    // Started in the tray: enable BLE scan duty-cycling.
+                    set_foreground(app_handle, false);
                 }
             }
             tauri::RunEvent::ExitRequested { code, .. } => {
@@ -287,6 +292,9 @@ fn handle_window_event(w: &Window, event: &WindowEvent) {
         trace!("handle_window_event: prevent close");
         w.hide().unwrap();
         api.prevent_close();
+
+        // Window hidden to tray: enable BLE scan duty-cycling.
+        set_foreground(w.app_handle(), false);
     }
 }
 
@@ -308,10 +316,21 @@ fn open_main_window(app_handle: &AppHandle) {
     if let Some(webview_window) = app_handle.get_webview_window("main") {
         let _ = webview_window.show();
         let _ = webview_window.set_focus();
+
+        // Window shown: restore continuous BLE scanning.
+        set_foreground(app_handle, true);
         return;
     }
 
     warn!("open_main_window: no main window found");
+}
+
+/// Update the core lib's foreground state. `true` when the main window is
+/// visible, `false` when hidden to the tray. Drives BLE scan duty-cycling on
+/// Linux (see `BleListener` in core_lib).
+fn set_foreground(app_handle: &AppHandle, foreground: bool) {
+    let state: tauri::State<'_, AppState> = app_handle.state();
+    let _ = state.foreground_sender.send(foreground);
 }
 
 fn kill_app(app_handle: &AppHandle) {
