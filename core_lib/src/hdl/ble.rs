@@ -195,3 +195,22 @@ impl BleListener {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_duty_cycle_only_when_backgrounded_on_linux() {
+        // Foreground (window visible): always scan continuously, every platform.
+        assert!(!BleListener::should_duty_cycle(true));
+
+        // Backgrounded (in tray): duty-cycle only on Linux/BlueZ, where
+        // continuous discovery monopolizes the adapter. Other platforms keep
+        // scanning continuously because the OS multiplexes scanning.
+        assert_eq!(
+            BleListener::should_duty_cycle(false),
+            cfg!(target_os = "linux")
+        );
+    }
+}
