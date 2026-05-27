@@ -65,6 +65,13 @@ pub struct RQS {
     // Only used to send the info "a nearby device is sharing"
     ble_sender: broadcast::Sender<()>,
 
+    // Signals whether the main app window is in the foreground (true) or
+    // backgrounded in the tray (false). Used to duty-cycle BLE scanning on
+    // Linux so BlueZ isn't held in continuous discovery for the app lifetime.
+    pub foreground_sender: watch::Sender<bool>,
+    #[allow(dead_code)]
+    foreground_receiver: watch::Receiver<bool>,
+
     port_number: Option<u32>,
 
     pub message_sender: broadcast::Sender<ChannelMessage>,
@@ -92,6 +99,9 @@ impl RQS {
         let (visibility_sender, visibility_receiver) = watch::channel(Visibility::Invisible);
         let _ = visibility_sender.send(visibility);
 
+        // Default to foreground; the frontend updates this on window show/hide.
+        let (foreground_sender, foreground_receiver) = watch::channel(true);
+
         Self {
             tracker: None,
             ctoken: None,
@@ -99,6 +109,8 @@ impl RQS {
             visibility_sender: Arc::new(Mutex::new(visibility_sender)),
             visibility_receiver,
             ble_sender,
+            foreground_sender,
+            foreground_receiver,
             port_number,
             message_sender,
         }
@@ -139,7 +151,8 @@ impl RQS {
             // Don't threat BleListener error as fatal, it's a nice to have.
             if let Ok(ble) = BleListener::new(self.ble_sender.clone()).await {
                 let ctk = ctoken.clone();
-                tracker.spawn(async move { ble.run(ctk).await });
+                let fg_rx = self.foreground_receiver.clone();
+                tracker.spawn(async move { ble.run(ctk, fg_rx).await });
             }
         }
 
@@ -207,6 +220,12 @@ impl RQS {
             .lock()
             .unwrap()
             .send_modify(|state| *state = nv);
+    }
+
+    /// Update whether the main app window is in the foreground. Drives BLE
+    /// scan duty-cycling on Linux (see `BleListener`).
+    pub fn set_foreground(&self, foreground: bool) {
+        let _ = self.foreground_sender.send(foreground);
     }
 
     pub async fn stop(&mut self) {
