@@ -106,11 +106,23 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
 
 pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String), anyhow::Error> {
     let decoded_bytes = URL_SAFE_NO_PAD.decode(encoded_str)?;
-    if decoded_bytes.len() < 19 {
+
+    // Some Quick Share mDNS endpoints advertise a compact 17-byte payload
+    // without the name-length byte or display name.
+    if decoded_bytes.len() < 17 {
         return Err(anyhow!("Invalid data length"));
     }
 
     let device_type = (decoded_bytes[0] >> 1) & 0x7;
+
+    if decoded_bytes.len() == 17 {
+        return Ok((DeviceType::from_raw_value(device_type), String::new()));
+    }
+
+    if decoded_bytes.len() < 19 {
+        return Err(anyhow!("Invalid data length"));
+    }
+
     let name_length = decoded_bytes[17] as usize;
     if 18 + name_length > decoded_bytes.len() {
         return Err(anyhow!("Invalid name length"));
