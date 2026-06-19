@@ -83,13 +83,25 @@ impl MDnsDiscovery {
                                         Err(_) => continue
                                     };
 
+                                    // Compact n= records carry no display name.
+                                    // Fall back to the mDNS hostname so the device is still
+                                    // surfaced with a human-readable label.
+                                    let display_name = if dn.is_empty() {
+                                        info.get_hostname()
+                                            .trim_end_matches(".local.")
+                                            .trim_end_matches(".local")
+                                            .to_string()
+                                    } else {
+                                        dn
+                                    };
+
                                     let ip_port = format!("{ip}:{port}");
                                     let fullname = info.get_fullname().to_string();
                                     if TcpStream::connect(&ip_port).await.is_ok() {
                                         let ei = EndpointInfo {
                                             fullname: fullname.clone(),
                                             id: ip_port,
-                                            name: Some(dn),
+                                            name: Some(display_name),
                                             ip: Some(ip.to_string()),
                                             port: Some(port.to_string()),
                                             rtype: Some(dt),
