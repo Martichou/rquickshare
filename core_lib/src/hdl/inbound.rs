@@ -829,7 +829,12 @@ impl InboundRequest {
                 info!("File name: {}", file.name());
 
                 let mut dest = get_download_dir();
-                dest.push(file.name());
+                let rel_path = file.parent_folder
+                    .as_ref()
+                    .map(std::path::PathBuf::from)
+                    .unwrap_or_default()
+                    .join(file.name());
+                dest.push(&rel_path);
 
                 info!("Destination: {:?}", dest);
                 if dest.exists() {
@@ -848,6 +853,35 @@ impl InboundRequest {
                     info!("New destination: {:?}", dest);
                 }
 
+                // Validate path to prevent traversal outside the user-selected writable path.
+                let path_valid = match dest.strip_prefix(get_download_dir()) {
+                    Ok(remaining_path) => {
+                        let has_components = remaining_path.components().count() >= 1;
+                        if !has_components {
+                            error!("destination path {:?} failed validation: no path components beyond download dir", dest);
+                        }
+                        let all_normal = remaining_path
+                            .components()
+                            .all(|c| matches!(c, std::path::Component::Normal(_)));
+                        if !all_normal {
+                            error!("destination path {:?} failed validation: invalid path components found", dest);
+                        }
+                        has_components && all_normal
+                    }
+                    Err(_) => {
+                        error!("destination path {:?} failed validation: path is outside of download dir", dest);
+                        false
+                    }
+                };
+                if !path_valid {
+                    info!("rejecting inbound file due to invalid path {:?}", dest);
+                    self.reject_transfer(Some(
+                        sharing_nearby::connection_response_frame::Status::Reject,
+                    ))
+                    .await?;
+                    return Err(anyhow!("destination path {:?} failed validation", dest));
+                }
+
                 let info = InternalFileInfo {
                     payload_id: file.payload_id(),
                     file_url: dest,
@@ -857,7 +891,7 @@ impl InboundRequest {
                 };
                 total_bytes += info.total_size as u64;
                 self.state.transferred_files.insert(file.payload_id(), info);
-                files_name.push(file.name().to_owned());
+                files_name.push(rel_path.display().to_string());
             }
 
             let metadata = TransferMetadata {
@@ -1004,6 +1038,12 @@ impl InboundRequest {
         for id in ids {
             let mfi = self.state.transferred_files.get_mut(&id).unwrap();
 
+            if let Some(parent) = mfi.file_url.parent() {
+                if !parent.exists() {
+                    std::fs::create_dir_all(parent)?;
+               }
+            }
+
             let file = File::create(&mfi.file_url)?;
             info!("Created file: {:?}", &file);
             mfi.file = Some(file);
@@ -1014,7 +1054,9 @@ impl InboundRequest {
             v1: Some(sharing_nearby::V1Frame {
                 r#type: Some(sharing_nearby::v1_frame::FrameType::Response.into()),
                 connection_response: Some(sharing_nearby::ConnectionResponseFrame {
+                    attachment_details: Default::default(),
                     status: Some(sharing_nearby::connection_response_frame::Status::Accept.into()),
+                    stream_metadata: Default::default(),
                 }),
                 ..Default::default()
             }),
@@ -1048,7 +1090,9 @@ impl InboundRequest {
             v1: Some(sharing_nearby::V1Frame {
                 r#type: Some(sharing_nearby::v1_frame::FrameType::Response.into()),
                 connection_response: Some(sharing_nearby::ConnectionResponseFrame {
+                    attachment_details: Default::default(),
                     status: Some(sreason.into()),
+                    stream_metadata: Default::default(),
                 }),
                 ..Default::default()
             }),

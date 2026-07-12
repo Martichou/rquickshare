@@ -33,7 +33,7 @@ pub use manager::SendInfo;
 pub use utils::DeviceType;
 
 pub mod sharing_nearby {
-    include!(concat!(env!("OUT_DIR"), "/sharing.nearby.rs"));
+    include!(concat!(env!("OUT_DIR"), "/nearby.sharing.service.proto.rs"));
 }
 
 pub mod securemessage {

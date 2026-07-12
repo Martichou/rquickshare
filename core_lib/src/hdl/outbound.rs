@@ -669,7 +669,7 @@ impl OutboundRequest {
                     } else if ftype.starts_with("audio/") {
                         file_metadata::Type::Audio
                     } else if path.extension().unwrap_or_default() == "apk" {
-                        file_metadata::Type::App
+                        file_metadata::Type::AndroidApp
                     } else {
                         file_metadata::Type::Unknown
                     };
