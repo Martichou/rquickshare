@@ -1,0 +1,126 @@
+name: rquickshare
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # --- Toolchain ---
+  - rust=1.97
+  - pnpm=11
+  - protobuf=6.33
+  - pkg-config=0.29
+
+  # --- GTK stack (with .pc files for pkg-config) ---
+  - gtk3=3.24
+  - pango=1.56
+  - cairo=1.18
+  - atk-1.0=2.38
+  - gdk-pixbuf=2.44
+  - harfbuzz=12
+  - libsoup=3.6
+  - fontconfig=2.18
+  - freetype=2.14
+  - fribidi=1.0
+  - pixman=0.46
+  - epoxy=1.5
+
+  # --- GLib / GIO ---
+  - glib=2.86
+  - glib-tools=2.86
+  - libglib=2.86
+  - glib-networking=2.80
+
+  # --- GStreamer / media support ---
+  - libxml2=2.15
+  - libpng=1.6
+  - libwebp-base=1.6
+  - lerc=4.2
+  - libjpeg-turbo=3.2
+  - libtiff=4.7
+  - libdeflate=1.25
+
+  # --- X11 / Wayland ---
+  - libxcb=1.17
+  - xorg-libx11=1.8
+  - xorg-libxcomposite=0.4
+  - xorg-libxcursor=1.2
+  - xorg-libxdamage=1.1
+  - xorg-libxext=1.3
+  - xorg-libxfixes=6.0
+  - xorg-libxi=1.8
+  - xorg-libxinerama=1.1
+  - xorg-libxrandr=1.5
+  - xorg-libxrender=0.9
+  - xorg-libxtst=1.2
+  - xorg-libxxf86vm=1.1
+  - xorg-libice=1.1
+  - xorg-libsm=1.2
+  - xorg-libxau=1.0
+  - xkeyboard-config=2.48
+  - libxkbcommon=1.13
+  - wayland=1.26
+
+  # --- Networking ---
+  - openssl=3.6
+  - zlib=1.3
+  - libnghttp2=1.68
+  - c-ares=1.34
+  - libuv=1.52
+  - libpsl=0.21
+  - libbrotlienc=1.2
+  - libbrotlidec=1.2
+  - libbrotlicommon=1.2
+
+  # --- D-Bus / IPC ---
+  - dbus=1.16
+
+  # --- Crypto / security ---
+  - keyutils=1.6
+  - libffi=3.7
+  - libuuid=2.42
+  - liblzma=5.8
+
+  # --- Text / locale ---
+  - icu=78
+  - pcre2=10.46
+  - ncurses=6.6
+  - readline=8.3
+
+  # --- Compression ---
+  - bzip2=1.0
+  - zstd=1.5
+  - libzlib=1.3
+
+  # --- Graphics (OpenGL / EGL) ---
+  - libglvnd=1.7
+  - libgl=1.7
+  - libegl=1.7
+  - libglx=1.7
+  - libdrm=2.4
+
+  # --- System ---
+  - libstdcxx-ng=16
+  - libgcc-ng=16
+  - sysroot_linux-64=2.39
+  - binutils_impl_linux-64=2.46
+  - ld_impl_linux-64=2.46
+  - gcc_impl_linux-64=16.1
+
+  # --- Fonts ---
+  - font-ttf-dejavu-sans-mono=2.37
+  - font-ttf-inconsolata=3.0
+  - font-ttf-source-code-pro=2.3
+  - font-ttf-ubuntu=0.83
+
+  # --- Misc ---
+  - gettext=0.25
+  - gettext-tools=0.25
+  - hicolor-icon-theme=0.17
+  - protobuf-c=1.5
+  - graphite2=1.3
+  - libedit=3.1
+  - libpciaccess=0.19
+  - libcups=2.3
+  - libexpat=2.8
+  - libiconv=1.18
+  - libsqlite=3.53
+  - pthread-stubs=0.4
