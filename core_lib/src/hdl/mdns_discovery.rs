@@ -83,6 +83,14 @@ impl MDnsDiscovery {
                                         Err(_) => continue
                                     };
 
+                                    // Some devices (e.g. some Samsung phones) don't embed a display
+                                    // name in the mDNS "n=" payload, fallback to the mDNS hostname.
+                                    let dn = if dn.is_empty() {
+                                        info.get_hostname().trim_end_matches('.').to_string()
+                                    } else {
+                                        dn
+                                    };
+
                                     let ip_port = format!("{ip}:{port}");
                                     let fullname = info.get_fullname().to_string();
                                     if TcpStream::connect(&ip_port).await.is_ok() {

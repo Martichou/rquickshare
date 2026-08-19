@@ -43,6 +43,11 @@ message V1Frame {
     KEEP_ALIVE = 5;
     DISCONNECTION = 6;
     PAIRED_KEY_ENCRYPTION = 7;
+    AUTHENTICATION_MESSAGE = 8;
+    AUTHENTICATION_RESULT = 9;
+    AUTO_RESUME = 10;
+    AUTO_RECONNECT = 11;
+    BANDWIDTH_UPGRADE_RETRY = 12;
   }
   optional FrameType type = 1;
 
