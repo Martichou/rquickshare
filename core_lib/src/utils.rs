@@ -106,11 +106,23 @@ pub fn gen_mdns_endpoint_info(device_type: u8, device_name: &str) -> String {
 
 pub fn parse_mdns_endpoint_info(encoded_str: &str) -> Result<(DeviceType, String), anyhow::Error> {
     let decoded_bytes = URL_SAFE_NO_PAD.decode(encoded_str)?;
-    if decoded_bytes.len() < 19 {
+    // 17 bytes: 1-byte type/visibility + 16 unknown bytes.
+    // Some devices (e.g. some Samsung phones) only advertise this prefix over
+    // mDNS with no embedded display name - the name-length/name suffix is optional.
+    if decoded_bytes.len() < 17 {
         return Err(anyhow!("Invalid data length"));
     }
 
     let device_type = (decoded_bytes[0] >> 1) & 0x7;
+
+    if decoded_bytes.len() == 17 {
+        return Ok((DeviceType::from_raw_value(device_type), String::new()));
+    }
+
+    if decoded_bytes.len() < 18 {
+        return Err(anyhow!("Invalid data length"));
+    }
+
     let name_length = decoded_bytes[17] as usize;
     if 18 + name_length > decoded_bytes.len() {
         return Err(anyhow!("Invalid name length"));
@@ -234,6 +246,21 @@ mod tests {
         let parse_info = parse_mdns_endpoint_info(&info).unwrap();
 
         assert_eq!(parse_info.1, device_name);
+        assert_eq!(parse_info.0, device_type);
+    }
+
+    #[test]
+    fn test_parse_mdns_info_without_name() {
+        // Some devices (e.g. some Samsung phones) only send the 17-byte
+        // prefix with no name-length/name suffix. See issue #431.
+        let device_type = DeviceType::Phone;
+        let mut record = vec![(device_type.clone() as u8) << 1];
+        record.extend_from_slice(&[0u8; 16]);
+        let encoded = URL_SAFE_NO_PAD.encode(&record);
+
+        let parse_info = parse_mdns_endpoint_info(&encoded).unwrap();
+
+        assert_eq!(parse_info.1, "");
         assert_eq!(parse_info.0, device_type);
     }
 }
