@@ -218,6 +218,8 @@ pub fn is_not_self_ip(ip_address: &Ipv4Addr) -> bool {
     true
 }
 
+pub use crate::offset_write::write_all_at_offset;
+
 #[cfg(test)]
 mod tests {
     use super::*;

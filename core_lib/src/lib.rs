@@ -6,7 +6,10 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use anyhow::anyhow;
 use channel::ChannelMessage;
-#[cfg(all(feature = "experimental", target_os = "linux"))]
+#[cfg(all(
+    feature = "experimental",
+    any(target_os = "linux", target_os = "windows")
+))]
 use hdl::BleAdvertiser;
 use hdl::MDnsDiscovery;
 use once_cell::sync::Lazy;
@@ -26,6 +29,7 @@ pub mod channel;
 mod errors;
 mod hdl;
 mod manager;
+mod offset_write;
 mod utils;
 
 pub use hdl::{EndpointInfo, OutboundPayload, State, Visibility};
@@ -185,6 +189,24 @@ impl RQS {
 
                 if let Err(e) = blea.run(ctk_blea).await {
                     error!("Couldn't start BleAdvertiser: {}", e);
+                }
+            });
+        }
+
+        #[cfg(all(feature = "experimental", target_os = "windows"))]
+        {
+            let ctk_blea = ctk.clone();
+            tracker.spawn(async move {
+                let blea = match BleAdvertiser::new().await {
+                    Ok(b) => b,
+                    Err(e) => {
+                        warn!("Windows BLE advertiser not available: {}", e);
+                        return;
+                    }
+                };
+
+                if let Err(e) = blea.run(ctk_blea).await {
+                    warn!("Windows BLE advertiser stopped: {}", e);
                 }
             });
         }

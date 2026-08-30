@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
-use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use std::time::Duration;
 
@@ -681,7 +680,7 @@ impl OutboundRequest {
                     let fmeta = FileMetadata {
                         payload_id: Some(rand::rng().random::<i64>()),
                         name: Some(fname.to_os_string().into_string().unwrap()),
-                        size: Some(fmetadata.size() as i64),
+                        size: Some(fmetadata.len() as i64),
                         mime_type: Some(ftype),
                         r#type: Some(meta_type.into()),
                         ..Default::default()
@@ -697,7 +696,7 @@ impl OutboundRequest {
                         },
                     );
                     file_metadata.push(fmeta);
-                    total_to_send += fmetadata.size();
+                    total_to_send += fmetadata.len();
                 }
             }
         }
