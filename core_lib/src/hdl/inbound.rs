@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::fs::{create_dir_all, File};
 use std::os::unix::fs::FileExt;
 use std::time::Duration;
 
@@ -1003,6 +1003,10 @@ impl InboundRequest {
 
         for id in ids {
             let mfi = self.state.transferred_files.get_mut(&id).unwrap();
+
+            if let Some(parent) = mfi.file_url.parent() {
+                create_dir_all(parent)?;
+            }
 
             let file = File::create(&mfi.file_url)?;
             info!("Created file: {:?}", &file);
