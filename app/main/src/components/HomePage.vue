@@ -2,137 +2,140 @@
 	<div class="flex flex-col w-full h-full bg-green-50 max-w-full max-h-full overflow-hidden">
 		<ToastNotification />
 		<SettingsModal :vm="vm" @close="settingsOpen = false" />
+		<LanguageModal :vm="vm" @close="languageOpen = false" />
 
-		<Heading :vm="vm" :open-url="openUrl" @open-settings="settingsOpen = true" />
+		<Heading :vm="vm" :open-url="openUrl" @open-settings="settingsOpen = true"
+			@open-language="languageOpen = true" />
 
 		<div class="flex-1 flex flex-row">
 			<SideMenu :vm="vm" @invert-visibility="invertVisibility(vm)" @clear-sending="clearSending(vm)" />
 
-			<div class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
-				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el" @discovery-running="discoveryRunning = true;" />
+			<div
+				class="flex-1 flex flex-col bg-white w-full max-w-full min-w-0 min-h-full rounded-tl-[3rem] p-12 h-1 overflow-y-scroll">
+				<ContentStatus :vm="vm" @outbound-payload="(el: OutboundPayload) => outboundPayload = el"
+					@discovery-running="discoveryRunning = true;" />
 
-				<div
-					v-for="item in displayedItems" :key="item.id" class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
-					:class="{'cursor-pointer': item.endpoint}" @click="item.endpoint && sendInfo(vm, item.id)">
+				<div v-for="item in displayedItems" :key="item.id"
+					class="w-full rounded-3xl flex flex-row gap-6 p-4 mb-4 bg-green-100"
+					:class="{ 'cursor-pointer': item.endpoint }" @click="item.endpoint && sendInfo(vm, item.id)">
 					<!-- Loader and image of the device type & pin_code -->
 					<ItemSide :item="item" />
 
 					<!-- Content and state of the transfer -->
-					<div class="flex-1 flex flex-col text-sm min-w-0" :class="{'justify-center': item.state === undefined}">
+					<div class="flex-1 flex flex-col text-sm min-w-0"
+						:class="{ 'justify-center': item.state === undefined }">
 						<h4 class="text-base font-medium">
 							{{ item.name }}
 						</h4>
 
 						<div v-if="item.state === 'WaitingForUserConsent'" class="flex-1 flex flex-col justify-between">
 							<p class="mt-4">
-								Wants to share {{ item.files?.join(', ') ?? item.text_description ?? 'some file(s).' }}
+								{{ (item.files?.join(', ') && item.text_description) ? ($t('info.sharingFilesDetail') +
+									item.text_description) : $t('info.sharingFilesGeneric')}}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
-								<p
-									@click.stop="sendCmd(vm, item.id, 'AcceptTransfer')" class="btn px-3
+								<p @click.stop="sendCmd(vm, item.id, 'AcceptTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Accept
+									{{ $t('buttons.accept') }}
 								</p>
-								<p
-									@click.stop="sendCmd(vm, item.id, 'RejectTransfer')" class="btn px-3
+								<p @click.stop="sendCmd(vm, item.id, 'RejectTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Decline
+									{{ $t('buttons.decline') }}
 								</p>
 							</div>
 						</div>
 
-						<div v-else-if="['SentIntroduction', 'SendingFiles', 'ReceivingFiles'].includes(item.state ?? 'Initial')">
-							<p class="mt-2" v-if="['SentIntroduction', 'SendingFiles'].includes(item.state ?? 'Initial')">
-								Sending...
+						<div
+							v-else-if="['SentIntroduction', 'SendingFiles', 'ReceivingFiles'].includes(item.state ?? 'Initial')">
+							<p class="mt-2"
+								v-if="['SentIntroduction', 'SendingFiles'].includes(item.state ?? 'Initial')">
+								{{ $t('info.sending') }}
 							</p>
 							<p class="mt-2" v-else>
-								Receiving...
+								{{ $t('info.receiving') }}
 							</p>
-							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
+							<p v-for="f in item.files ?? []" :key="f"
+								class="overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ f }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
-								<p
-									@click.stop="sendCmd(vm, item.id, 'CancelTransfer')" class="btn px-3
+								<p @click.stop="sendCmd(vm, item.id, 'CancelTransfer')" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Cancel
+									{{ $t('buttons.cancel') }}
 								</p>
 							</div>
 						</div>
 
 						<div v-else-if="item.state === 'Finished'">
 							<p class="mt-2">
-								Received <span v-if="item.text_type">text</span>
+								{{ $t('labels.received') }} <span v-if="item.text_type">{{ $t('labels.text') }}</span>
 							</p>
 
 							<!-- If files -->
-							<p v-for="f in item.files ?? []" :key="f" class="overflow-hidden whitespace-nowrap text-ellipsis">
+							<p v-for="f in item.files ?? []" :key="f"
+								class="overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ f }}
 							</p>
 							<p v-if="item.files" class="mt-2 overflow-hidden whitespace-nowrap text-ellipsis">
-								<span v-if="item.files">Saved to </span>{{ item.destination }}
+								<span v-if="item.files">{{ $t('labels.savedTo') }} </span>{{ item.destination }}
 							</p>
 
 							<!-- If text -->
-							<p v-if="item.text_type" class="!select-text cursor-text overflow-hidden whitespace-nowrap text-ellipsis">
+							<p v-if="item.text_type"
+								class="!select-text cursor-text overflow-hidden whitespace-nowrap text-ellipsis">
 								{{ item.text_payload }}
 							</p>
 
 							<div class="flex flex-row justify-end gap-4 mt-1">
-								<p
-									v-if="item.destination || (item.text_type === 'Url' && item.text_payload)"
+								<p v-if="item.destination || (item.text_type === 'Url' && item.text_payload)"
 									@click.stop="openUrl(item.destination ?? item.text_payload!)"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Open
+									{{ $t('buttons.open') }}
 								</p>
-								<p
-									v-if="item.text_type && item.text_payload" @click.stop="writeToClipboard(item.text_payload)"
+								<p v-if="item.text_type && item.text_payload"
+									@click.stop="writeToClipboard(item.text_payload)"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Copy
+									{{ $t('buttons.copy') }}
 								</p>
-								<p
-									@click.stop="removeRequest(vm, item.id)"
+								<p @click.stop="removeRequest(vm, item.id)"
 									class="btn px-3 rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Clear
+									{{ $t('buttons.clear') }}
 								</p>
 							</div>
 						</div>
 
 						<div v-else-if="item.state === 'Cancelled'">
 							<p class="mt-2">
-								Transfer cancelled
+								{{ $t('info.transferCancelled') }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
-								<p
-									@click.stop="removeRequest(vm, item.id)" class="btn px-3
+								<p @click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Clear
+									{{ $t('buttons.clear') }}
 								</p>
 							</div>
 						</div>
 
 						<div v-else-if="item.state === 'Rejected'">
 							<p class="mt-2">
-								Transfer rejected
+								{{ $t('info.transferRejected') }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
-								<p
-									@click.stop="removeRequest(vm, item.id)" class="btn px-3
+								<p @click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Clear
+									{{ $t('buttons.clear') }}
 								</p>
 							</div>
 						</div>
 
 						<div v-else-if="item.state === 'Disconnected'">
 							<p class="mt-2">
-								Unexpected disconnection
+								{{ $t('info.unexpectedDisconnection') }}
 							</p>
 							<div class="flex flex-row justify-end gap-4 mt-1">
-								<p
-									@click.stop="removeRequest(vm, item.id)" class="btn px-3
+								<p @click.stop="removeRequest(vm, item.id)" class="btn px-3
 									rounded-xl active:scale-95 transition duration-150 ease-in-out shadow-none">
-									Clear
+									{{ $t('buttons.clear') }}
 								</p>
 							</div>
 						</div>
@@ -164,10 +167,12 @@ import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { ToastNotification, ToDelete, stateToDisplay, autostartKey, DisplayedItem, useToastStore, opt, ToastType, utils } from '../vue_lib';
 
 import SettingsModal from '../composables/SettingsModal.vue';
+import LanguageModal from '../composables/LanguageModal.vue';
 import Heading from '../composables/Heading.vue';
 import SideMenu from '../composables/SideMenu.vue';
 import ContentStatus from '../composables/ContentStatus.vue';
 import ItemSide from '../composables/ItemSide.vue';
+import { useI18n } from "vue-i18n";
 
 export default {
 	name: "HomePage",
@@ -175,6 +180,7 @@ export default {
 	components: {
 		ToastNotification,
 		SettingsModal,
+		LanguageModal,
 		Heading,
 		SideMenu,
 		ContentStatus,
@@ -202,6 +208,7 @@ export default {
 
 	data() {
 		return {
+			t: useI18n({ useScope: "global" }),
 			isAppInForeground: false,
 			discoveryRunning: ref(false),
 			isDragHovering: ref(false),
@@ -226,6 +233,7 @@ export default {
 			hostname: ref<string>(),
 
 			settingsOpen: ref<boolean>(false),
+			languageOpen: ref<boolean>(false),
 
 			new_version: opt<string>(),
 		};
@@ -336,7 +344,7 @@ export default {
 		});
 	},
 
-	unmounted: function() {
+	unmounted: function () {
 		this.unlisten.forEach((el) => el());
 
 		if (this.cleanupInterval && this.cleanupInterval[Symbol.dispose]) {
@@ -357,21 +365,21 @@ export default {
 	},
 
 	methods: {
-		writeToClipboard: async function(text: string) {
+		writeToClipboard: async function (text: string) {
 			try {
 				await writeText(text);
-				this.toastStore.addToast("Copied to clipboard", ToastType.Success);
+				this.toastStore.addToast(this.$t('info.copiedToClipboard'), ToastType.Success);
 			} catch (e) {
-				this.toastStore.addToast("Unknown error while copying text", ToastType.Error);
-				console.error("Error copying text", e);
+				this.toastStore.addToast(this.$t('info.copyToClipboardError_unknown'), ToastType.Error);
+				console.error(this.$t('info.copyToClipboardError'), e);
 			}
 		},
-		openUrl: async function(url: string) {
+		openUrl: async function (url: string) {
 			try {
 				await open(url);
 			} catch (e) {
-				this.toastStore.addToast("Error opening URL, it may not be a valid URI", ToastType.Error);
-				console.error("Error opening URL", e);
+				this.toastStore.addToast(this.$t('info.openingURLError_invalid'), ToastType.Error);
+				console.error(this.$t('info.openingURLError'), e);
 			}
 		},
 	},
