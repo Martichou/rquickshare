@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { utils } from '../vue_lib';
-import { PropType } from 'vue';
+import { computed, PropType } from 'vue';
 import { TauriVM } from '../vue_lib/helper/ParamsHelper';
 
 const props = defineProps({
@@ -11,6 +11,14 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close']);
+
+const themeOptions = [
+	{ value: 'light', label: 'Light' },
+	{ value: 'system', label: 'System' },
+	{ value: 'dark', label: 'Dark' },
+] as const;
+
+const themeIndex = computed(() => Math.max(0, themeOptions.findIndex((o) => o.value === props.vm.theme)));
 
 function openDownloadPicker() {
 	props.vm.dialogOpen({
@@ -29,7 +37,7 @@ function openDownloadPicker() {
 
 <template>
 	<div v-if="vm.settingsOpen" class="absolute z-10 w-full h-full flex justify-center items-center bg-black bg-opacity-25">
-		<div class="bg-white rounded-xl shadow-xl p-4 w-[24rem]">
+		<div class="bg-white dark:bg-neutral-800 rounded-xl shadow-xl p-4 w-[24rem]">
 			<div class="flex flex-row justify-between items-center">
 				<h3 class="font-medium text-xl">
 					Settings
@@ -56,6 +64,21 @@ function openDownloadPicker() {
 						<span class="label-text">Start minimized</span>
 						<input type="checkbox" :checked="vm.startminimized" class="checkbox focus:outline-none">
 					</label>
+				</div>
+				<div class="p-3 flex flex-row justify-between items-center">
+					<span class="label-text">Theme</span>
+					<div class="relative grid grid-cols-3 rounded-xl bg-gray-500 bg-opacity-10 p-1">
+						<div
+							class="absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-lg bg-green-200 transition-transform duration-300 ease-out"
+							:style="{ transform: `translateX(${themeIndex * 100}%)` }" />
+						<div
+							v-for="opt in themeOptions" :key="opt.value"
+							class="relative z-10 px-3 py-1 text-center rounded-lg text-sm cursor-pointer transition-colors duration-300"
+							:class="vm.theme === opt.value ? 'text-black' : 'hover:bg-gray-500 hover:bg-opacity-10'"
+							@click="utils.setTheme(vm, opt.value)">
+							{{ opt.label }}
+						</div>
+					</div>
 				</div>
 				<div class="form-control hover:bg-gray-500 hover:bg-opacity-10 rounded-xl p-3">
 					<label class="cursor-pointer flex flex-col items-start" @click="openDownloadPicker()">

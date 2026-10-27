@@ -47,6 +47,11 @@
         "title": "RQuickShare",
         "width": 900,
         "height": 600,
+        "minWidth": 720,
+        "minHeight": 520,
+        "center": true,
+        "decorations": false,
+        "transparent": true,
         "resizable": true,
         "fullscreen": false
       }

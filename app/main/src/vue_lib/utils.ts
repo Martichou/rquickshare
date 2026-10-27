@@ -1,10 +1,11 @@
 import { Visibility } from '@martichou/core_lib/bindings/Visibility';
 import { TauriVM } from './helper/ParamsHelper';
-import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, visibilityKey, visibilityToNumber } from './types';
+import { autostartKey, DisplayedItem, downloadPathKey, numberToVisibility, realcloseKey, startminimizedKey, stateToDisplay, themeKey, deviceNameKey, visibilityKey, visibilityToNumber } from './types';
 import { SendInfo } from '@martichou/core_lib/bindings/SendInfo';
 import { ChannelMessage } from '@martichou/core_lib/bindings/ChannelMessage';
 import { ChannelAction } from '@martichou/core_lib';
 import { gt } from 'semver';
+import { applyThemePref, ThemePref } from '../theme';
 
 function _displayedItems(vm: TauriVM): Array<DisplayedItem> {
 	const ndisplayed = new Array<DisplayedItem>();
@@ -92,6 +93,18 @@ async function getStartMinimized(vm: TauriVM) {
 	vm.startminimized = await vm.store.get(startminimizedKey) ?? false;
 }
 
+async function setTheme(vm: TauriVM, theme: ThemePref) {
+	await vm.store.set(themeKey, theme);
+	await vm.store.save();
+	vm.theme = theme;
+	applyThemePref(theme);
+}
+
+async function getTheme(vm: TauriVM) {
+	vm.theme = await vm.store.get(themeKey) ?? 'system';
+	applyThemePref(vm.theme);
+}
+
 async function setVisibility(vm: TauriVM, visibility: Visibility) {
 	await vm.invoke('change_visibility', { message: visibility });
 	await vm.store.set(visibilityKey, visibilityToNumber[visibility]);
@@ -176,6 +189,22 @@ async function setDownloadPath(vm: TauriVM, dest: string) {
 	vm.downloadPath = dest;
 }
 
+async function setDeviceName(vm: TauriVM, name: string) {
+	const clean = name.trim();
+	if (clean) {
+		await vm.store.set(deviceNameKey, clean);
+		vm.hostname = clean;
+	} else {
+		await vm.store.delete(deviceNameKey);
+		vm.hostname = (await vm.invoke('get_hostname')) as string;
+	}
+	await vm.store.save();
+}
+
+async function getDeviceName(vm: TauriVM) {
+	vm.hostname = (await vm.store.get(deviceNameKey)) as string | undefined || (await vm.invoke('get_hostname')) as string;
+}
+
 async function getDownloadPath(vm: TauriVM) {
 	vm.downloadPath = await vm.store.get(downloadPathKey) ?? undefined;
 }
@@ -216,8 +245,12 @@ export const utils = {
 	getProgress,
 	setDownloadPath,
 	getDownloadPath,
+	setDeviceName,
+	getDeviceName,
 	getLatestVersion,
 	setStartMinimized,
-	getStartMinimized
+	getStartMinimized,
+	setTheme,
+	getTheme
 };
 export type UtilsType = typeof utils;

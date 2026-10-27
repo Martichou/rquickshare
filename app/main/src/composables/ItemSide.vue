@@ -21,7 +21,7 @@ defineProps({
 				<circle class="bg" />
 				<circle class="fg" />
 			</svg>
-			<div class="h-14 w-14 rounded-full bg-white absolute top-0 left-0 bottom-0 right-0 m-auto">
+			<div class="h-14 w-14 rounded-full bg-white dark:bg-neutral-800 absolute top-0 left-0 bottom-0 right-0 m-auto">
 				<svg
 					v-if="item.state === 'Finished'" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960"
 					width="24" class="w-full h-full p-4">

@@ -49,6 +49,15 @@ pub fn get_port(app_handle: &AppHandle) -> Option<u32> {
         .and_then(|json| json.as_u64().map(|v| v as u32))
 }
 
+pub fn get_device_name(app_handle: &AppHandle) -> Option<String> {
+    let store = _get_store(app_handle);
+
+    store
+        .get("device_name")
+        .and_then(|json| json.as_str().map(String::from))
+        .filter(|n| !n.trim().is_empty())
+}
+
 pub fn get_visibility(app_handle: &AppHandle) -> Visibility {
     let store = _get_store(app_handle);
 

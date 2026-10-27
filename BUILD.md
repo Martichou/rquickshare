@@ -6,6 +6,18 @@ The project is divided into two parts:
 How to build
 --------------------------
 
+### Linux system packages
+
+On Debian and Ubuntu, install these packages before the first build:
+
+```
+sudo apt-get install -y protobuf-compiler libdbus-1-dev libgtk-3-dev \
+  libayatana-appindicator3-dev librsvg2-dev libsoup-3.0-dev \
+  libjavascriptcoregtk-4.1-dev libwebkit2gtk-4.1-dev
+```
+
+Without `libayatana-appindicator3-dev`, `pnpm build` stops at the bundling step with `Can't detect any appindicator library`.
+
 ### core_lib
 
 Building the core_lib is straightforward because it is a basic Rust project.

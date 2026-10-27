@@ -26,6 +26,76 @@ body,
 	-webkit-perspective: 1000;
 }
 
+:root {
+    color-scheme: light dark;
+}
+
+html,
+body {
+    margin: 0;
+    background: transparent;
+    color: #000;
+}
+
+.app-frame {
+    position: relative;
+    border-radius: 12px;
+    border: 1px solid #d4d4d4;
+}
+
+html.dark .app-frame {
+    border-color: #404040;
+}
+
+html.maximized .app-frame {
+    border-radius: 0;
+    border-width: 0;
+}
+
+.titlebar-btn {
+    @apply flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer hover:bg-gray-500 hover:bg-opacity-20;
+}
+
+svg {
+    fill: currentColor;
+}
+
+html.dark {
+    color-scheme: dark;
+}
+
+html.dark body,
+html.dark {
+    background: transparent;
+    color: #f5f5f5;
+}
+
+@media all {
+
+    html.dark .status-indicator .circle-main,
+    html.dark .status-indicator--success .circle-main {
+        background: #fff;
+    }
+
+    html.dark .status-indicator .circle-secondary,
+    html.dark .status-indicator--success .circle-secondary {
+        background: rgba(255, 255, 255, .1);
+    }
+
+    html.dark .status-indicator .circle-tertiary,
+    html.dark .status-indicator--success .circle-tertiary {
+        background: rgba(255, 255, 255, .4);
+    }
+
+    html.dark .circular-progress circle.bg {
+        stroke: #404040;
+    }
+
+    html.dark .circular-progress circle.fg {
+        stroke: #fff;
+    }
+}
+
 .status-indicator {
     position: relative;
     display: inline-block;
@@ -160,30 +230,45 @@ body,
 }
 
 .checkbox {
+    position: relative;
     flex-shrink: 0;
-    --chkbg: var(--fallback-bc, oklch(var(--bc) / 1));
-    --chkfg: var(--fallback-b1, oklch(var(--b1) / 1));
     height: 1.5rem;
     width: 1.5rem;
     cursor: pointer;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    border-radius: var(--rounded-btn, 0.5rem);
-    border-width: 1px;
-    border-color: var(--fallback-bc, oklch(var(--bc) / var(--tw-border-opacity)));
-    --tw-border-opacity: .2;
+    border-radius: 0.5rem;
+    border: 0;
+    background-color: rgba(107, 114, 128, 0.1);
+    transition: background-color 0.25s ease, transform 0.15s ease;
 }
 
-.checkbox:checked, .checkbox[checked=true], .checkbox[aria-checked=true] {
-    background-repeat: no-repeat;
-    animation: checkmark var(--animation-input, .2s) ease-out;
+.checkbox::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 0.4rem;
+    height: 0.7rem;
+    border: solid #000;
+    border-width: 0 2px 2px 0;
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(45deg) scale(0);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease;
+}
+
+.checkbox:checked {
     background-color: #bbf7d0;
-    background-image: linear-gradient(-45deg, transparent 65%, #bbf7d0 65.99%), linear-gradient(45deg, transparent 75%, #bbf7d0 75.99%), linear-gradient(-45deg, #bbf7d0 40%, transparent 40.99%), linear-gradient(45deg, #bbf7d0 30%, black 30.99%, black 40%, transparent 40.99%), linear-gradient(-45deg, black 50%, #bbf7d0 50.99%);
 }
 
-.checkbox:checked, .checkbox[checked=true], .checkbox[aria-checked=true] {
-	@apply bg-green-200 border-green-200 text-black;
+.checkbox:checked::before {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1);
+}
+
+.checkbox:active {
+    transform: scale(0.9);
 }
 
 .circular-progress {

@@ -46,11 +46,12 @@ impl MDnsServer {
     pub fn new(
         endpoint_id: [u8; 4],
         service_port: u16,
+        device_name: Option<String>,
         ble_receiver: Receiver<()>,
         visibility_sender: Arc<Mutex<watch::Sender<Visibility>>>,
         visibility_receiver: watch::Receiver<Visibility>,
     ) -> Result<Self, anyhow::Error> {
-        let service_info = Self::build_service(endpoint_id, service_port, DeviceType::Laptop)?;
+        let service_info = Self::build_service(endpoint_id, service_port, DeviceType::Laptop, device_name)?;
 
         Ok(Self {
             daemon: ServiceDaemon::new()?,
@@ -134,9 +135,13 @@ impl MDnsServer {
         endpoint_id: [u8; 4],
         service_port: u16,
         device_type: DeviceType,
+        device_name: Option<String>,
     ) -> Result<ServiceInfo, anyhow::Error> {
         let name = gen_mdns_name(endpoint_id);
-        let hostname = sys_metrics::host::get_hostname()?;
+        let hostname = match device_name {
+            Some(n) if !n.trim().is_empty() => n,
+            _ => sys_metrics::host::get_hostname()?,
+        };
         info!("Broadcasting with: {hostname}");
         let endpoint_info = gen_mdns_endpoint_info(device_type as u8, &hostname);
 

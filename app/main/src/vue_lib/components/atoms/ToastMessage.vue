@@ -22,7 +22,7 @@ defineProps({
 	<div
 		class="w-full p-4 rounded-xl shadow-md"
 		:class="{'bg-red-100': type === ToastType.Error, 'bg-green-100': type === ToastType.Success, 'bg-blue-100': type === ToastType.Info}">
-		<span class="text-sm text-gray-800">
+		<span class="text-sm text-gray-800 dark:text-gray-900">
 			{{ message }}
 		</span>
 	</div>

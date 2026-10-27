@@ -55,9 +55,9 @@ function openFilePicker() {
 	</div>
 
 	<div
-		v-if="props.vm.displayedIsEmpty && props.vm.outboundPayload === undefined" class="w-full border
+		v-if="props.vm.displayedIsEmpty && props.vm.outboundPayload === undefined" class="w-full border border-neutral-200 dark:border-neutral-700
         rounded-2xl p-6 flex flex-col justify-center items-center transition duration-150 ease-in-out mt-auto"
-		:class="{'border-green-200 bg-green-100 scale-105': props.vm.isDragHovering}">
+		:class="{'!border-green-200 bg-green-100 dark:!border-green-700 dark:bg-neutral-700 scale-105': props.vm.isDragHovering}">
 		<svg
 			xmlns="http://www.w3.org/2000/svg" height="24"
 			viewBox="0 -960 960 960" width="24" class="w-8 h-8">

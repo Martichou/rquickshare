@@ -66,13 +66,14 @@ pub struct RQS {
     ble_sender: broadcast::Sender<()>,
 
     port_number: Option<u32>,
+    device_name: Option<String>,
 
     pub message_sender: broadcast::Sender<ChannelMessage>,
 }
 
 impl Default for RQS {
     fn default() -> Self {
-        Self::new(Visibility::Visible, None, None)
+        Self::new(Visibility::Visible, None, None, None)
     }
 }
 
@@ -81,6 +82,7 @@ impl RQS {
         visibility: Visibility,
         port_number: Option<u32>,
         download_path: Option<PathBuf>,
+        device_name: Option<String>,
     ) -> Self {
         let mut guard = CUSTOM_DOWNLOAD.write().unwrap();
         *guard = download_path;
@@ -100,6 +102,7 @@ impl RQS {
             visibility_receiver,
             ble_sender,
             port_number,
+            device_name,
             message_sender,
         }
     }
@@ -147,6 +150,7 @@ impl RQS {
         let mut mdns = MDnsServer::new(
             endpoint_id[..4].try_into()?,
             binded_addr.port(),
+            self.device_name.clone(),
             self.ble_sender.subscribe(),
             self.visibility_sender.clone(),
             self.visibility_receiver.clone(),

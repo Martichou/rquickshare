@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { PropType } from 'vue';
+import { nextTick, PropType, ref } from 'vue';
+import { utils } from '../vue_lib';
 import { TauriVM } from '../vue_lib/helper/ParamsHelper';
 
-defineProps({
+const props = defineProps({
 	vm: {
 		type: Object as PropType<TauriVM>,
 		required: true
@@ -14,6 +15,29 @@ defineProps({
 });
 
 const emit = defineEmits(['openSettings']);
+
+const editing = ref(false);
+const draft = ref('');
+const changed = ref(false);
+const input = ref<HTMLInputElement | null>(null);
+
+function startEdit() {
+	draft.value = props.vm.hostname ?? '';
+	editing.value = true;
+	nextTick(() => input.value?.select());
+}
+
+async function commit() {
+	if (!editing.value) {
+		return;
+	}
+	editing.value = false;
+	if (draft.value.trim() === (props.vm.hostname ?? '')) {
+		return;
+	}
+	await utils.setDeviceName(props.vm, draft.value);
+	changed.value = true;
+}
 </script>
 
 <template>
@@ -23,9 +47,28 @@ const emit = defineEmits(['openSettings']);
 			<h4 class="text-md">
 				Device name
 			</h4>
-			<h2 class="text-2xl font-medium">
-				{{ vm.hostname }}
-			</h2>
+			<div
+				class="group flex items-center gap-2 rounded-xl px-3 py-1 -mx-3 w-72 max-w-full ring-2 transition duration-300"
+				:class="editing ? 'bg-gray-500 bg-opacity-10 ring-transparent' : 'ring-transparent cursor-pointer hover:bg-gray-500 hover:bg-opacity-10'"
+				:title="editing ? undefined : 'Edit device name'" @click="!editing && startEdit()">
+				<input
+					v-if="editing" ref="input" v-model="draft" maxlength="32" spellcheck="false"
+					class="text-2xl font-medium bg-transparent outline-none w-full min-w-0"
+					@keydown.enter="commit" @keydown.esc="editing = false" @blur="commit">
+				<template v-else>
+					<h2 class="text-2xl font-medium truncate">
+						{{ vm.hostname }}
+					</h2>
+					<svg
+						class="shrink-0 opacity-40 group-hover:opacity-100 transition duration-300" xmlns="http://www.w3.org/2000/svg"
+						height="18" viewBox="0 -960 960 960" width="18">
+						<path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.500-17t30.500-6q16 0 31 6t26 18l55 56q12 11 17.500 26t5.500 30q0 16-5.500 30.500T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z" />
+					</svg>
+				</template>
+			</div>
+			<p v-if="changed" class="text-xs opacity-60">
+				Restart the app to show the new name to nearby devices.
+			</p>
 		</div>
 		<div class="flex justify-center items-center gap-4">
 			<div
