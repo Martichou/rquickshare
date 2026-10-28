@@ -4,6 +4,7 @@ use mdns_sd::{ServiceDaemon, ServiceEvent};
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 use tokio::sync::broadcast;
+use tokio::time::{timeout, Duration};
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
@@ -85,7 +86,9 @@ impl MDnsDiscovery {
 
                                     let ip_port = format!("{ip}:{port}");
                                     let fullname = info.get_fullname().to_string();
-                                    if TcpStream::connect(&ip_port).await.is_ok() {
+                                    // Bounded so an unreachable peer cannot stall the whole loop for the OS connect timeout
+                                    let probe = timeout(Duration::from_secs(5), TcpStream::connect(&ip_port)).await;
+                                    if matches!(probe, Ok(Ok(_))) {
                                         let ei = EndpointInfo {
                                             fullname: fullname.clone(),
                                             id: ip_port,
@@ -118,10 +121,20 @@ impl MDnsDiscovery {
                                 _ => {}
                             }
                         },
-                        Err(err) => error!("MDnsDiscovery: error: {}", err),
+                        Err(err) => {
+                            // The channel is closed for good: recv_async() returns immediately from now on,
+                            // so continuing would busy-loop and flood the log (#268)
+                            error!("MDnsDiscovery: error: {}, stopping", err);
+                            break;
+                        }
                     }
                 }
             }
+        }
+
+        // discovery() creates a new daemon each time; stop this one so they don't accumulate
+        if let Ok(status) = self.daemon.shutdown() {
+            let _ = status.recv_async().await;
         }
 
         Ok(())
