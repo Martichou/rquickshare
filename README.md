@@ -2,7 +2,7 @@
   <h1>rquickshare</h1>
 
   <p>
-    <strong>NearbyShare/QuickShare for Linux and MacOS</strong>
+    <strong>NearbyShare/QuickShare for Linux, macOS, and Windows</strong>
   </p>
   <p>
 
@@ -31,6 +31,26 @@ You simply have to download the latest release.
 Simply install the .dmg.
 
 Note that you may have to first allow the app to install under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission)
+
+#### Windows
+
+**Installer (.msi):**
+Run the `.msi` installer. This is the recommended installation method as it properly registers the application for notifications and autostart.
+
+**Portable (.zip):**
+Extract the ZIP archive to any folder and run the `.exe`. Note that:
+- Windows Firewall may block incoming connections. You may need to [add a firewall exception](#windows-firewall).
+- Notifications may not work properly — the app uses basic Windows toast notifications.
+- Autostart on login may require running as Administrator once to register.
+
+> [!WARNING]
+> **SmartScreen Warning:** Unsigned builds may show a "Windows protected your PC" warning from SmartScreen. Click "More info" → "Run anyway" to proceed. A code-signed release is planned.
+
+> [!NOTE]
+> **Windows Limitations (MVP):**
+> - **Wi-Fi LAN only** — same as Linux/macOS.
+> - **Bluetooth discovery** — Android devices may require manually opening the Quick Share receive UI on the phone. Automatic discovery via BLE advertising is planned for a future release.
+> - **Notifications** — Basic toast notifications only (no Accept/Reject action buttons). You'll need to open the app to accept transfers.
 
 #### Linux
 
@@ -164,6 +184,9 @@ vim ./.local/share/dev.mandre.rquickshare/.settings.json
 # mac
 vim Library/Application\ Support/dev.mandre.rquickshare/.settings.json
 
+# windows (PowerShell)
+notepad "$env:APPDATA\dev.mandre.rquickshare\.settings.json"
+
 # to be sure
 find $HOME -name ".settings.json"
 ```
@@ -193,10 +216,31 @@ env WEBKIT_DISABLE_COMPOSITING_MODE=1 rquickshare
 
 Alternatively, you may try the `legacy` variant.
 
+### Windows: Firewall is blocking incoming connections
+
+Windows Firewall blocks inbound TCP connections by default. If the app starts but other devices can't discover or connect to your Windows machine:
+
+1. **Quick fix (portable mode):** Open PowerShell as Administrator and run:
+   ```powershell
+   New-NetFirewallRule -DisplayName "RQuickShare" -Direction Inbound -Protocol TCP -Program "C:\path\to\r-quick-share.exe" -Action Allow
+   ```
+2. **Installer (.msi):** The MSI installer should prompt to add a firewall exception. If it doesn't, use the PowerShell command above.
+3. **Static port:** You can also set a static port in `.settings.json` (see above) and create a rule for that specific port:
+   ```powershell
+   New-NetFirewallRule -DisplayName "RQuickShare" -Direction Inbound -Protocol TCP -LocalPort 12345 -Action Allow
+   ```
+
+### Windows: App won't reopen after closing
+
+On Windows, closing the window minimizes the app to the system tray (same as Linux/macOS). The process continues running in the background.
+
+- **To fully exit:** Right-click the system tray icon → Quit.
+- **To close on window close:** Click the three dots in the app → "Stop app on close".
+
 WIP Notes
 --------------------------
 
-`rquickshare` is still in development (WIP) and currently only supports Linux even though it should be compatible with macOS too. Keep in mind that the design may change between versions, so flexibility is key.
+`rquickshare` is still in development (WIP) and supports Linux, macOS, and Windows. Keep in mind that the design may change between versions, so flexibility is key.
 
 Got feedback or suggestions? We'd love to hear them! Feel free to open an issue and share your thoughts.
 

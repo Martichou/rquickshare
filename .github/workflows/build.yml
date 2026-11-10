@@ -21,6 +21,7 @@ jobs:
         include:
           - os: ubuntu-latest
           - os: macos-latest
+          - os: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -30,8 +31,8 @@ jobs:
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install dependencies
-        if: contains(matrix.os, 'macos') == false
+      - name: Install dependencies (Linux)
+        if: contains(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-dev
@@ -39,6 +40,10 @@ jobs:
           cd ./core_lib
           cargo test
           cargo build
+      - name: Test Windows artifact renaming
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tests/rename_build.Tests.ps1
 
   build_tauri:
     runs-on: ${{ matrix.os }}
@@ -56,7 +61,11 @@ jobs:
             name: main
             target_path: app/main
             cache_directory: app/main/src-tauri/target
-          - os: macos-13
+          - os: macos-15-intel
+            name: main
+            target_path: app/main
+            cache_directory: app/main/src-tauri/target
+          - os: windows-latest
             name: main
             target_path: app/main
             cache_directory: app/main/src-tauri/target
@@ -76,29 +85,45 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Linux dependencies for U
-        if: contains(matrix.os, 'macos') == false
+      - name: Install dependencies (Linux)
+        if: contains(matrix.os, 'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y libdbus-1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
-      - name: Install Linux dependencies
-        if: contains(matrix.os, 'macos') == false
+      - name: Install WebKitGTK dependencies (Linux)
+        if: contains(matrix.os, 'ubuntu')
         run: ${{ matrix.dependencies }}
 
       - name: GLIBC version
-        if: contains(matrix.os, 'macos') == false
+        if: contains(matrix.os, 'ubuntu')
         run: |
           GLIBC_VER=$(ldd --version | head -n1 | awk '{print $NF}')
           echo "GLIBC version: ${GLIBC_VER}"
 
       - name: Build Vite + Tauri
+        shell: bash
         run: |
           rm -rf ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/
           cd ./${{ matrix.target_path }}
           pnpm install
           pnpm build:debug
+
+      - name: Rename build artifacts (Linux/macOS)
+        if: contains(matrix.os, 'ubuntu') || contains(matrix.os, 'macos')
+        run: |
           cd ${{ github.workspace }}
           ./rename_build.sh ${{ github.workspace }}/${{ matrix.target_path }}/src-tauri/target/debug/bundle/ ${{ matrix.name }}
+
+      - name: Rename build artifacts (Windows)
+        if: contains(matrix.os, 'windows')
+        shell: pwsh
+        run: |
+          $bundlePath = "${{ github.workspace }}\${{ matrix.target_path }}\src-tauri\target\debug\bundle"
+          if (Test-Path $bundlePath) {
+            & "${{ github.workspace }}\rename_build.ps1" -BaseDirectory $bundlePath -TauriVersion "${{ matrix.name }}" -DebugMode
+          } else {
+            Write-Host "Bundle path not found: $bundlePath"
+          }
 
       - name: Upload result
         uses: actions/upload-artifact@v4

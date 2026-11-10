@@ -1,5 +1,4 @@
 use std::fs::File;
-use std::os::unix::fs::FileExt;
 use std::time::Duration;
 
 use anyhow::anyhow;
@@ -36,7 +35,7 @@ use crate::securemessage::{
 use crate::sharing_nearby::{paired_key_result_frame, text_metadata};
 use crate::utils::{
     encode_point, gen_ecdsa_keypair, gen_random, get_download_dir, hkdf_extract_expand,
-    stream_read_exact, to_four_digit_string, DeviceType, RemoteDeviceInfo,
+    stream_read_exact, to_four_digit_string, write_all_at_offset, DeviceType, RemoteDeviceInfo,
 };
 use crate::{location_nearby_connections, sharing_nearby};
 
@@ -652,11 +651,11 @@ impl InboundRequest {
                         }
 
                         if !chunk.body().is_empty() {
-                            file_internal
-                                .file
-                                .as_ref()
-                                .unwrap()
-                                .write_all_at(chunk.body(), current_offset as u64)?;
+                            write_all_at_offset(
+                                file_internal.file.as_ref().unwrap(),
+                                chunk.body(),
+                                current_offset as u64,
+                            )?;
                             file_internal.bytes_transferred += chunk_size as i64;
 
                             self.update_state(
