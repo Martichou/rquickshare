@@ -169,6 +169,10 @@ import SideMenu from '../composables/SideMenu.vue';
 import ContentStatus from '../composables/ContentStatus.vue';
 import ItemSide from '../composables/ItemSide.vue';
 
+interface ShareRequest {
+	files: string[]
+}
+
 export default {
 	name: "HomePage",
 
@@ -315,6 +319,13 @@ export default {
 			);
 
 			this.unlisten.push(
+				await listen<ShareRequest>('share_received', async (event) => {
+					await this.queueSharedFiles(event.payload.files);
+					await invoke('take_pending_share');
+				})
+			);
+
+			this.unlisten.push(
 				await getCurrentWindow().onDragDropEvent(async (event) => {
 					if (event.payload.type === 'over') {
 						this.isDragHovering = true;
@@ -331,6 +342,12 @@ export default {
 					}
 				})
 			);
+
+			// A share can be queued before the webview has finished loading.
+			const pendingShare = await invoke<ShareRequest | null>('take_pending_share');
+			if (pendingShare) {
+				await this.queueSharedFiles(pendingShare.files);
+			}
 
 			await this.getLatestVersion(this);
 		});
@@ -357,6 +374,21 @@ export default {
 	},
 
 	methods: {
+		queueSharedFiles: async function(files: string[]) {
+			if (files.length === 0) return;
+
+			const existing = this.outboundPayload?.Files ?? [];
+			const merged = [...new Set([...existing, ...files])];
+			this.outboundPayload = { Files: merged } as OutboundPayload;
+
+			if (!this.discoveryRunning) {
+				await invoke('start_discovery');
+				this.discoveryRunning = true;
+			}
+
+			const noun = merged.length === 1 ? 'item' : 'items';
+			this.toastStore.addToast(`Ready to share ${merged.length} ${noun}`, ToastType.Success);
+		},
 		writeToClipboard: async function(text: string) {
 			try {
 				await writeText(text);

@@ -30,6 +30,7 @@ use crate::store::{
 mod cmds;
 mod logger;
 mod notification;
+mod share;
 mod store;
 
 pub struct AppState {
@@ -48,6 +49,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
     // Build and run Tauri app
     tauri::Builder::default()
+        .manage(share::PendingShare::default())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
@@ -69,6 +71,7 @@ async fn main() -> Result<(), anyhow::Error> {
             cmds::get_hostname,
             cmds::send_payload,
             cmds::send_to_rs,
+            share::take_pending_share,
         ])
         .setup(|app| {
             // Setting up logging inside file for the app
@@ -167,6 +170,10 @@ async fn main() -> Result<(), anyhow::Error> {
                 if code != Some(-1) {
                     kill_app(app_handle);
                 }
+            }
+            #[cfg(target_os = "macos")]
+            tauri::RunEvent::Opened { urls } => {
+                share::handle_opened(app_handle, &urls);
             }
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Reopen { .. } => {
@@ -304,7 +311,12 @@ fn rs2js_endpointinfo(message: EndpointInfo, manager: &AppHandle) {
     manager.emit("rs2js_endpointinfo", &message).unwrap();
 }
 
-fn open_main_window(app_handle: &AppHandle) {
+pub(crate) fn open_main_window(app_handle: &AppHandle) {
+    #[cfg(target_os = "macos")]
+    if let Err(e) = app_handle.show() {
+        warn!("open_main_window: show app: {e}");
+    }
+
     if let Some(webview_window) = app_handle.get_webview_window("main") {
         let _ = webview_window.show();
         let _ = webview_window.set_focus();

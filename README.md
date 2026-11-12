@@ -32,6 +32,8 @@ Simply install the .dmg.
 
 Note that you may have to first allow the app to install under `Settings > Privacy & Security > Security` (you should see a dialog asking for permission)
 
+Right-click a file in Finder and choose `Share > RQuickShare` to queue it for transfer. The app opens with the files ready and you only need to pick a target device. This uses a Share extension that is embedded in the macOS app bundle. If the item does not appear in the Share menu, open the app once from Applications, then enable it under `Settings > General > Login Items & Extensions > Sharing` if needed. See [app/main/share-extension/README.md](app/main/share-extension/README.md) for build and troubleshooting details.
+
 #### Linux
 
 ##### Install dependencies
