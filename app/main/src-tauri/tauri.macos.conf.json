@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "pnpm vite:build && pnpm build:share-extension"
+  },
+  "bundle": {
+    "macOS": {
+      "files": {
+        "PlugIns/RQuickShareShare.appex": "../share-extension/build/RQuickShareShare.appex"
+      }
+    }
+  }
+}

@@ -7,6 +7,7 @@
     "tauri": "tauri",
     "build:debug": "tauri build -d",
     "build": "tauri build",
+    "build:share-extension": "bash share-extension/build.sh",
     "vite:dev": "vite dev",
     "vite:build": "vite build",
     "test": "vitest",
